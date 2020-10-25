@@ -13,6 +13,7 @@
 
 # Executables
 *.exe
+bin/teraflop-test-library
 
 # DUB
 .dub
