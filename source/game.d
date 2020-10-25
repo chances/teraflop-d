@@ -4,7 +4,7 @@ module teraflop.game;
 abstract class Game {
   private bool active_;
   import teraflop.time : Time;
-  private Time time_;
+  private auto time_ = Time.zero;
   private bool limitFrameRate = true;
   private int desiredFramerateHertz_ = 60;
 
@@ -40,13 +40,13 @@ abstract class Game {
 
     while (active) {
       auto elapsed = stopwatch.peek();
-      time_ = Time(time.totalElapsedTime + elapsed, elapsed);
+      time_ = Time(time.total + elapsed, elapsed);
       auto deltaSeconds = time.deltaSeconds;
 
       const desiredFrameTimeSeconds = 1.0f / desiredFramerateHertz;
       while (limitFrameRate && deltaSeconds < desiredFrameTimeSeconds) {
         elapsed = stopwatch.peek();
-        time_ = Time(time.totalElapsedTime + elapsed, elapsed);
+        time_ = Time(time.total + elapsed, elapsed);
         deltaSeconds += time.deltaSeconds;
         stopwatch.reset();
 
