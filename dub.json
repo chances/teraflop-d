@@ -1,0 +1,17 @@
+{
+  "name": "teraflop",
+	"description": "An ECS game engine on a wgpu foundation",
+	"authors": [
+		"Chance Snow"
+  ],
+  "license": "BSD 3-clause",
+  "copyright": "Copyright © 2020, Chance Snow",
+  "targetType": "sourceLibrary",
+  "targetPath": "bin",
+  "sourcePaths": [ "source" ],
+  "dependencies": {
+		"bindbc-glfw": "~>0.10.1",
+		"wgpu-d": "~>0.6.1"
+  },
+  "versions": [ "GLFW_32" ]
+}
