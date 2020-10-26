@@ -49,17 +49,17 @@ unittest {
 
   // Test the Event with int event arg
   Event!int onChanged;
-  auto s = S(expectedSDotA); // @suppress(dscanner.suspicious.unmodified)
+  const s = S(expectedSDotA);
 
   assert(!onChanged);
 
   onChanged += (int arg) { assert(arg == expectedArg, "Mismatched argument for lambda callback!"); };
   onChanged ~= &func;
-  onChanged += &s.handler;
+  onChanged += &(cast(S) s).handler;
   assert(onChanged);
   onChanged(expectedArg += 1);
 
-  onChanged -= &s.handler;
+  onChanged -= &(cast(S) s).handler;
   onChanged(expectedArg += 1);
 
   onChanged -= &func;
