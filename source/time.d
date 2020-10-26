@@ -1,8 +1,9 @@
 module teraflop.time;
 
+import core.time : Duration;
+
 /// Tracks time-based statistics about the running game.
 struct Time {
-  import core.time : Duration;
   private Duration total_ = Duration.zero;
   private Duration delta_ = Duration.zero;
   private bool runningSlowly_ = false;
@@ -92,4 +93,155 @@ unittest {
   import std.typecons : Yes;
   time = Time(time, Yes.runningSlowly);
   assert(time.runningSlowly);
+}
+
+/// A Timer that, when running, repeatedly ticks at a specific interval.
+final class Timer {
+  import teraflop.event : Event;
+  /// Occurs when an `interval` amount of time has passed since the last tick event.
+  Event!Timer onTick;
+
+  /// How often the timer should tick.
+  private auto interval = Duration.zero;
+  import core.time : MonoTime;
+  private auto startedAt = MonoTime.zero;
+  private bool justTicked_ = false;
+  // Timer worker thread state
+  import std.concurrency : Tid;
+  private Tid worker;
+
+  import core.time : seconds;
+  import std.datetime.stopwatch : AutoStart;
+  /// Instantiate a Timer that repeatedly ticks at every given interval.
+  this(Duration interval = 1.seconds, AutoStart autostart = AutoStart.no) {
+    this.interval = interval;
+    if (autostart) start();
+  }
+
+  ~this() {
+    if (running) stop();
+  }
+
+  /// Start this timer.
+  void start() {
+    startedAt = MonoTime.currTime;
+    // Spawn a timer worker thread
+    import std.concurrency : send, spawn;
+    worker = spawn(&timerWorker, interval);
+    shared TickCallback cb = (Duration delta) {
+      justTicked_ = delta >= interval;
+      if (justTicked_ && onTick) onTick(this);
+    };
+    send(worker, TickCallbackMessage(cb));
+  }
+  /// Stop this timer.
+  void stop() {
+    if (startedAt == MonoTime.zero) return;
+
+    // Stop the worker thread and wait for acknowledgement
+    import std.concurrency : send;
+    send(worker, StopMessage());
+
+    startedAt = MonoTime.zero;
+  }
+
+  /// Whether or not this timer is ticking.
+  bool running() const @property {
+    return startedAt != MonoTime.zero;
+  }
+  /// Whether this timer just ticked.
+  bool justTicked() const @property {
+    return justTicked_;
+  }
+
+  /// Duration that this timer has been `running`.
+  Duration duration() const @property {
+    return startedAt != MonoTime.zero
+      ? MonoTime.currTime - startedAt
+      : Duration.zero;
+  }
+  /// Duration that this timer has been `running`, in seconds.
+  long durationSeconds() const @property {
+    return duration.total!"seconds";
+  }
+
+  /// Update this timer, resetting `justTicked` to `false` if neccesary since the last update.
+  void update() {
+    if (justTicked_) justTicked_ = false;
+  }
+}
+
+private {
+  alias TickCallback = void delegate(Duration);
+  struct TickCallbackMessage {
+    shared TickCallback onTick;
+  }
+  struct StopMessage {}
+
+  import std.concurrency : Tid;
+  import core.time : msecs;
+  void timerWorker(Duration tickFrequency = 10.msecs) {
+    TickCallback onTick = null;
+    import std.datetime.stopwatch : AutoStart, StopWatch;
+    auto stopwatch = StopWatch(AutoStart.yes);
+
+    bool stopped = false;
+    while (!stopped) {
+      import core.time : nsecs;
+      auto timeout = (tickFrequency.total!"nsecs" / 4).nsecs;
+      import std.concurrency : receiveTimeout, OwnerTerminated;
+      try {
+        receiveTimeout(timeout, (TickCallbackMessage message) {
+          onTick = message.onTick;
+        }, (StopMessage _) => stopped = true);
+      } catch (OwnerTerminated) stopped = true;
+
+      auto elapsed = stopwatch.peek;
+      if (elapsed >= tickFrequency) {
+        if (onTick !is null) onTick(elapsed);
+        stopwatch.reset();
+      }
+    }
+
+    stopwatch.stop();
+  }
+}
+
+unittest {
+  import std.datetime.stopwatch : AutoStart, StopWatch;
+  import core.time : msecs;
+  auto timer = new Timer(20.msecs, AutoStart.yes);
+  assert(timer.running);
+
+  import core.thread : Thread;
+  Thread.sleep(14.msecs);
+  timer.update();
+  assert(timer.duration >= 14.msecs);
+  assert(timer.durationSeconds < 1);
+
+  Thread.sleep(10.msecs);
+  assert(timer.justTicked);
+  timer.update();
+  assert(!timer.justTicked);
+  assert(timer.duration >= 24.msecs && timer.duration < 30.msecs);
+  assert(timer.durationSeconds < 1);
+
+  Thread.sleep(20.msecs);
+  assert(timer.justTicked);
+  timer.update();
+  assert(!timer.justTicked);
+  assert(timer.duration >= 44.msecs && timer.duration < 50.msecs);
+  assert(timer.durationSeconds < 1);
+
+  timer.stop();
+  assert(!timer.running);
+  assert(timer.duration == Duration.zero);
+
+  Thread.sleep(20.msecs);
+  timer.start();
+  assert(timer.running);
+  assert(timer.duration < 5.msecs);
+  assert(timer.durationSeconds < 1);
+
+  destroy(timer);
 }
