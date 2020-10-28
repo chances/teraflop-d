@@ -1,5 +1,6 @@
 module teraflop.ecs;
 
+import std.traits : fullyQualifiedName;
 import std.uuid : UUID;
 
 /// A collection of Entities, their `Component`s, `Resource`s, and the `System`s that operate on
@@ -106,68 +107,137 @@ final class Entity {
   }
 
   /// Add a `Component` instance to this entity.
-  void add(Component component) {
-    components_[key(component)] = component;
+  void add(const Component component) {
+    components_[key(component)] = cast(Component) component;
+  }
+  /// Add a new Component given its type and, optionally, a default value and its name
+  void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
+    add(new Structure!T(data, name));
   }
 
-  private static string key(Component component) {
-    return component.classinfo.name ~ ":" ~ component.name;
+  /// Detect whether this Entity has the given `Tag`.
+  bool hasTag(const Tag tag) {
+    return (key(tag) in components_) !is null;
+  }
+
+  private static string key(const Component component) {
+    if (Component.isNamed(component)) {
+      import std.conv : to;
+      return component.type ~ ":" ~ component.to!(const NamedComponent).name;
+    }
+    return component.type;
   }
 
   unittest {
     auto entity = new Entity();
+    auto seven = Number(7);
+    const key = "teraflop.ecs.Structure!(Number).Structure:teraflop.ecs.Number";
     assert(entity.components.length == 0);
-    auto seven = new Number(7, "seven");
-    import std.traits : fullyQualifiedName;
-    auto key = fullyQualifiedName!Number ~ ":seven";
 
-    assert(Entity.key(seven) == key);
     entity.add(seven);
     assert(entity.components.length == 1);
-    assert(entity.components[0] == seven);
-    assert(entity.components_.keys[0] == Entity.key(seven));
+    import std.conv : to;
+    assert(entity.components[0].to!(const(Structure!Number)).data == seven);
+    assert(entity.components_.keys[0] == key);
   }
 }
 
-/// Derive this class to contain specialized `Entity` data.
+import teraflop.traits : inheritsFrom;
+/// Detect whether `T` inherits from `Component`.
+enum bool isComponent(T) = inheritsFrom!(T, Component);
+
+/// A container for specialized `Entity` data.
 abstract class Component {
+  private string type_;
+
+  package string type() const @property {
+    return this.classinfo.name;
+  }
+
+  package static bool isNamed(inout Component component) {
+    return typeid(NamedComponent).isBaseOf(component.classinfo);
+  }
+
+  package static bool isTag(Component component) {
+    return typeid(Tag).isBaseOf(component.classinfo);
+  }
+}
+
+/// Detect whether `T` inherits from `NamedComponent`.
+enum bool isNamedComponent(T) = inheritsFrom!(T, NamedComponent);
+
+/// A named container for specialized `Entity` data.
+abstract class NamedComponent : Component {
   private string name_;
 
-  /// Initialize a component given its name.
-  this(string name = "") {
+  /// Initialize a new NamedComponent.
+  this(string name) pure {
+    assert(name.length, "A named Component must have a non-empty name.");
     this.name_ = name;
-    if (name == "") {
-      this.name_ = this.classinfo.name;
-    }
   }
 
   string name() const @property {
     return name_;
   }
+}
 
-  unittest {
-    assert(new Number(1).name == "teraflop.ecs.Number");
+import teraflop.traits : isStruct;
+private final class Structure(T) : NamedComponent if (isStruct!T) {
+  T data;
 
-    auto seven = new Number(7, "seven");
-    assert(seven.name == "seven");
+  this(T data, string name = fullyQualifiedName!T) {
+    assert(name.length, "A Component constructed from a struct must be named.");
+    super(name);
+    this.data = data;
   }
+  /// Make an immutable copy of this `Structure`.
+  immutable(Structure) idup() {
+    return new immutable(Structure!T)(data, name);
+  }
+}
+
+unittest {
+  auto one = Number(1);
+  auto component = new Structure!Number(one);
+  assert(component.type == "teraflop.ecs.Structure!(Number).Structure");
+  assert(component.name == "teraflop.ecs.Number");
+}
+
+/// A named, dataless Component used to flag Entities.
+final class Tag : NamedComponent {
+  /// Initialize a new Tag
+  this(string name) pure {
+    assert(name.length, "A Tag must be named.");
+    super(name);
+  }
+  /// Make an immutable copy of this `Tag`.
+  immutable(Tag) idup() {
+    return new immutable(Tag)(name);
+  }
+}
+
+/// Create a new `Tag` given a name
+immutable(Tag) tag(string name) {
+  return new Tag(name).idup;
 }
 
 // TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
 
 /// Whether *all* of an `Entity`s GPU resources have been initialized.
-mixin Tag!"Initialized";
+static immutable Initialized = tag("Initialized");
 /// Whether *all* of an `Entity`s `Asset` components have been loaded.
-mixin Tag!"Loaded";
-
-/// Create a dataless `Component` derivation given a name
-mixin template Tag(string name) {
-  mixin("class " ~ name ~ " : Component {}");
-}
+static immutable Loaded = tag("Loaded");
 
 unittest {
-  auto initTag = new Initialized();
-  assert(initTag.name_ == "teraflop.ecs.Tag!\"Initialized\".Initialized");
+  assert(Initialized.name == Initialized.stringof);
+
+  const foo = tag("foo");
+  assert(foo.type == "teraflop.ecs.Tag");
+  assert(foo.name == foo.stringof);
+
+  auto entity = new Entity();
+  entity.add(foo);
+  assert(entity.hasTag(foo));
 }
 
 /// Derive this class to encapsulate a game system that operates on `Component`s in the world.
@@ -186,12 +256,7 @@ abstract class System {
 }
 
 version(unittest) {
-  class Number : Component {
-    int number;
-
-    this(int number, string name = "") {
-      super(name);
-      this.number = number;
-    }
+  struct Number {
+    int value;
   }
 }
