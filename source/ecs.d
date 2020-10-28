@@ -4,7 +4,7 @@ import std.uuid : UUID;
 
 /// A collection of Entities, their `Component`s, `Resource`s, and the `System`s that operate on
 /// those components and mutate the world
-class World {
+final class World {
   private Entity[UUID] entities_;
   private ResourceCollection resources_;
   private ResourceTracker resourceChanged;
@@ -90,7 +90,7 @@ unittest {
 }
 
 /// A world entity consisting of a unique ID and a collection of associated components.
-class Entity {
+final class Entity {
   private Component[string] components_;
   import std.uuid : randomUUID;
   /// Unique ID of this entity
