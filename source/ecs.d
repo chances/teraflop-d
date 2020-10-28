@@ -107,18 +107,25 @@ final class Entity {
 
   /// Add a `Component` instance to this entity.
   void add(Component component) {
-    auto name = component.classinfo.name ~ ":" ~ component.name;
-    components_[name] = component;
+    components_[key(component)] = component;
+  }
+
+  private static string key(Component component) {
+    return component.classinfo.name ~ ":" ~ component.name;
   }
 
   unittest {
     auto entity = new Entity();
     assert(entity.components.length == 0);
     auto seven = new Number(7, "seven");
+    import std.traits : fullyQualifiedName;
+    auto key = fullyQualifiedName!Number ~ ":seven";
+
+    assert(Entity.key(seven) == key);
     entity.add(seven);
     assert(entity.components.length == 1);
     assert(entity.components[0] == seven);
-    assert(entity.components_.keys[0] == "teraflop.ecs.Number:seven");
+    assert(entity.components_.keys[0] == Entity.key(seven));
   }
 }
 
