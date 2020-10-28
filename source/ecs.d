@@ -1,7 +1,10 @@
 module teraflop.ecs;
 
+import std.conv : to;
 import std.traits : fullyQualifiedName;
 import std.uuid : UUID;
+
+import teraflop.traits : isStruct;
 
 /// A collection of Entities, their `Component`s, `Resource`s, and the `System`s that operate on
 /// those components and mutate the world
@@ -107,7 +110,7 @@ final class Entity {
   }
 
   /// Add a `Component` instance to this entity.
-  void add(const Component component) {
+  void add(inout Component component) {
     components_[key(component)] = cast(Component) component;
   }
   /// Add a new Component given its type and, optionally, a default value and its name
@@ -120,9 +123,40 @@ final class Entity {
     return (key(tag) in components_) !is null;
   }
 
+  /// Determines whether this Entity contains a given `Component` instance.
+  ///
+  /// Complexity: Constant
+  bool contains(inout Component component) const {
+    return ((key(component) in components_) !is null);
+  }
+  /// Determines whether this Entity contains a `NamedComponent` instance given its name.
+  ///
+  /// Complexity: Linear
+  bool contains(string name) const {
+    assert(name.length);
+    import std.algorithm.iteration : filter, map;
+    import std.algorithm.searching : canFind;
+
+    auto componentNames = components.filter!(Component.isNamed)
+      .map!(c => c.to!(const NamedComponent).name);
+    if (componentNames.empty) return false;
+    return componentNames.canFind(name);
+  }
+  /// Determines whether this Entity contains a Component given its type and, optionally, its name.
+  ///
+  /// Complexity: Linear
+  bool contains(T)(string name = "") const if (isStruct!T) {
+    import std.algorithm.iteration : filter, map;
+    import std.algorithm.searching : canFind;
+
+    auto structComponents = components.filter!(Component.isStructure!T)
+      .map!(c => c.to!(const Structure!T).name);
+    return name == "" ? !structComponents.empty : structComponents.canFind(name);
+  }
+
+  // TODO: Move this to the Component classes as a hash function and refactor components_ to use Component.hashOf
   private static string key(const Component component) {
     if (Component.isNamed(component)) {
-      import std.conv : to;
       return component.type ~ ":" ~ component.to!(const NamedComponent).name;
     }
     return component.type;
@@ -131,14 +165,22 @@ final class Entity {
   unittest {
     auto entity = new Entity();
     auto seven = Number(7);
-    const key = "teraflop.ecs.Structure!(Number).Structure:teraflop.ecs.Number";
+    const name = "teraflop.ecs.Number";
+    const key = "teraflop.ecs.Structure!(Number).Structure:" ~ name;
     assert(entity.components.length == 0);
 
     entity.add(seven);
     assert(entity.components.length == 1);
-    import std.conv : to;
-    assert(entity.components[0].to!(const(Structure!Number)).data == seven);
     assert(entity.components_.keys[0] == key);
+    assert(entity.contains(name));
+    assert(entity.contains!Number());
+    assert(entity.contains!Number(name));
+    assert(entity.contains(entity.components[0]));
+
+    import std.conv : to;
+    const structure = entity.components[0].to!(const(Structure!Number));
+    assert(structure.data == seven);
+    assert(entity.key(structure) == key);
   }
 }
 
@@ -155,6 +197,10 @@ abstract class Component {
   }
 
   package static bool isNamed(inout Component component) {
+    return typeid(NamedComponent).isBaseOf(component.classinfo);
+  }
+
+  package static bool isStructure(T)(inout Component component) if (isStruct!T) {
     return typeid(NamedComponent).isBaseOf(component.classinfo);
   }
 
