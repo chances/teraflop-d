@@ -158,7 +158,7 @@ abstract class Component {
     return typeid(NamedComponent).isBaseOf(component.classinfo);
   }
 
-  package static bool isTag(Component component) {
+  package static bool isTag(inout Component component) {
     return typeid(Tag).isBaseOf(component.classinfo);
   }
 }
@@ -221,23 +221,28 @@ immutable(Tag) tag(string name) {
   return new Tag(name).idup;
 }
 
-// TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
-
-/// Whether *all* of an `Entity`s GPU resources have been initialized.
-static immutable Initialized = tag("Initialized");
-/// Whether *all* of an `Entity`s `Asset` components have been loaded.
-static immutable Loaded = tag("Loaded");
-
 unittest {
-  assert(Initialized.name == Initialized.stringof);
-
   const foo = tag("foo");
+
   assert(foo.type == "teraflop.ecs.Tag");
   assert(foo.name == foo.stringof);
+  assert(Component.isTag(foo));
 
   auto entity = new Entity();
   entity.add(foo);
   assert(entity.hasTag(foo));
+}
+
+// TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
+
+/// Whether *all* of an `Entity`s GPU resources have been initialized.
+static const Initialized = tag("Initialized");
+/// Whether *all* of an `Entity`s `Asset` components have been loaded.
+static const Loaded = tag("Loaded");
+
+unittest {
+  assert(Initialized.name == Initialized.stringof);
+  assert(Loaded.name == Loaded.stringof);
 }
 
 /// Derive this class to encapsulate a game system that operates on `Component`s in the world.
