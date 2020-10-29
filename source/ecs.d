@@ -100,6 +100,9 @@ unittest {
   assert(world.resources.get!Foo.bar == "hello");
 }
 
+/// Detect whether `T` is the `Entity` class.
+enum bool isEntity(T) = __traits(isSame, Unqual!T, Entity);
+
 /// A world entity consisting of a unique ID and a collection of associated components.
 final class Entity {
   private Component[string] components_;
