@@ -18,6 +18,12 @@ final class World {
     return entities_.values;
   }
 
+  /// Get an Entity given its unique ID.
+  const(Entity) get(UUID id) const {
+    assert((id in entities_) !is null, "Could not find Entity!");
+    return entities_[id];
+  }
+
   /// A collection of resource instances identified by their type.
   Resources resources() const @property {
     return Resources(
@@ -225,6 +231,14 @@ final class Entity {
       return cast(T[]) namedComponents.filter!(c => c.type == typeid(T).name)
         .map!(c => c.to!(const T)).array;
     }
+  }
+
+  /// Replace a Component given new value.
+  ///
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
+  void replace(Component component) {
+    assert(contains(component), "A Component must first be added before replacement.");
+    components_[key(component)] = component;
   }
 
   // TODO: Move this to the Component classes as a hash function and refactor components_ to use Component.hashOf
