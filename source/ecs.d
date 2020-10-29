@@ -339,6 +339,11 @@ unittest {
   assert(component.name == "teraflop.ecs.Number");
 }
 
+/// Initialize a new `Component`, optionally given default data and a custom name.
+Component component(T)(T data = T.init, const string name = "") if (isStruct!T) {
+  return new Structure!T(data, name);
+}
+
 /// A named, dataless Component used to flag Entities.
 final class Tag : NamedComponent {
   /// Initialize a new Tag
