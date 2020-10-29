@@ -115,6 +115,8 @@ final class Entity {
     components_[key(component)] = cast(Component) component;
   }
   /// Add a new Component given its type and, optionally, a default value and its name
+  ///
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
   void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
     add(new Structure!T(data, name));
   }
@@ -146,7 +148,7 @@ final class Entity {
   /// Determines whether this Entity contains a Component given its type and, optionally, its name.
   ///
   /// Complexity: Linear
-  bool contains(T)(string name = "") const if (isStruct!T || isComponent!T) {
+  bool contains(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : filter, map;
     import std.algorithm.searching : canFind;
 
@@ -171,7 +173,7 @@ final class Entity {
   }
 
   /// Get Component data given its type and optionally its name.
-  immutable(T[]) get(T)(string name = "") const if (isStruct!T || isComponent!T) {
+  immutable(T[]) get(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : map;
     import std.array : array;
 
@@ -186,7 +188,7 @@ final class Entity {
   }
 
   /// Get a mutable reference to Component data given its type and optionally its name.
-  T[] getMut(T)(string name = "") const if (isStruct!T || isComponent!T) {
+  T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : filter, map;
     import std.algorithm.searching : canFind;
     import std.array : array;
@@ -259,6 +261,9 @@ final class Entity {
 import teraflop.traits : inheritsFrom;
 /// Detect whether `T` inherits from `Component`.
 enum bool isComponent(T) = inheritsFrom!(T, Component);
+
+/// Detect whether `T` may be stored as Component data.
+enum storableAsComponent(T) = isStruct!T || isComponent!T;
 
 /// A container for specialized `Entity` data.
 abstract class Component {
@@ -384,6 +389,35 @@ abstract class System {
   Entity[] query(ComponentT...)() {
     static if (ComponentT.length == 0) return world.entities;
   }
+}
+
+import std.traits : isCallable, ReturnType;
+/// Detect whether `T` is callable as a `System`, which can be mapped to a `System` with `System.from`.
+template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (ReturnType!T == void)) {
+  import std.traits : Parameters;
+  alias TParams = Parameters!T;
+  static if (!TParams.length)
+    enum bool isCallableAsSystem = true;
+  else {
+    import std.traits : isBoolean, isNumeric, isSomeString;
+    import std.meta : allSatisfy, templateOr;
+    alias isComponentData(T) = storableAsComponent!T;
+    enum isResourceData(T) = isBoolean!T || isNumeric!T || isSomeString!T || isStruct!T;
+    enum bool isCallableAsSystem = allSatisfy!(templateOr!(isResourceData, isComponentData), TParams);
+  }
+}
+
+@safe unittest {
+  interface I { void run() const; }
+  struct S { static void opCall(bool, int) {} }
+  class C { void opCall(double, float, S, Number) {} }
+  auto c = new C;
+
+  static assert(isCallableAsSystem!c);
+  static assert(isCallableAsSystem!(S));
+  static assert(isCallableAsSystem!(I.run));
+  static assert(isCallableAsSystem!(c.opCall));
+  static assert(isCallableAsSystem!((Number _) {}));
 }
 
 version(unittest) {
