@@ -27,7 +27,7 @@ final class World {
   }
 
   /// Spawn a new entity given a set of `Component` instances.
-  void spawn(T...)(T components) if (components.length > 0) {
+  void spawn(T...)(T components) const if (components.length > 0) {
     auto entity = new Entity();
     foreach (component; components) entity.add(component);
     entities_[entity.id] = entity;
@@ -376,19 +376,44 @@ unittest {
   assert(Loaded.name == Loaded.stringof);
 }
 
-/// Derive this class to encapsulate a game system that operates on `Component`s in the world.
+/// Derive this class to encapsulate a game system that operates on Resources and Components in the world.
 abstract class System {
-  private World world;
+  private string name_;
+  private const World world;
 
-  /// Initialize a system given the ECS `World`.
-  this(World world) {
+  /// Initialize a system given the ECS `World` and, optionally, a name.
+  this(const World world, const string name = "") {
+    this.name_ = name.length ? name : this.classinfo.name;
     this.world = world;
   }
+
+  /// The name of this system.
+  string name() const @property {
+    return name_;
+  }
+
+  /// Operate this system on resources and `Component`s in the world.
+  abstract void run() const;
 
   /// Query the world for entities containing a component of the given type.
   Entity[] query(ComponentT...)() {
     static if (ComponentT.length == 0) return world.entities;
   }
+}
+
+unittest {
+  class Foo : System {
+    this(World world) { super(world); }
+    override void run() const {
+      assert(world.entities.length == 0);
+    }
+  }
+  const foo = new Foo(new World());
+
+  import std.traits : fullyQualifiedName;
+  assert(foo.name == fullyQualifiedName!Foo);
+
+  foo.run();
 }
 
 import std.traits : isCallable, ReturnType;
