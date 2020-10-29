@@ -44,41 +44,41 @@ import std.variant : Variant;
 alias ResourceId = size_t;
 private alias ResourceCollection = Variant[ResourceId];
 private alias ResourceTracker = bool[ResourceId];
-/// A collection of resource instances identified by their type.
+/// A collection of Resource instances identified by their type.
 struct Resources {
   private ResourceCollection* resources;
   private ResourceTracker* resourceChanged;
 
-  /// Add a resource to the collection.
+  /// Add a Resource to the collection.
   void add(T)(T resource) {
     Variant resourceVariant = resource;
     (*resources)[resourceVariant.type.toHash] = resourceVariant;
   }
 
-  /// Returns `true` if and only if the given resource type can be found in the collection.
+  /// Returns `true` if and only if the given Resource type can be found in the collection.
   bool contains(T)() const {
     import std.algorithm.searching : canFind;
     return resources.keys.canFind(typeid(T).toHash);
   }
 
-  /// Returns a resource from the collection given its resource type.
+  /// Returns a Resource from the collection given its type.
   immutable(T) get(T)() {
-    assert(contains!T(), "Could not find resource!");
+    assert(contains!T(), "Could not find Resource!");
     auto variant = (*resources)[typeid(T).toHash];
     assert(variant.peek!T !is null);
     return variant.get!T;
   }
 
-  /// Replace a resource.
+  /// Replace a Resource.
   void replace(T)(T resource) {
-    assert(contains!T(), "A resource must first be added before replacement.");
+    assert(contains!T(), "A Resource must first be added before replacement.");
     const Variant resourceVariant = resource;
     auto key = resourceVariant.type.toHash;
     (*resources)[key] = resource;
     (*resourceChanged)[key] = true;
   }
 
-  /// Clear each resource's change detection tracking state.
+  /// Clear each Resource's change detection tracking state.
   void clearTrackers() {
     foreach (key; resourceChanged.keys) {
       (*resourceChanged)[key] = false;
