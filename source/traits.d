@@ -8,7 +8,7 @@ package enum bool isClass(T) = is (T == class);
 /// Detect whether `T` inherits from `U`.
 template inheritsFrom(T, U) if (isClass!T && isClass!U) {
   import std.meta : anySatisfy;
-  import std.traits : BaseClassesTuple;
+  import std.traits : BaseClassesTuple, fullyQualifiedName;
   enum bool isBaseClassOfU(T) = __traits(isSame, fullyQualifiedName!T, fullyQualifiedName!U);
   enum bool inheritsFrom = anySatisfy!(isBaseClassOfU, BaseClassesTuple!T);
 }

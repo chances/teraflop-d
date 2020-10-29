@@ -1,6 +1,7 @@
 module teraflop.ecs;
 
 import std.conv : to;
+import std.string : format;
 import std.traits : fullyQualifiedName;
 import std.uuid : UUID;
 
@@ -145,13 +146,83 @@ final class Entity {
   /// Determines whether this Entity contains a Component given its type and, optionally, its name.
   ///
   /// Complexity: Linear
-  bool contains(T)(string name = "") const if (isStruct!T) {
+  bool contains(T)(string name = "") const if (isStruct!T || isComponent!T) {
     import std.algorithm.iteration : filter, map;
     import std.algorithm.searching : canFind;
 
-    auto structComponents = components.filter!(Component.isStructure!T)
-      .map!(c => c.to!(const Structure!T).name);
-    return name == "" ? !structComponents.empty : structComponents.canFind(name);
+    // For unnamed `Component` derivations
+    static if (!isStruct!T && isComponent!T && !isNamedComponent!T) {
+      static assert(name == "", "Cannot filter for named components given an unnamed Component type.");
+      return !components_.filter!(c => c.classname == typeid(T)).empty;
+    }
+
+    alias FilterFunc = bool function(inout Component);
+    FilterFunc isStructureOrNamed;
+
+    static if (isStruct!T) {
+      isStructureOrNamed = &Component.isStructure!T;
+    } else static if (isNamedComponent!T) {
+      isStructureOrNamed = &Component.isNamed;
+    }
+
+    auto namedComponents = components.filter!(isStructureOrNamed)
+      .map!(c => c.to!(const NamedComponent).name);
+    return name == "" ? !namedComponents.empty : namedComponents.canFind(name);
+  }
+
+  /// Get Component data given its type and optionally its name.
+  immutable(T[]) get(T)(string name = "") const if (isStruct!T || isComponent!T) {
+    import std.algorithm.iteration : map;
+    import std.array : array;
+
+    auto components = getMut!T(name);
+    static if (isStruct!T) {
+      return components.idup;
+    } else {
+      // Cannot implicitly convert from mutable ⇒ immutable 😢️
+      // https://dlang.org/spec/const3.html#implicit_qualifier_conversions
+      return cast(immutable(T[])) components;
+    }
+  }
+
+  /// Get a mutable reference to Component data given its type and optionally its name.
+  T[] getMut(T)(string name = "") const if (isStruct!T || isComponent!T) {
+    import std.algorithm.iteration : filter, map;
+    import std.algorithm.searching : canFind;
+    import std.array : array;
+
+    assert(contains!T(name), format!"Expected Component data of type %s"(typeid(T).name));
+
+    // For unnamed `Component` derivations
+    static if (!isStruct!T && !isNamedComponent!T) {
+      assert(name == "", "Cannot filter for named components given an unnamed Component type.");
+      return components_.filter!(c => c.classname == typeid(T)).array;
+    }
+
+    alias FilterFunc = bool function(inout Component);
+    FilterFunc isStructureOrNamed;
+
+    static if (isStruct!T) {
+      isStructureOrNamed = &Component.isStructure!T;
+    } else static if (isNamedComponent!T) {
+      isStructureOrNamed = &Component.isNamed;
+    }
+
+    auto namedComponents = components.filter!(isStructureOrNamed)
+      .map!(c => c.to!(const NamedComponent)).array;
+
+    if (name.length) {
+      namedComponents = namedComponents.filter!(c => c.name == name).array;
+    }
+
+    // Cannot implicitly convert from const ⇒ mutable
+    // https://dlang.org/spec/const3.html#implicit_qualifier_conversions
+    static if (isStruct!T) {
+      return cast(T[]) namedComponents.map!(c => c.to!(const Structure!T).data).array;
+    } else {
+      return cast(T[]) namedComponents.filter!(c => c.type == typeid(T).name)
+        .map!(c => c.to!(const T)).array;
+    }
   }
 
   // TODO: Move this to the Component classes as a hash function and refactor components_ to use Component.hashOf
@@ -172,15 +243,16 @@ final class Entity {
     entity.add(seven);
     assert(entity.components.length == 1);
     assert(entity.components_.keys[0] == key);
+    assert(entity.components[0].to!(const NamedComponent).name == name);
     assert(entity.contains(name));
     assert(entity.contains!Number());
     assert(entity.contains!Number(name));
     assert(entity.contains(entity.components[0]));
 
     import std.conv : to;
-    const structure = entity.components[0].to!(const(Structure!Number));
-    assert(structure.data == seven);
-    assert(entity.key(structure) == key);
+    const structures = entity.get!Number;
+    assert(structures.length == 1);
+    assert(structures == [seven].idup);
   }
 }
 
@@ -227,17 +299,16 @@ abstract class NamedComponent : Component {
   }
 }
 
-import teraflop.traits : isStruct;
 private final class Structure(T) : NamedComponent if (isStruct!T) {
   T data;
 
-  this(T data, string name = fullyQualifiedName!T) {
+  this(T data, const string name = fullyQualifiedName!T) pure {
     assert(name.length, "A Component constructed from a struct must be named.");
     super(name);
     this.data = data;
   }
   /// Make an immutable copy of this `Structure`.
-  immutable(Structure) idup() {
+  immutable(Structure) idup() const @property {
     return new immutable(Structure!T)(data, name);
   }
 }
@@ -253,18 +324,18 @@ unittest {
 final class Tag : NamedComponent {
   /// Initialize a new Tag
   this(string name) pure {
-    assert(name.length, "A Tag must be named.");
     super(name);
   }
   /// Make an immutable copy of this `Tag`.
-  immutable(Tag) idup() {
+  immutable(Tag) idup() const @property {
     return new immutable(Tag)(name);
   }
 }
 
 /// Create a new `Tag` given a name
 immutable(Tag) tag(string name) {
-  return new Tag(name).idup;
+  assert(name.length, "A Tag must be named.");
+  return new Tag(name);
 }
 
 unittest {
@@ -276,7 +347,16 @@ unittest {
 
   auto entity = new Entity();
   entity.add(foo);
+  assert(entity.contains(foo.stringof));
+  assert(entity.contains!Tag);
+  assert(entity.contains!Tag(foo.stringof));
   assert(entity.hasTag(foo));
+
+  const tags = entity.get!Tag;
+  assert(tags.length == 1);
+  assert(tags == [foo]);
+
+  assert(entity.get!(Tag)("foo") == [foo]);
 }
 
 // TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
