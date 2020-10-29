@@ -2,7 +2,8 @@ module teraflop.ecs;
 
 import std.conv : to;
 import std.string : format;
-import std.traits : fullyQualifiedName;
+import std.meta : templateOr;
+import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
 import teraflop.traits : isStruct;
@@ -32,8 +33,9 @@ final class World {
     );
   }
 
+  import std.meta : allSatisfy;
   /// Spawn a new entity given a set of `Component` instances.
-  void spawn(T...)(T components) const if (components.length > 0) {
+  void spawn(T...)(T components) if (components.length && allSatisfy!(storableAsComponent, T)) {
     auto entity = new Entity();
     foreach (component; components) entity.add(component);
     entities_[entity.id] = entity;
@@ -127,11 +129,11 @@ final class Entity {
   ///
   /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
   void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
-    add(new Structure!T(data, name));
+    add(data.component(name));
   }
 
   /// Detect whether this Entity has the given `Tag`.
-  bool hasTag(const Tag tag) {
+  bool hasTag(const Tag tag) const {
     return (key(tag) in components_) !is null;
   }
 
@@ -160,11 +162,12 @@ final class Entity {
   bool contains(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : filter, map;
     import std.algorithm.searching : canFind;
+    import std.array : array;
 
     // For unnamed `Component` derivations
-    static if (!isStruct!T && isComponent!T && !isNamedComponent!T) {
+    static if (!isStruct!T && inheritsComponent!T && !isNamedComponent!T) {
       static assert(name == "", "Cannot filter for named components given an unnamed Component type.");
-      return !components_.filter!(c => c.classname == typeid(T)).empty;
+      return components_.filter!(c => c.classname == typeid(T)).array.length;
     }
 
     alias FilterFunc = bool function(inout Component);
@@ -177,8 +180,8 @@ final class Entity {
     }
 
     auto namedComponents = components.filter!(isStructureOrNamed)
-      .map!(c => c.to!(const NamedComponent).name);
-    return name == "" ? !namedComponents.empty : namedComponents.canFind(name);
+      .map!(c => c.to!(const NamedComponent).name).array;
+    return name == "" ? !!namedComponents.length : namedComponents.canFind(name);
   }
 
   /// Get Component data given its type and optionally its name.
@@ -212,7 +215,6 @@ final class Entity {
 
     alias FilterFunc = bool function(inout Component);
     FilterFunc isStructureOrNamed;
-
     static if (isStruct!T) {
       isStructureOrNamed = &Component.isStructure!T;
     } else static if (isNamedComponent!T) {
@@ -277,10 +279,21 @@ final class Entity {
 
 import teraflop.traits : inheritsFrom;
 /// Detect whether `T` inherits from `Component`.
-enum bool isComponent(T) = inheritsFrom!(T, Component);
+enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
+
+private enum bool isRawComponent(T) = __traits(isSame, T, Component);
+
+/// Detect whether `T` is a `Component`.
+template isComponent(T) {
+  alias isRawOrInherited = templateOr!(isRawComponent || inheritsComponent);
+  enum bool isComponent = isRawOrInherited!T;
+}
 
 /// Detect whether `T` may be stored as Component data.
-enum storableAsComponent(T) = isStruct!T || isComponent!T;
+template storableAsComponent(T) {
+  alias isStructOrComponent = templateOr!(isStruct, inheritsComponent, isRawComponent);
+  enum bool storableAsComponent = isStructOrComponent!T;
+}
 
 /// A container for specialized `Entity` data.
 abstract class Component {
@@ -409,6 +422,14 @@ abstract class System {
     this.world = world;
   }
 
+  private alias SystemGenerator = System function(World world);
+  /// Dynamically construct a new `System` instance given a function with parameters expecting
+  /// specific resource and Component types.
+  static SystemGenerator from(alias Func)() if (isCallableAsSystem!Func) {
+    alias FuncSystem = GeneratedSystem!Func;
+    return (World world) => new FuncSystem(world);
+  }
+
   /// The name of this system.
   string name() const @property {
     return name_;
@@ -448,9 +469,13 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
   else {
     import std.traits : isBoolean, isNumeric, isSomeString;
     import std.meta : allSatisfy, templateOr;
-    alias isComponentData(T) = storableAsComponent!T;
     enum isResourceData(T) = isBoolean!T || isNumeric!T || isSomeString!T || isStruct!T;
-    enum bool isCallableAsSystem = allSatisfy!(templateOr!(isResourceData, isComponentData), TParams);
+    alias isComponentData(T) = storableAsComponent!T;
+    enum bool isCallableAsSystem = allSatisfy!(templateOr!(
+      isEntity,
+      isResourceData,
+      isComponentData
+    ), TParams);
   }
 }
 
@@ -467,8 +492,186 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
   static assert(isCallableAsSystem!((Number _) {}));
 }
 
+private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!Func) {
+  import std.traits : Parameters, ParameterIdentifierTuple, ParameterStorageClassTuple;
+  import std.typecons : Tuple, tuple;
+
+  enum GeneratedSystemName = __traits(identifier, Func);
+  private static auto systemName = GeneratedSystemName;
+
+  alias FuncParams = Parameters!Func;
+  alias FuncParamNames = ParameterIdentifierTuple!Func;
+  alias FuncParamStorage = ParameterStorageClassTuple!Func;
+  private static auto paramNames = [FuncParamNames];
+
+  this(World world) {
+    super(world, "teraflop.ecs.GeneratedSystem:" ~ systemName);
+  }
+
+  override void run() const {
+    import std.algorithm.iteration : each, joiner, map;
+    import std.string : join;
+
+    alias Replacements = Component[];
+    Replacements[UUID] replacements;
+    debug Diagnostic[] diagnostics;
+
+    foreach (entity; world.entities) {
+      const results = tryApplyFunc(entity);
+      replacements[entity.id] ~= cast(Component[]) results.replacements;
+      debug {
+        auto messages = results.diagnostics.map!(d => d.message);
+        if (messages.length)
+          diagnostics ~= Diagnostic(messages.join("\n"), format!"Entity %s"(entity.id));
+      }
+    }
+
+    debug {
+      if (diagnostics.length) {
+        auto message = diagnostics.map!(d => d.toString).join("\n\n");
+        assert(0, format!"Ran system '%s':\n%s"(name, message));
+      }
+    }
+
+    foreach (entityId; replacements.keys) {
+      auto entity = cast(Entity) world.get(entityId);
+      foreach (Component component; replacements[entityId])
+        entity.replace(component);
+    }
+  }
+
+  private struct Diagnostic {
+    string message;
+    string source = "Unknown";
+
+    string toString() const @property {
+      return format!"%s: %s"(source, message);
+    }
+  }
+
+  private alias FuncApplicationResults = Tuple!(Component[], "replacements", Diagnostic[], "diagnostics");
+  private FuncApplicationResults tryApplyFunc(const Entity entity) const {
+    import std.algorithm.iteration : map;
+    import std.array : array;
+    import std.conv : text;
+    import std.meta : staticIndexOf, staticMap;
+    import std.traits : ConstOf, ImmutableOf, InoutOf, QualifierOf, ParameterStorageClass;
+
+    string[] diagnosticMessages;
+
+    // Try to get the dependent Entity, Component, and Resource instances for function arguments
+    Tuple!(staticMap!(Unqual, FuncParams)) params;
+    enum int indexOf(T) = staticIndexOf!(T, FuncParams);
+    enum string ParamName(T) = FuncParamNames[indexOf!T];
+    enum bool isParamConst(T) = __traits(isSame, QualifierOf!T, ConstOf!T);
+    enum bool isParamImmutable(T) = __traits(isSame, QualifierOf!T, ImmutableOf!(Unqual!T));
+    enum bool isImplicitlyConvertableFromMutable(T) =
+        __traits(isSame, Unqual!T, T) ||
+        __traits(isSame, QualifierOf!T, T) ||
+        isParamConst!T;
+    enum bool hasRefStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.ref_) ==
+      ParameterStorageClass.ref_;
+    enum bool hasScopeStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.scope_) ==
+      ParameterStorageClass.scope_;
+    enum string diagnosticNameOf(T) = "argument " ~ text(indexOf!T + 1) ~ " " ~ "'" ~ ParamName!T ~ "'" ~
+      " of type " ~ typeid(Unqual!T).name;
+    enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";
+
+    static foreach (Param; FuncParams) {
+      // Guard against `ref Entity`, and `immutable ref` parameters
+      static if (hasRefStorage!Param && isEntity!Param)
+        static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
+          "\n\tTeraflop considers overwriting an Entity at System runtime bad practice." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
+      static if (hasRefStorage!Param && isParamImmutable!Param)
+        static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
+      // Require the `scope` storage class on `Entity` parameters
+      static if (!hasScopeStorage!Param && isEntity!Param)
+        static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
+          " i.e. Use \"`scope const Entity " ~ ParamName!Param ~ "`\" instead." ~
+          "\n\tEntity references cannot escape a running System." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
+      // TODO: Require the `const` storage class qualifier on `Entity` parameters
+      // static if (!isParamConst!Param && isEntity!Param)
+      //   static assert(0, "Constant qualifier on " ~ diagnosticNameOf!Param ~
+      //    " is required. i.e. Use \"`const Entity " ~ ParamName!Param ~ "`\" instead." ~
+      //    "\n\t" ~ diagnosticDlangFuncParams);
+
+      static if (!isEntity!Param) {
+        // Run the system function only if this entity contains instances of all the expected Component types
+        if (!entity.contains!(Unqual!Param)(ParamName!Param)) {
+          diagnosticMessages ~= format!("Could not apply %s to %s\n" ~
+            "\tThere must exist a Component named '%s' in the World.")(
+              diagnosticNameOf!Param,
+              GeneratedSystemName,
+              ParamName!Param);
+          goto L_continue; // Hack to workaround lack of `continue` support in `static foreach` 😒️
+        }
+      }
+      // TODO: Use `T.init` for `out` parameters
+      // Otherwise, get the Entity, Resource, or Component data
+      static if (isEntity!Param) {
+        params[indexOf!Param] = cast(Unqual!Param) entity;
+      } else static if (isParamImmutable!Param) {
+        params[indexOf!Param] = entity.get!Param(ParamName!Param)[0];
+      } else static if (isImplicitlyConvertableFromMutable!Param) {
+        params[indexOf!Param] = entity.getMut!(Unqual!Param)(ParamName!Param)[0];
+      } else {
+        static assert(0,
+          "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
+      }
+      // Only define this label once
+      static if (indexOf!Param == 0) {
+L_continue:
+      }
+    }
+
+    FuncApplicationResults results;
+    results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
+
+    if (diagnosticMessages.length) {
+      results.replacements = new Component[0];
+      return results;
+    }
+
+    // Run the system, applying dependent `Component` instance arguments
+    Func(params.expand);
+
+    Component[] replacements;
+    static foreach (Param; FuncParams) {
+      static if (hasRefStorage!Param) {
+        static if (isStruct!(Unqual!Param))
+          replacements ~= new Structure!(Unqual!Param)(params[indexOf!Param], ParamName!Param);
+        else static if (!isComponent!(Unqual!Param))
+          replacements ~= params[indexOf!Param];
+      }
+    }
+
+    results.replacements = replacements;
+    return results;
+  }
+}
+
+unittest {
+  auto world = new World();
+
+  world.spawn(Number(0).component("number"));
+  assert(world.entities.length == 1);
+
+  auto counterSystem = System.from!counter;
+  counterSystem(world).run();
+  const number = world.entities[0].get!Number[0];
+  assert(number.value == 1);
+}
+
 version(unittest) {
   struct Number {
     int value;
+  }
+
+  // TODO: Add an attribute to params to remap expected Component name binding?
+  void counter(scope const Entity _, scope ref Number number) {
+    number.value += 1;
   }
 }
