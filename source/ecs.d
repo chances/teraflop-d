@@ -485,7 +485,7 @@ abstract class System {
   abstract void run() const;
 
   /// Query the World for entities containing Components of the given types.
-  Entity[] query(ComponentT...)() {
+  const(Entity[]) query(ComponentT...)() const {
     static if (ComponentT.length == 0) return world.entities;
   }
 }
