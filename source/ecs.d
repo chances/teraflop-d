@@ -8,8 +8,8 @@ import std.uuid : UUID;
 
 import teraflop.traits : isStruct;
 
-/// A collection of Entities, their `Component`s, `Resource`s, and the `System`s that operate on
-/// those components and mutate the world
+/// A collection of Entities, their `Component`s, and `Resource`s. `System`s operate on those
+/// components and mutate the World.
 final class World {
   private Entity[UUID] entities_;
   private ResourceCollection resources_;
@@ -127,7 +127,7 @@ final class Entity {
   }
   /// Add a new Component given its type and, optionally, a default value and its name
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
   void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
     add(data.component(name));
   }
@@ -240,7 +240,7 @@ final class Entity {
 
   /// Replace a Component given new value.
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
   void replace(Component component) {
     assert(contains(component), "A Component must first be added before replacement.");
     components_[key(component)] = component;
@@ -283,7 +283,7 @@ enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
 
 private enum bool isRawComponent(T) = __traits(isSame, T, Component);
 
-/// Detect whether `T` is a `Component`.
+/// Detect whether `T` is a `Component` or inherits from `Component`.
 template isComponent(T) {
   alias isRawOrInherited = templateOr!(isRawComponent || inheritsComponent);
   enum bool isComponent = isRawOrInherited!T;
@@ -296,6 +296,8 @@ template storableAsComponent(T) {
 }
 
 /// A container for specialized `Entity` data.
+///
+/// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
 abstract class Component {
   private string type_;
 
@@ -411,34 +413,67 @@ unittest {
   assert(Loaded.name == Loaded.stringof);
 }
 
-/// Derive this class to encapsulate a game system that operates on Resources and Components in the world.
+/// Derive this class to encapsulate a game system that operates on Resources and Components in the World.
 abstract class System {
   private string name_;
   private const World world;
 
   /// Initialize a system given the ECS `World` and, optionally, a name.
+  ///
+  /// Parameters:
+  /// `name` defaults to the derived class' name.
   this(const World world, const string name = "") {
     this.name_ = name.length ? name : this.classinfo.name;
     this.world = world;
   }
 
   private alias SystemGenerator = System function(World world);
-  /// Dynamically construct a new `System` instance given a function with parameters expecting
-  /// specific resource and Component types.
+  /// Dynamically construct a new `System` instance given a function.
+  ///
+  /// When a generated System is run it will try to apply the World's Entities, Components, and Resources to the function's parameters. See Parameter Application below.
+  ///
+  /// Function Requirements:
+  /// 1. **MUST** have parameters matching any of these types:
+  ///    - Any [Basic Data Type](https://dlang.org/spec/type.html#basic-data-types), e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.
+  ///    - Any [array type](https://dlang.org/spec/type.html#derived-data-types) derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.
+  ///    - Any [string type](https://dlang.org/spec/arrays.html#strings), e.g. `string`, `char[]`, `wchar[]`, etc.
+  ///    - A `struct` type
+  ///    - `World`
+  ///    - `Entity`
+  ///    - `Component` and its derivations
+  /// 2. **MUST** use certain parameter [Storage Classes](https://dlang.org/spec/function.html#param-storage):
+  ///    - `World`, `Entity`, `Component`, and `struct` parameters **MUST** use the `scope` storage class
+  ///    - `World` and `Entity` parameters **MUST** use the `const` storage class and **MUST NOT** not use the `ref` storage class
+  ///    - The `ref` storage class **MUST NOT** be used with the `const` or `immutable` storage classes
+  /// 3. **MAY** use [Storage Classes](https://dlang.org/spec/function.html#param-storage) of these combinations:
+  ///    - `immutable` or `const` for any allowed type, *EXCEPT* where the `ref` storage class is used
+  ///    - `ref` for `struct` and `Component` types
+  ///
+  /// Parameter Application:
+  ///
+  /// When ran, a generated System will:
+  ///    1. For each of the World's Entities, either:
+  ///        a. Apply a mutable reference to the World for `World` parameters,
+  ///        b. Try to apply a World Resource for [Basic Data](https://dlang.org/spec/type.html#basic-data-types), arrays, string, and `struct` parameter types
+  ///        c. Try to find a matching Entity Component to apply given the parameter's type and name:
+  ///            - `struct` and `Component` parameter names must match an Entity's Component name
+  ///        d. Or, if a parameter could not be applied, continue to the next Entity
+  ///    2. Call the user-provided function for Entities where *all* parameters could be applied
+  ///    3. For each `struct` and `Component` parameters with the `ref` storage class, update the Component
   static SystemGenerator from(alias Func)() if (isCallableAsSystem!Func) {
     alias FuncSystem = GeneratedSystem!Func;
     return (World world) => new FuncSystem(world);
   }
 
-  /// The name of this system.
+  /// The name of this System.
   string name() const @property {
     return name_;
   }
 
-  /// Operate this system on resources and `Component`s in the world.
+  /// Operate this System on Resources and Components in the World.
   abstract void run() const;
 
-  /// Query the world for entities containing a component of the given type.
+  /// Query the World for entities containing Components of the given types.
   Entity[] query(ComponentT...)() {
     static if (ComponentT.length == 0) return world.entities;
   }
@@ -460,7 +495,9 @@ unittest {
 }
 
 import std.traits : isCallable, ReturnType;
-/// Detect whether `T` is callable as a `System`, which can be mapped to a `System` with `System.from`.
+/// Detect whether `T` is callable as a `System`.
+///
+/// If callable, use `System.from` to construct a `System` from the function.
 template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (ReturnType!T == void)) {
   import std.traits : Parameters;
   alias TParams = Parameters!T;
@@ -583,10 +620,13 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\tTeraflop considers overwriting an Entity at System runtime bad practice." ~
           "\n\t" ~ diagnosticDlangFuncParams);
+      static if (hasRefStorage!Param && isParamConst!Param)
+        static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
       static if (hasRefStorage!Param && isParamImmutable!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // Require the `scope` storage class on `Entity` parameters
+      // Require the `scope` storage class on `Entity`, `Component`, and `struct` parameters
       static if (!hasScopeStorage!Param && isEntity!Param)
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
           " i.e. Use \"`scope const Entity " ~ ParamName!Param ~ "`\" instead." ~
