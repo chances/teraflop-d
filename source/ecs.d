@@ -450,19 +450,12 @@ abstract class System {
   /// When a generated System is run it will try to apply the World's Entities, Components, and Resources to the function's parameters. See Parameter Application below.
   ///
   /// Function Requirements:
-  /// 1. **MUST** have parameters matching any of these types:
-  ///    - Any [Basic Data Type](https://dlang.org/spec/type.html#basic-data-types), e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.
-  ///    - Any [array type](https://dlang.org/spec/type.html#derived-data-types) derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.
-  ///    - Any [string type](https://dlang.org/spec/arrays.html#strings), e.g. `string`, `char[]`, `wchar[]`, etc.
-  ///    - A `struct` type
-  ///    - `World`
-  ///    - `Entity`
-  ///    - `Component` and its derivations
-  /// 2. **MUST** use certain parameter [Storage Classes](https://dlang.org/spec/function.html#param-storage):
-  ///    - `World`, `Entity`, `Component`, and `struct` parameters **MUST** use the `scope` storage class
-  ///    - `World` and `Entity` parameters **MUST** use the `const` storage class and **MUST NOT** not use the `ref` storage class
+  /// 1. The function **MUST** satisfy `isCallableAsSystem`.
+  /// 2. *All* parameters **MUST** use certain [Storage Classes](https://dlang.org/spec/function.html#param-storage):
+  ///    - `World`, `Entity`, `Component`, `System`, and `struct` parameters **MUST** use the `scope` storage class
+  ///    - `World`, `Entity`, and `System` parameters **MUST** use the `const` storage class and **MUST NOT** use the `ref` storage class
   ///    - The `ref` storage class **MUST NOT** be used with the `const` or `immutable` storage classes
-  /// 3. **MAY** use [Storage Classes](https://dlang.org/spec/function.html#param-storage) of these combinations:
+  /// 3. Parameters **MAY** use [Storage Classes](https://dlang.org/spec/function.html#param-storage) of these combinations:
   ///    - `immutable` or `const` for any allowed type, *EXCEPT* where the `ref` storage class is used
   ///    - `ref` for `struct` and `Component` types
   ///
@@ -474,9 +467,10 @@ abstract class System {
   ///        b. Try to apply a World Resource for [Basic Data](https://dlang.org/spec/type.html#basic-data-types), arrays, string, and `struct` parameter types
   ///        c. Try to find a matching Entity Component to apply given the parameter's type and name:
   ///            - `struct` and `Component` parameter names must match an Entity's Component name
-  ///        d. Or, if a parameter could not be applied, continue to the next Entity
+  ///        d. Try to apply the generated System instance
+  ///        e. Or, if a parameter could not be applied, continue to the next Entity
   ///    2. Call the user-provided function for Entities where *all* parameters could be applied
-  ///    3. For each `struct` and `Component` parameters with the `ref` storage class, update the Component
+  ///    3. For all `struct` and `Component` parameters with the `ref` storage class, update the Component
   static SystemGenerator from(alias Func)() if (isCallableAsSystem!Func) {
     alias FuncSystem = GeneratedSystem!Func;
     return (World world) => new FuncSystem(world);
@@ -514,7 +508,20 @@ unittest {
 import std.traits : isCallable, ReturnType;
 /// Detect whether `T` is callable as a `System`.
 ///
-/// If callable, use `System.from` to construct a `System` from the function.
+/// If callable, use `System.from` to construct a `SystemGenerator` from the function.
+///
+/// Requirements:
+/// 1. `T` **MUST** satisfy [`isCallable`](https://dlang.org/library/std/traits/is_callable.html).
+/// 2. `T` **MUST** return `void`.
+/// 1. `T` **MUST** have parameters matching any of these types:
+///    - Any [Basic Data Type](https://dlang.org/spec/type.html#basic-data-types), e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.
+///    - Any [array type](https://dlang.org/spec/type.html#derived-data-types) derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.
+///    - Any [string type](https://dlang.org/spec/arrays.html#strings), e.g. `string`, `char[]`, `wchar[]`, etc.
+///    - A `struct` type
+///    - `World`
+///    - `Entity`
+///    - `Component` and any of its derivations
+///    - `System`
 template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (ReturnType!T == void)) {
   import std.traits : Parameters;
   alias TParams = Parameters!T;
