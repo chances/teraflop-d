@@ -1,3 +1,6 @@
+/// Authors: Chance Snow
+/// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
+/// License: 3-Clause BSD License
 module teraflop.ecs;
 
 import std.conv : to;
@@ -342,24 +345,31 @@ unittest {
   assert(component.name == "teraflop.ecs.Number");
 }
 
-/// Initialize a new `Component`, optionally given default data and a custom name.
+/// Initialize a new `Component` optionally with initial data and a custom name.
+///
+/// Params:
+/// data = Initial data value.
+/// name = A custom name. Defaults to `fullyQualifiedName!T`.
 Component component(T)(T data = T.init, const string name = "") if (isStruct!T) {
   return new Structure!T(data, name);
 }
 
 /// A named, dataless Component used to flag Entities.
 final class Tag : NamedComponent {
-  /// Initialize a new Tag
+  /// Initialize a new Tag.
   this(string name) pure {
     super(name);
   }
-  /// Make an immutable copy of this `Tag`.
+  /// Make an immutable copy of this Tag.
   immutable(Tag) idup() const @property {
     return new immutable(Tag)(name);
   }
 }
 
-/// Create a new `Tag` given a name
+/// Create a new `Tag` given a name.
+///
+/// Params:
+/// name = Desired name.
 immutable(Tag) tag(string name) {
   assert(name.length, "A Tag must be named.");
   return new Tag(name);
@@ -388,9 +398,9 @@ unittest {
 
 // TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
 
-/// Whether *all* of an `Entity`s GPU resources have been initialized.
+/// Whether *all* of an `Entity`'s GPU Resources have been initialized.
 static const Initialized = tag("Initialized");
-/// Whether *all* of an `Entity`s `Asset` components have been loaded.
+/// Whether *all* of an `Entity`'s `Asset` Components have been loaded.
 static const Loaded = tag("Loaded");
 
 unittest {
@@ -403,31 +413,34 @@ enum bool inheritsSystem(T) = inheritsFrom!(T, System);
 
 private enum bool isRawSystem(T) = __traits(isSame, T, System);
 
-/// Detect whether `T` is a `System` or inherits from `System`.
+/// Detect whether `T` is the `System` class or inherits from `System`.
 template isSystem(T) {
   alias isRawOrInherited = templateOr!(isRawSystem, inheritsSystem);
   enum bool isSystem = isRawOrInherited!T;
 }
 
-/// A function that initializes a new dynamically generated System.
+/// A function that initializes a new dynamically generated `System`.
 ///
-/// Use [System.from] to construct a `SystemGenerator` given a function that satisfies [isCallableAsSystem].
+/// Use `System.from` to construct a `SystemGenerator` given a function that satisfies `isCallableAsSystem`.
 ///
-/// See_Also: [System.from], [isCallableAsSystem]
+/// See_Also: `System.from`, `isCallableAsSystem`
 alias SystemGenerator = System function(World world);
 
-/// Derive this class to encapsulate a game system that operates on Resources and Components in the World.
+/// Derive this class to encapsulate a game System that operates on Resources and Components in the World.
 abstract class System {
   private string name_;
   private const World world;
 
-  /// Initialize a system given the ECS `World` and, optionally, a name.
+  /// Initialize a System given the ECS `World` and, optionally, a name.
   ///
   /// Params:
-  /// world = The [World] the System will operate on.
-  /// name = A name for this system. Defaults to the derived class' name.
+  /// world = The `World` the System will operate on.
+  /// name = A name for this System. Defaults to the derived class' name.
   ///
-  /// See_Also: [World], [System.name]
+  ///        Defaults to `fullyQualifiedName!System` or, in the case of a generated System,
+  ///        "`fullyQualifiedName!System`:FuncName" where `FuncName` is the name of the function used to generate the System.
+  ///
+  /// See_Also: `World`, `System.name`
   this(const World world, const string name = "") {
     this.name_ = name.length ? name : this.classinfo.name;
     this.world = world;
@@ -435,40 +448,46 @@ abstract class System {
 
   /// Dynamically generate a new `System` instance given a function.
   ///
-  /// When a generated System is run it will try to apply the World's Entities, Components, and Resources to the function's parameters. See Parameter Application below.
+  /// When a generated System is run it will try to apply the World's Entities, Components, and Resources to the function's parameters.
   ///
-  /// #### Function Requirements
+  /// See <a href=isCallableAsSystem.html#Requirements><span class="pln">isCallableAsSystem</span> § Satisfaction Requirements</a> to understand the requirements of `isCallableAsSystem`.
   ///
-  /// 1. The function **MUST** satisfy [isCallableAsSystem].
-  /// 2. *All* parameters **MUST NOT** use the `immutable` storage class. Use `const` instead.
-  /// 3. *Certain* parameters **MUST** use [Storage Classes](https://dlang.org/spec/function.html#param-storage):
-  ///    - `World`, `Resources`, `Entity`, `Component`, and `System` parameters **MUST** have the `scope` storage class
-  ///    - `World`, `Resources`, `Entity`, and `System` parameters **MUST** have the `const` storage class
-  ///    - The `ref` storage class **MUST NOT** be used with the `const` storage class
-  /// 4. *Certain* parameters **MAY** use these Storage Classes:
-  ///    - `const` for any allowed type, *EXCEPT* where the `ref` storage class is used
-  ///    - `ref` for `struct` and `Component` types
+  /// See <a href="#Parameter-Application">Parameter Application</a> to understand how parameters are applied at runtime.
   ///
-  /// #### Parameter Application
-  ///
+  /// <strong>See Also</strong>: `isCallableAsSystem`
+  /// <h2 id="Parameter-Application">Parameter Application</h2>
   /// When ran, a generated System will:
-  ///
-  /// 1. For each of the World's Entities, either:
-  ///    a. Apply a mutable reference to the World for `World` parameters,
-  ///    b. Try to apply a World Resource for [Basic Data](https://dlang.org/spec/type.html#basic-data-types), arrays, string, and `struct` parameter types
-  ///    c. Try to find a matching Entity Component to apply given the parameter's type and name:
-  ///       - `struct` and `Component` parameter names must match an Entity's Component name
-  ///    d. Try to apply the generated System instance
-  ///    e. Or, if a parameter could not be applied, continue to the next Entity
-  /// 2. Call the user-provided function for Entities where *all* parameters could be applied
-  /// 3. For all `struct` and `Component` parameters with the `ref` storage class, update the Component
-  ///
-  /// Returns: A newly instantiated [SystemGenerator], a function that initializes a new generated `System` given a [World] reference.
-  ///
-  /// See_Also: [isCallableAsSystem], [SystemGenerator], [Storage Classes], [Basic Data Types]
-  ///
-  /// [Storage Classes]: https://dlang.org/spec/function.html#param-storage "The D Language Website"
-  /// [Basic Data Types]: https://dlang.org/spec/type.html#basic-data-types "The D Language Website"
+  /// $(OL
+  ///   $(LI For each of the World's Entities, either:)
+  ///     <ol type="a">
+  ///       $(LI Apply a constant reference to the World for `World` parameters)
+  ///       $(LI Apply a constant reference to the current Entity for `Entity` parameters)
+  ///       $(LI Apply a constant reference to the World's Resources for `Resources` parameters)
+  ///       $(LI Apply a constant reference to the generated System for `System` parameters)
+  ///       $(LI Try to find a matching Entity Component to apply given a parameter's type and name:)
+  ///         $(UL
+  ///           $(LI `struct` and `Component` parameter names must match an Entity's Component name)
+  ///         )
+  ///       $(LI Try to find a matching World Resource to apply given the parameter's type is one of:)
+  ///         $(UL
+  ///           $(LI <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data</a>
+  ///           $(LI arrays)
+  ///           $(LI string)
+  ///           $(LI `struct`)
+  ///         )
+  ///       $(LI Or, if a parameter could not be applied, continue to the next Entity)
+  ///     </ol>
+  ///   $(LI Call the user-provided function for Entities if and only if <i>all</i> parameters were be applied)
+  ///   $(LI For all `struct` and `Component` parameters with the `ref` storage class, update the Component)
+  /// )
+  /// Returns: A newly instantiated `SystemGenerator`, a function that initializes a new generated `System` given a `World` reference.
+  /// See_Also:
+  /// $(UL
+  ///   $(LI `isCallableAsSystem`)
+  ///   $(LI `SystemGenerator`)
+  ///   $(LI <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Classes</a>)
+  ///   $(LI <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Types</a>)
+  /// )
   static SystemGenerator from(alias Func)() if (isCallableAsSystem!Func) {
     alias FuncSystem = GeneratedSystem!Func;
     return (World world) => new FuncSystem(world);
@@ -481,10 +500,10 @@ abstract class System {
     return name_;
   }
 
-  /// Operate this System on Resources and Components in the [World].
+  /// Operate this System on Resources and Components in the `World`.
   abstract void run() const;
 
-  /// Query the [World] for Entities containing Components of the given types.
+  /// Query the `World` for Entities containing Components of the given types.
   const(Entity[]) query(ComponentT...)() const {
     static if (ComponentT.length == 0) return world.entities;
   }
@@ -572,20 +591,43 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
 import std.traits : isCallable, ReturnType;
 /// Detect whether `T` is callable as a `System`.
 ///
-/// If callable, use [System.from] to construct a `SystemGenerator` from the function.
+/// If `T` is callable as a System, use `System.from` to construct a `SystemGenerator` from the function.
 ///
-/// Requirements:
-/// 1. `T` **MUST** satisfy [`isCallable`](https://dlang.org/library/std/traits/is_callable.html).
-/// 2. `T` **MUST** return `void`.
-/// 1. `T` **MUST** have parameters matching any of these types:
-///    - Any [Basic Data Type](https://dlang.org/spec/type.html#basic-data-types), e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.
-///    - Any [array type](https://dlang.org/spec/type.html#derived-data-types) derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.
-///    - Any [string type](https://dlang.org/spec/arrays.html#strings), e.g. `string`, `char[]`, `wchar[]`, etc.
-///    - A `struct` type
-///    - `World`
-///    - `Entity`
-///    - `Component` and any of its derivations
-///    - `System`
+/// <h2 id="Requirements">Satisfaction Requirements</h2>
+///
+/// $(OL
+///   $(LI `T` <b>MUST</b> satisfy <a href="https://dlang.org/library/std/traits/is_callable.html" title="The D Language Website">`isCallable`</a>.)
+///   $(LI `T` <b>MUST</b> return `void`.)
+///   $(LI <i>All</i> of `T`'s parameters <b>MUST</b> match one of:)
+///     $(UL
+///       $(LI Any <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Type</a>, e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.)
+///       $(LI Any <a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">array type</a> derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.)
+///       $(LI Any <a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">string type</a>, e.g. `string`, `char[]`, `wchar[]`, etc.)
+///       $(LI A `struct` type)
+///       $(LI `World`)
+///       $(LI `Resources`)
+///       $(LI `Entity`)
+///       $(LI `Component` or any of its derivations)
+///       $(LI `System`)
+///     )
+///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `immutable` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>. <p>Use `const` instead.</p>)
+///   $(LI <i>Certain</i> parameters <b>MUST</b> use specific Storage Classes:)
+///     $(UL
+///       $(LI `World`, `Resources`, `Entity`, `Component`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
+///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `const` Storage Class)
+///       $(LI The `ref` Storage Class <b>MUST NOT</b> be used with the `const` Storage Class)
+///     )
+///   $(LI `struct` and `Component` parameters <b>MAY</b> use the `ref` Storage Class)
+/// )
+/// See_Also:
+/// $(UL
+///   $(LI `System.from`)
+///   $(LI <a href="https://dlang.org/library/std/traits/is_callable.html" title="The D Language Website">`isCallable`</a>)
+///   $(LI <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Types</a>)
+///   $(LI <a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">Derived Data Types</a>)
+///   $(LI <a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">Strings</a>)
+///   $(LI <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Parameter Storage Classes</a>)
+/// )
 template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (ReturnType!T == void)) {
   import std.traits : Parameters;
   alias TParams = Parameters!T;
