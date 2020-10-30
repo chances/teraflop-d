@@ -6,7 +6,10 @@ import std.meta : templateOr;
 import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
-import teraflop.traits : isStruct;
+import teraflop.traits : inheritsFrom, isStruct;
+
+/// Detect whether `T` is the `World` class
+enum bool isWorld(T) = __traits(isSame, T, World);
 
 /// A collection of Entities, their `Component`s, and `Resource`s. `System`s operate on those
 /// components and mutate the World.
@@ -277,7 +280,6 @@ final class Entity {
   }
 }
 
-import teraflop.traits : inheritsFrom;
 /// Detect whether `T` inherits from `Component`.
 enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
 
@@ -411,6 +413,17 @@ static const Loaded = tag("Loaded");
 unittest {
   assert(Initialized.name == Initialized.stringof);
   assert(Loaded.name == Loaded.stringof);
+}
+
+/// Detect whether `T` inherits from `System`.
+enum bool inheritsSystem(T) = inheritsFrom!(T, System);
+
+private enum bool isRawSystem(T) = __traits(isSame, T, System);
+
+/// Detect whether `T` is a `System` or inherits from `System`.
+template isSystem(T) {
+  alias isRawOrInherited = templateOr!(isRawSystem || inheritsSystem);
+  enum bool isSystem = isRawOrInherited!T;
 }
 
 /// Derive this class to encapsulate a game system that operates on Resources and Components in the World.
@@ -606,6 +619,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
         __traits(isSame, Unqual!T, T) ||
         __traits(isSame, QualifierOf!T, T) ||
         isParamConst!T;
+    enum bool mustNotEscapeScope(T) = templateOr!(isWorld, isEntity, isComponent, isSystem, isStruct);
     enum bool hasRefStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.ref_) ==
       ParameterStorageClass.ref_;
     enum bool hasScopeStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.scope_) ==
@@ -626,10 +640,10 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       static if (hasRefStorage!Param && isParamImmutable!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // Require the `scope` storage class on `Entity`, `Component`, and `struct` parameters
-      static if (!hasScopeStorage!Param && isEntity!Param)
+      // Require the `scope` storage class on `World`, `Entity`, `Component`, `System`, and `struct` parameters
+      static if (!hasScopeStorage!Param && mustNotEscapeScope!Param)
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-          " i.e. Use \"`scope const Entity " ~ ParamName!Param ~ "`\" instead." ~
+          " i.e. Use \"`scope const " ~ typeid(Unqual!Param).name ~ " " ~ ParamName!Param ~ "`\" instead." ~
           "\n\tEntity references cannot escape a running System." ~
           "\n\t" ~ diagnosticDlangFuncParams);
       // TODO: Require the `const` storage class qualifier on `Entity` parameters
