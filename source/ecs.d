@@ -11,7 +11,7 @@ import std.uuid : UUID;
 
 import teraflop.traits : inheritsFrom, isStruct;
 
-/// Detect whether `T` is the `World` class
+/// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
 
 /// A collection of Entities, their `Component`s, and `Resource`s. `System`s operate on those
@@ -48,14 +48,14 @@ final class World {
   }
 }
 
-/// Detect whether `T` is the `Resources` class
+/// Detect whether `T` is the `Resources` class.
 enum bool isResources(T) = __traits(isSame, T, Resources);
 
 import std.traits : isBoolean, isNumeric, isSomeString;
 private alias isResourceData = templateOr!(isBoolean, isNumeric, isSomeString, isStruct);
 
 import std.variant : Variant;
-alias ResourceId = size_t;
+private alias ResourceId = size_t;
 private alias ResourceCollection = Variant[ResourceId];
 private alias ResourceTracker = bool[ResourceId];
 /// A collection of Resource instances identified by their type.
