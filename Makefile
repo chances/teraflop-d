@@ -19,12 +19,21 @@ docs.json: $(DOCS_SOURCES)
 
 docs/sitemap.xml:
 	dub build -b ddox
+	@echo "Performing cosmetic changes..."
+	@sed -i "s/main-nav\">/main-nav\">\
+<h1>teraflop Engine<\/h1>\
+<p>API Reference<\/p>/" `find docs -name '*.html'`
+	@sed -i "s/API documentation/API Reference/g" docs/index.html
+	@sed -i "s/<\/title>/ - teraflop<\/title>/" `find docs -name '*.html'`
+	@sed -i "s/3-Clause BSD License/<a href=\"https:\/\/opensource.org\/licenses\/BSD-3-Clause\">3-Clause BSD License<\/a>/" `find docs -name '*.html'`
+	@sed -i "s/<p class=\"faint\">Generated using the DDOX documentation generator<\/p>/\
+<div style=\"display: flex; justify-content: space-between; margin-top: 2em\">\
+  <a href=\"https:\/\/github.com\/chances\/teraflop-d#readme\">GitHub<\/a>\
+  <span class=\"faint\" style=\"float: right;\">Generated using <a href=\"https:\/\/code.dlang.org\/packages\/ddox\">DDOX<\/a><\/span>\
+<\/div>/" `find docs -name '*.html'`
+	@echo Done
 
-docs/file_hashes.json: $(DOCS_SOURCES) docs/index.html docs.json
-	dub run ddox -- filter --min-protection=Protected docs.json
-	dub run ddox -- generate-html --navigation-type=ModuleTree docs.json docs
-
-docs: docs/sitemap.xml docs/file_hashes.json
+docs: docs/sitemap.xml
 .PHONY: docs
 
 clean:

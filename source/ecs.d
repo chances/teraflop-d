@@ -470,7 +470,7 @@ abstract class System {
   ///         )
   ///       $(LI Try to find a matching World Resource to apply given the parameter's type is one of:)
   ///         $(UL
-  ///           $(LI <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data</a>
+  ///           $(LI <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data</a>)
   ///           $(LI arrays)
   ///           $(LI string)
   ///           $(LI `struct`)
