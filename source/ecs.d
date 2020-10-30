@@ -287,13 +287,13 @@ private enum bool isRawComponent(T) = __traits(isSame, T, Component);
 
 /// Detect whether `T` is a `Component` or inherits from `Component`.
 template isComponent(T) {
-  alias isRawOrInherited = templateOr!(isRawComponent || inheritsComponent);
+  alias isRawOrInherited = templateOr!(isRawComponent, inheritsComponent);
   enum bool isComponent = isRawOrInherited!T;
 }
 
 /// Detect whether `T` may be stored as Component data.
 template storableAsComponent(T) {
-  alias isStructOrComponent = templateOr!(isStruct, inheritsComponent, isRawComponent);
+  alias isStructOrComponent = templateOr!(isStruct, isComponent);
   enum bool storableAsComponent = isStructOrComponent!T;
 }
 
@@ -422,7 +422,7 @@ private enum bool isRawSystem(T) = __traits(isSame, T, System);
 
 /// Detect whether `T` is a `System` or inherits from `System`.
 template isSystem(T) {
-  alias isRawOrInherited = templateOr!(isRawSystem || inheritsSystem);
+  alias isRawOrInherited = templateOr!(isRawSystem, inheritsSystem);
   enum bool isSystem = isRawOrInherited!T;
 }
 
@@ -505,6 +505,10 @@ unittest {
   foo.run();
 }
 
+import std.meta : templateOr;
+import std.traits : isBoolean, isNumeric, isSomeString;
+private alias isResourceData = templateOr!(isBoolean, isNumeric, isSomeString, isStruct);
+
 import std.traits : isCallable, ReturnType;
 /// Detect whether `T` is callable as a `System`.
 ///
@@ -528,9 +532,7 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
   static if (!TParams.length)
     enum bool isCallableAsSystem = true;
   else {
-    import std.traits : isBoolean, isNumeric, isSomeString;
-    import std.meta : allSatisfy, templateOr;
-    enum isResourceData(T) = isBoolean!T || isNumeric!T || isSomeString!T || isStruct!T;
+    import std.meta : allSatisfy;
     alias isComponentData(T) = storableAsComponent!T;
     enum bool isCallableAsSystem = allSatisfy!(templateOr!(
       isEntity,
@@ -615,13 +617,12 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     import std.algorithm.iteration : map;
     import std.array : array;
     import std.conv : text;
-    import std.meta : staticIndexOf, staticMap;
+    import std.meta : staticIndexOf, staticMap, templateAnd, templateNot;
     import std.traits : ConstOf, ImmutableOf, InoutOf, QualifierOf, ParameterStorageClass;
 
     string[] diagnosticMessages;
 
-    // Try to get the dependent Entity, Component, and Resource instances for function arguments
-    Tuple!(staticMap!(Unqual, FuncParams)) params;
+    // Parameter requirements helper templates
     enum int indexOf(T) = staticIndexOf!(T, FuncParams);
     enum string ParamName(T) = FuncParamNames[indexOf!T];
     enum bool isParamConst(T) = __traits(isSame, QualifierOf!T, ConstOf!T);
@@ -630,15 +631,24 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
         __traits(isSame, Unqual!T, T) ||
         __traits(isSame, QualifierOf!T, T) ||
         isParamConst!T;
-    enum bool mustNotEscapeScope(T) = templateOr!(isWorld, isEntity, isComponent, isSystem, isStruct);
     enum bool hasRefStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.ref_) ==
       ParameterStorageClass.ref_;
     enum bool hasScopeStorage(T) = (FuncParamStorage[indexOf!T] & ParameterStorageClass.scope_) ==
       ParameterStorageClass.scope_;
+    alias mustNotEscapeScope = templateOr!(isComponent, isWorld, isEntity, isSystem);
+    alias illegallyEscapesScope = templateAnd!(
+      templateNot!isResourceData,
+      templateNot!hasScopeStorage,
+      mustNotEscapeScope
+    );
+
+    // Diagnostic message generator helper templates
     enum string diagnosticNameOf(T) = "argument " ~ text(indexOf!T + 1) ~ " " ~ "'" ~ ParamName!T ~ "'" ~
       " of type " ~ typeid(Unqual!T).name;
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";
 
+    // Try to get the dependent Entity, Component, and Resource instances for function arguments
+    Tuple!(staticMap!(Unqual, FuncParams)) params;
     static foreach (Param; FuncParams) {
       // Guard against `ref Entity`, and `immutable ref` parameters
       static if (hasRefStorage!Param && isEntity!Param)
@@ -651,13 +661,13 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       static if (hasRefStorage!Param && isParamImmutable!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // Require the `scope` storage class on `World`, `Entity`, `Component`, `System`, and `struct` parameters
-      static if (!hasScopeStorage!Param && mustNotEscapeScope!Param)
+      // Require the `scope` storage class qualifier on `World`, `Entity`, `Component`, `System`, and `struct` parameters
+      static if (illegallyEscapesScope!Param)
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-          " i.e. Use \"`scope const " ~ typeid(Unqual!Param).name ~ " " ~ ParamName!Param ~ "`\" instead." ~
-          "\n\tEntity references cannot escape a running System." ~
+          " i.e. Add `scope` qualifier to \"`" ~ typeid(Unqual!Param).name ~ " " ~ ParamName!Param ~ "`\"." ~
+          "\n\tWorld, Entity, Component, and System references cannot escape a running System." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // TODO: Require the `const` storage class qualifier on `Entity` parameters
+      // TODO: Require the `const` storage class qualifier on `World`, `Entity`, and `System` parameters
       // static if (!isParamConst!Param && isEntity!Param)
       //   static assert(0, "Constant qualifier on " ~ diagnosticNameOf!Param ~
       //    " is required. i.e. Use \"`const Entity " ~ ParamName!Param ~ "`\" instead." ~
