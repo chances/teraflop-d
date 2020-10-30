@@ -426,6 +426,11 @@ template isSystem(T) {
   enum bool isSystem = isRawOrInherited!T;
 }
 
+/// A function that initializes a new dynamically generated System.
+///
+/// Use `System.from` to construct a `SystemGenerator` given a function that satisfies `isCallableAsSystem`.
+alias SystemGenerator = System function(World world);
+
 /// Derive this class to encapsulate a game system that operates on Resources and Components in the World.
 abstract class System {
   private string name_;
@@ -440,8 +445,7 @@ abstract class System {
     this.world = world;
   }
 
-  private alias SystemGenerator = System function(World world);
-  /// Dynamically construct a new `System` instance given a function.
+  /// Dynamically generate a new `System` instance given a function.
   ///
   /// When a generated System is run it will try to apply the World's Entities, Components, and Resources to the function's parameters. See Parameter Application below.
   ///
