@@ -1,0 +1,10 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"glfw-d": "1.0.1",
+		"teraflop": {"path":"../../"},
+		"wgpu-d": "0.6.1",
+		"xcb-d": "2.1.1+1.11.1",
+		"xkbcommon-d": "0.5.1"
+	}
+}

@@ -9,6 +9,9 @@
   "targetType": "sourceLibrary",
   "targetPath": "bin",
   "sourcePaths": [ "source" ],
+  "subPackages": [
+    "examples/triangle"
+  ],
   "dependencies": {
 		"bindbc-glfw": "~>0.10.1",
 		"wgpu-d": "~>0.6.1"

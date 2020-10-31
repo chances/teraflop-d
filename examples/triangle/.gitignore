@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/triangle
+triangle.so
+triangle.dylib
+triangle.dll
+triangle.a
+triangle.lib
+triangle-test-*
+*.exe
+*.o
+*.obj
+*.lst

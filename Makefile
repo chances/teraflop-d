@@ -3,6 +3,14 @@ SOURCES := $(shell find source -name '*.d')
 .DEFAULT_GOAL := docs
 all: docs
 
+EXAMPLES := examples/triangle/triangle
+examples: $(EXAMPLES)
+.PHONY: examples
+
+TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
+examples/triangle/triangle: $(TRIANGLE_SOURCES)
+	cd examples/triangle && dub build
+
 test:
 	dub test --parallel
 .PHONY: test
@@ -26,6 +34,7 @@ docs: docs/sitemap.xml
 
 clean:
 	rm -f bin/teraflop-test-library
+	rm -f $(EXAMPLES)
 	rm -f docs.json
 	rm -f docs/sitemap.xml docs/file_hashes.json
 	rm -rf `find docs -name '*.html'`
