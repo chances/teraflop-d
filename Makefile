@@ -1,14 +1,29 @@
 SOURCES := $(shell find source -name '*.d')
+TARGET_OS := $(shell uname -s)
 
 .DEFAULT_GOAL := docs
 all: docs
 
-EXAMPLES := examples/triangle/triangle
+EXAMPLES := bin/triangle
 examples: $(EXAMPLES)
 .PHONY: examples
 
+lib/glfw-3.3.2/CMakeLists.txt:
+	unzip lib/glfw-3.3.2.zip -d lib
+lib/glfw-3.3.2/src/libglfw3.a: lib/glfw-3.3.2/CMakeLists.txt
+	cd lib/glfw-3.3.2 && \
+	cmake . -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_DOCS=OFF && \
+	make
+	@echo "Sanity check for static lib:"
+	ld -Llib/glfw-3.3.2/src -l glfw3
+	@echo "👍️"
+
 TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
-examples/triangle/triangle: $(TRIANGLE_SOURCES)
+ifeq ($(TARGET_OS),Linux)
+	TRIANGLE_SOURCES := $(TRIANGLE_SOURCES) lib/glfw-3.3.2/src/libglfw3.a
+endif
+
+bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 
 test:

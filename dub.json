@@ -12,10 +12,22 @@
   "subPackages": [
     "examples/triangle"
   ],
-  "systemDependencies": "glfw >= 3.2.0, wgpu-native == 0.6.0",
+  "systemDependencies": "glfw >= 3.2, wgpu-native == 0.6.0",
   "dependencies": {
 		"bindbc-glfw": "~>0.10.1",
 		"wgpu-d": "~>0.6.1"
   },
-  "versions": [ "GLFW_32" ]
+  "subConfigurations": {
+    "bindbc-glfw": "static"
+  },
+  "lflags-linux": [
+    "-Llib/glfw-3.3.2/src"
+  ],
+  "libs": ["glfw3"],
+  "libs-linux": [
+    "X11"
+  ],
+  "copyFiles-linux": [
+    "lib/glfw-3.3.2/src/libglfw3.a"
+  ]
 }

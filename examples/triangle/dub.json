@@ -12,5 +12,8 @@
     "teraflop": {
       "path": "../../"
     }
-  }
+  },
+  "lflags-linux": [
+    "-L../../lib/glfw-3.3.2/src"
+  ]
 }
