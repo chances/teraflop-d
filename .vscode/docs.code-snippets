@@ -14,25 +14,4 @@
 // 	],
 // 	"description": "Log output to console"
 // }
-{
-  "Preamble": {
-    "description": "Attribution and License preamble for D files",
-    "scope": "d",
-    "prefix": "preamble",
-    "body": [
-      "/// Authors: Chance Snow",
-      "/// Copyright: Copyright © 2020 Chance Snow. All rights reserved.",
-      "/// License: 3-Clause BSD License"
-    ]
-  },
-  "Property Getter": {
-    "description": "Property getter",
-    "scope": "d",
-    "prefix": "getter",
-    "body": [
-      "string $1() const @property {",
-      "  $2",
-      "}",
-    ]
-  }
-}
+{}
