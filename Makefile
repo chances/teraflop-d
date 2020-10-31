@@ -17,20 +17,15 @@ docs.json: $(DOCS_SOURCES)
 	dmd $(DOCS_SOURCES) -D -X -Xfdocs.json || true
 	rm -f *.o
 
-docs/sitemap.xml:
+docs/sitemap.xml: $(DOCS_SOURCES)
 	dub build -b ddox
 	@echo "Performing cosmetic changes..."
-	@sed -i "s/main-nav\">/main-nav\">\
-<h1>teraflop Engine<\/h1>\
-<p>API Reference<\/p>/" `find docs -name '*.html'`
+	@sed -i -e "/<nav id=\"main-nav\">/r views/nav.html" -e "/<nav id=\"main-nav\">/d" `find docs -name '*.html'`
+	@sed -i "s/<\/title>/ - Teraflop<\/title>/" `find docs -name '*.html'`
 	@sed -i "s/API documentation/API Reference/g" docs/index.html
-	@sed -i "s/<\/title>/ - teraflop<\/title>/" `find docs -name '*.html'`
+	@sed -i -e "/<h1>API Reference<\/h1>/r views/index.html" -e "/<h1>API Reference<\/h1>/d" docs/index.html
 	@sed -i "s/3-Clause BSD License/<a href=\"https:\/\/opensource.org\/licenses\/BSD-3-Clause\">3-Clause BSD License<\/a>/" `find docs -name '*.html'`
-	@sed -i "s/<p class=\"faint\">Generated using the DDOX documentation generator<\/p>/\
-<div style=\"display: flex; justify-content: space-between; margin-top: 2em\">\
-  <a href=\"https:\/\/github.com\/chances\/teraflop-d#readme\">GitHub<\/a>\
-  <span class=\"faint\" style=\"float: right;\">Generated using <a href=\"https:\/\/code.dlang.org\/packages\/ddox\">DDOX<\/a><\/span>\
-<\/div>/" `find docs -name '*.html'`
+	@sed -i -e "/<p class=\"faint\">Generated using the DDOX documentation generator<\/p>/r views/footer.html" -e "/<p class=\"faint\">Generated using the DDOX documentation generator<\/p>/d" `find docs -name '*.html'`
 	@echo Done
 
 docs: docs/sitemap.xml
