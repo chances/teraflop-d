@@ -10,14 +10,7 @@ test:
 cover: $(SOURCES)
 	dub test --parallel --coverage
 
-# TODO: Fix this so I can include the window module
-DOCS_SOURCES := $(shell find source -name '*.d' ! -name 'window.d')
-docs.json: $(DOCS_SOURCES)
-	rm -f docs.json
-	dmd $(DOCS_SOURCES) -D -X -Xfdocs.json || true
-	rm -f *.o
-
-docs/sitemap.xml: $(DOCS_SOURCES)
+docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox
 	@echo "Performing cosmetic changes..."
 	@sed -i -e "/<nav id=\"main-nav\">/r views/nav.html" -e "/<nav id=\"main-nav\">/d" `find docs -name '*.html'`
