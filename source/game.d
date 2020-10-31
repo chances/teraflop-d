@@ -108,7 +108,7 @@ abstract class Game {
       }
 
       auto elapsed = stopwatch.peek();
-      time_ = Time(time.total + elapsed, elapsed);
+      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
       auto deltaSeconds = time.deltaSeconds;
 
       const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
@@ -133,10 +133,20 @@ abstract class Game {
       if (!active) break;
       render();
     }
+
+    foreach (window; windows_)
+      destroy(window);
+
+    eventLoop.exit();
   }
 
   /// Called when the Game should update itself.
   private void update() {
+    import std.string : format;
+    windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
+    foreach (window; windows_)
+      window.update();
+
     // Wait for events for 5 milliseconds
     if (!eventLoop.loop(5.msecs)) {
       // TODO: Log that there was an unrecoverable error

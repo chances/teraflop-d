@@ -67,6 +67,14 @@ class Window {
     return valid_;
   }
 
+  package (teraflop) void update() {
+    data.update(window);
+
+    glfwSetWindowTitle(window, toStringz(title_));
+
+    // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
+  }
+
   // https://github.com/dkorpel/glfw-d/blob/master/example/app.d
   private struct WindowData {
     // These are stored in the window's user data so that when exiting fullscreen,
