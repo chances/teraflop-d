@@ -10,7 +10,7 @@ An ECS game engine on a [wgpu](https://github.com/gfx-rs/wgpu-native) foundation
 
 ```json
 "dependencies": {
-    "terflop": "0.1.0-pre-alpha-1"
+    "teraflop": "0.1.0-pre-alpha-1"
 }
 ```
 
