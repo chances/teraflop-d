@@ -98,9 +98,10 @@ unittest {
   assert(time.runningSlowly);
 }
 
+// TODO: Consider switching to libasync.timer (https://libasync.dpldocs.info/libasync.timer.AsyncTimer.html)
 /// A Timer that, when running, repeatedly ticks at a specific interval.
 final class Timer {
-  import teraflop.event : Event;
+  import teraflop.async.event : Event;
   /// Occurs when an `interval` amount of time has passed since the last tick event.
   Event!Timer onTick;
 

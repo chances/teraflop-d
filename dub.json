@@ -14,7 +14,8 @@
   ],
   "systemDependencies": "glfw >= 3.2, wgpu-native == 0.6.0",
   "dependencies": {
-		"bindbc-glfw": "~>0.10.1",
+    "bindbc-glfw": "~>0.10.1",
+    "libasync": "~>0.8.6",
 		"wgpu-d": "~>0.6.1"
   },
   "subConfigurations": {

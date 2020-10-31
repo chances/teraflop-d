@@ -1,7 +1,7 @@
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
-module teraflop.event;
+module teraflop.async.event;
 
 // Adapted from https://forum.dlang.org/post/dcdtuqyrxpteuaxmvwft@forum.dlang.org
 

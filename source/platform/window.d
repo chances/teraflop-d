@@ -6,6 +6,7 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
+import libasync.notifier : AsyncNotifier;
 import std.string : toStringz;
 
 /// A native window.

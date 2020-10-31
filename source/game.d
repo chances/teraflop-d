@@ -7,6 +7,8 @@ import teraflop.platform.window;
 
 /// Derive this class for your game application.
 abstract class Game {
+  import core.time : msecs;
+  import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
 
@@ -17,6 +19,7 @@ abstract class Game {
   private int desiredFrameRateHertz_ = 60;
 
   private Window[] windows_;
+  private EventLoop eventLoop;
 
   private auto world = new World();
   private auto systems = new System[0];
@@ -81,7 +84,6 @@ abstract class Game {
 
   /// Run the game
   void run() {
-    import std.algorithm.iteration : map;
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
@@ -95,6 +97,8 @@ abstract class Game {
 
     initialize();
     active_ = true;
+
+    eventLoop = getThreadEventLoop();
 
     auto stopwatch = StopWatch(AutoStart.yes);
     while (active) {
@@ -117,7 +121,6 @@ abstract class Game {
         // Don't gobble up all available CPU cycles while waiting
         const deltaMilliseconds = desiredFrameTimeSeconds * 1000.0 - elapsed.total!"msecs";
         import core.thread : Thread;
-        import core.time : msecs;
         if (deltaMilliseconds > 8) Thread.sleep(5.msecs);
       }
 
@@ -134,6 +137,13 @@ abstract class Game {
 
   /// Called when the Game should update itself.
   private void update() {
+    // Wait for events for 5 milliseconds
+    if (!eventLoop.loop(5.msecs)) {
+      // TODO: Log that there was an unrecoverable error
+      active_ = false;
+      return;
+    }
+
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
