@@ -76,6 +76,59 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
+<style>
+.bs-hbtn {
+  display: inline-block;
+  color: white;
+  height: 34pt;
+  vertical-align: top;
+  text-align: center;
+  float: right;
+}
+.bs-hbtn.red.left {
+  background: #ab1919;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: 100% 34pt, 100% 18pt, 18.5pt 34pt;
+  background-position: 0 0, 18pt 34pt, 0 0;
+  background-clip: content-box, border-box, border-box;
+}
+.bs-hbtn.black.right {
+  background: black;
+  margin-right: 18pt;
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 34pt, 100% 18pt, 18.5pt 34pt;
+  background-position: 0 0, -18pt 34pt, 100% 0;
+  background-clip: content-box, border-box, border-box;
+}
+.dub-logo {
+  background-image: url(images/dub-logo.png);
+  width: 56px;
+  height: 100%;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+}
+#downloadButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+#downloadButton large {
+  font-size: 14pt;
+  line-height: 16pt;
+}
+#downloadButton .content {
+  padding: 0 5pt;
+}
+</style>
+
+<a id="downloadButton" href="https://code.dlang.org/packages/teraflop">
+  <div class="bs-hbtn right black">
+    <div class="content">get <strong>teraflop</strong><br><large>0.1.0</large></div>
+  </div><div class="bs-hbtn left red">
+    <div class="dub-logo"></div>
+  </div>
+</a>
+
 <h1>Teraflop API Reference</h1>
 <p>
   <a href="https://code.dlang.org/packages/teraflop">
