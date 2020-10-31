@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function Entity.replace - teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav"><h1>teraflop Engine</h1><p>API Reference</p>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">platform
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Function Entity.replace</h1><p>Replace a Component given new value.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="typ">void</span> <span class="pln">replace</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a> <span class="pln">component</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with <code class="lang-d"><a href="../../teraflop/ecs/Entity.replace.html#component"><span class="pln">component</span></a></code> for Component data.
+</p>
+</section>
+
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<div style="display: flex; justify-content: space-between; margin-top: 2em">  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span></div>
+			</footer>
+		</div>
+	</body>
+</html>

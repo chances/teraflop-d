@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module teraflop.ecs - teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../styles/ddox.css"/>
+		<link rel="stylesheet" href="../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../scripts/jquery.js">/**/</script><script type="text/javascript" src="../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav"><h1>teraflop Engine</h1><p>API Reference</p>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">platform
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../teraflop/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module teraflop.ecs</h1><p></p>
+			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="component" class="public" href="../teraflop/ecs/component.html">component</a><span class="tableEntryAnnotation">(data, name)</span>
+							</code>
+						</td>
+						<td>Initialize a new <code class="lang-d"><a href="../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code> optionally with initial data and a custom name.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="tag" class="public" href="../teraflop/ecs/tag.html">tag</a><span class="tableEntryAnnotation">(name)</span>
+							</code>
+						</td>
+						<td>Create a new <code class="lang-d"><a href="../teraflop/ecs/Tag.html"><span class="typ">Tag</span></a></code> given a name.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Component" class="public" href="../teraflop/ecs/Component.html">Component</a>
+							</code>
+						</td>
+						<td>A container for specialized <code class="lang-d"><a href="../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code> data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Entity" class="public" href="../teraflop/ecs/Entity.html">Entity</a>
+							</code>
+						</td>
+						<td>A world entity consisting of a unique ID and a collection of associated components.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="NamedComponent" class="public" href="../teraflop/ecs/NamedComponent.html">NamedComponent</a>
+							</code>
+						</td>
+						<td>A named container for specialized <code class="lang-d"><a href="../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code> data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="System" class="public" href="../teraflop/ecs/System.html">System</a>
+							</code>
+						</td>
+						<td>Derive this class to encapsulate a game System that operates on Resources and Components in the World.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Tag" class="public" href="../teraflop/ecs/Tag.html">Tag</a>
+							</code>
+						</td>
+						<td>A named, dataless Component used to flag Entities.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="World" class="public" href="../teraflop/ecs/World.html">World</a>
+							</code>
+						</td>
+						<td>A collection of Entities, their <code class="lang-d"><a href="../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code>s, and <code class="lang-d"><span class="typ">Resource</span></code>s. <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code>s operate on those
+components and mutate the World.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Resources" class="public" href="../teraflop/ecs/Resources.html">Resources</a>
+							</code>
+						</td>
+						<td>A collection of Resource instances identified by their type.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Manifest constants</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="inheritsComponent" class="public" href="../teraflop/ecs/inheritsComponent.html">
+								<code>inheritsComponent</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> inherits from <code class="lang-d"><a href="../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="inheritsSystem" class="public" href="../teraflop/ecs/inheritsSystem.html">
+								<code>inheritsSystem</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> inherits from <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isCallableAsSystem" class="public" href="../teraflop/ecs/isCallableAsSystem.html">
+								<code>isCallableAsSystem</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is callable as a <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isComponent" class="public" href="../teraflop/ecs/isComponent.html">
+								<code>isComponent</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is a <code class="lang-d"><a href="../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code> or inherits from <code class="lang-d"><a href="../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isEntity" class="public" href="../teraflop/ecs/isEntity.html">
+								<code>isEntity</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is the <code class="lang-d"><a href="../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code> class.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isNamedComponent" class="public" href="../teraflop/ecs/isNamedComponent.html">
+								<code>isNamedComponent</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> inherits from <code class="lang-d"><a href="../teraflop/ecs/NamedComponent.html"><span class="typ">NamedComponent</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isResources" class="public" href="../teraflop/ecs/isResources.html">
+								<code>isResources</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is the <code class="lang-d"><a href="../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code> class.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isSystem" class="public" href="../teraflop/ecs/isSystem.html">
+								<code>isSystem</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is the <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code> class or inherits from <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isWorld" class="public" href="../teraflop/ecs/isWorld.html">
+								<code>isWorld</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> is the <code class="lang-d"><a href="../teraflop/ecs/World.html"><span class="typ">World</span></a></code> class.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="storableAsComponent" class="public" href="../teraflop/ecs/storableAsComponent.html">
+								<code>storableAsComponent</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Detect whether <code class="lang-d"><span class="pln">T</span></code> may be stored as Component data.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Global variables</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="Initialized" class="public" href="../teraflop/ecs/Initialized.html">
+								<code>Initialized</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><a href="../teraflop/ecs/Tag.html"><span class="typ">Tag</span></a><span class="pun">)</span></code>
+						</td>
+						<td>Whether *all* of an <code class="lang-d"><a href="../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code>'s GPU Resources have been initialized.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Loaded" class="public" href="../teraflop/ecs/Loaded.html">
+								<code>Loaded</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="kwd">immutable</span><span class="pun">(</span><a href="../teraflop/ecs/Tag.html"><span class="typ">Tag</span></a><span class="pun">)</span></code>
+						</td>
+						<td>Whether *all* of an <code class="lang-d"><a href="../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code>'s <code class="lang-d"><span class="typ">Asset</span></code> Components have been loaded.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="SystemGenerator" class="public" href="../teraflop/ecs/SystemGenerator.html">
+								<code>SystemGenerator</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a> <span class="kwd">function</span><span class="pun">(</span><a href="../teraflop/ecs/World.html"><span class="typ">World</span></a><span class="pun">)</span></code>
+						</td>
+						<td>A function that initializes a new dynamically generated <code class="lang-d"><a href="../teraflop/ecs/System.html"><span class="typ">System</span></a></code>.
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<div style="display: flex; justify-content: space-between; margin-top: 2em">  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span></div>
+			</footer>
+		</div>
+	</body>
+</html>

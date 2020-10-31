@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Class World - teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav"><h1>teraflop Engine</h1><p>API Reference</p>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">platform
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Class World</h1><p>A collection of Entities, their <code class="lang-d"><a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code>s, and <code class="lang-d"><span class="typ">Resource</span></code>s. <code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code>s operate on those
+components and mutate the World.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">class</span> <span class="typ">World</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Properties</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/World.resources.html" class="public property"><code>resources</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code></td><td>A collection of resource instances identified by their type.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/World.get.html" class="public">
+								<code>get</code>
+							</a>
+							<span class="tableEntryAnnotation">(id)</span>
+						</td>
+						<td>Get an Entity given its unique ID.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/World.spawn.html" class="public">
+								<code>spawn</code>
+							</a>
+							<span class="tableEntryAnnotation">(components)</span>
+						</td>
+						<td>Spawn a new entity given a set of <code class="lang-d"><a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code> instances.
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<div style="display: flex; justify-content: space-between; margin-top: 2em">  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span></div>
+			</footer>
+		</div>
+	</body>
+</html>

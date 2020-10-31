@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct Time - teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav"><h1>teraflop Engine</h1><p>API Reference</p>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">platform
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct Time</h1><p>Tracks time-based statistics about the running game.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">struct</span> <span class="typ">Time</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(total, elapsed)</span>
+						</td>
+						<td>Instantiate an instance where <code class="lang-d"><a href="../../teraflop/time/Time.runningSlowly.html"><span class="pln">runningSlowly</span></a></code> is <code class="lang-d"><span class="kwd">false</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(other, runningSlowly)</span>
+						</td>
+						<td>Instantiate a copy of an instance of <code class="lang-d"><a href="../../teraflop/time/Time.html"><span class="typ">Time</span></a></code> with an explicit value for <code class="lang-d"><a href="../../teraflop/time/Time.this.html#runningSlowly"><span class="pln">runningSlowly</span></a></code>.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Properties</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.delta.html" class="public property"><code>delta</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">time<wbr/></span><span class="pun">.</span><span class="typ">Duration</span></code></td><td>Amount of time elapsed since the last update.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.deltaMilliseconds.html" class="public property"><code>deltaMilliseconds</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">long</span></code></td><td>Amount of time elapsed since the last update, in milliseconds.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.deltaSeconds.html" class="public property"><code>deltaSeconds</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Amount of time elapsed since the last update, in seconds.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.runningSlowly.html" class="public property"><code>runningSlowly</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether or not the game loop is taking longer than its <code class="lang-d"><span class="pln">targetElapsedTime</span></code>. In this case, the
+game loop can be considered to be running too slowly and should do something to "catch up."
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.total.html" class="public property"><code>total</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">core<wbr/></span><span class="pun">.</span><span class="pln">time<wbr/></span><span class="pun">.</span><span class="typ">Duration</span></code></td><td>Amount of time elapsed since the start of the game.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.totalMilliseconds.html" class="public property"><code>totalMilliseconds</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">long</span></code></td><td>Amount of time elapsed since the start of the game, in milliseconds.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.totalSeconds.html" class="public property"><code>totalSeconds</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>Amount of time elapsed since the start of the game, in seconds.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/time/Time.zero.html" class="public property"><code>zero</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../teraflop/time/Time.html"><span class="typ">Time</span></a></code></td><td>An instance of <code class="lang-d"><a href="../../teraflop/time/Time.html"><span class="typ">Time</span></a></code> where <code class="lang-d"><a href="../../teraflop/time/Time.total.html"><span class="pln">total</span></a></code>, <code class="lang-d"><a href="../../teraflop/time/Time.delta.html"><span class="pln">delta</span></a></code>, and <code class="lang-d"><a href="../../teraflop/time/Time.runningSlowly.html"><span class="pln">runningSlowly</span></a></code> is <code class="lang-d"><span class="kwd">false</span></code>
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<div style="display: flex; justify-content: space-between; margin-top: 2em">  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span></div>
+			</footer>
+		</div>
+	</body>
+</html>

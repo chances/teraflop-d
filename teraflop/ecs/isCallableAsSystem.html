@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum member isCallableAsSystem - teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav"><h1>teraflop Engine</h1><p>API Reference</p>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">platform
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum member isCallableAsSystem</h1><p>Detect whether <code class="lang-d"><span class="pln">T</span></code> is callable as a <code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code>.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">enum</span> <span class="pln">isCallableAsSystem</span>(T...)
+			 <span class="pun">=</span> <span class="kwd">true</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section><p>If <code class="lang-d"><span class="pln">T</span></code> is callable as a System, use <code class="lang-d"><a href="../../teraflop/ecs/System.from.html"><span class="typ">System<wbr/></span><span class="pun">.</span><span class="pln">from</span></a></code> to construct a <code class="lang-d"><a href="../../teraflop/ecs/SystemGenerator.html"><span class="typ">SystemGenerator</span></a></code> from the function.
+</p>
+
+<p><h2 id="Requirements">Satisfaction Requirements</h2>
+</p>
+
+<p><ol><li><code class="lang-d"><span class="pln">T</span></code> <b>MUST</b> satisfy <a href="https://dlang.org/library/std/traits/is_callable.html" title="The D Language Website"><code class="lang-d"><span class="pln">isCallable</span></code></a>.</li>
+<li><code class="lang-d"><span class="pln">T</span></code> <b>MUST</b> return <code class="lang-d"><span class="typ">void</span></code>.</li>
+<li><i>All</i> of <code class="lang-d"><span class="pln">T</span></code>'s parameters <b>MUST</b> match one of:</li>
+<ul><li>Any <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Type</a>, e.g. <code class="lang-d"><span class="typ">bool</span></code>, <code class="lang-d"><span class="typ">int</span></code>, <code class="lang-d"><span class="typ">uint</span></code>, <code class="lang-d"><span class="typ">float</span></code>, <code class="lang-d"><span class="typ">double</span></code>, <code class="lang-d"><span class="typ">char</span></code>, etc.</li>
+<li>Any <a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">array type</a> derived from a Basic Data Type, e.g. <code class="lang-d"><span class="typ">int</span><span class="pun">[]</span></code>, <code class="lang-d"><span class="typ">float</span><span class="pun">[]</span></code>, <code class="lang-d"><span class="typ">string</span><span class="pun">[]</span></code>, etc.</li>
+<li>Any <a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">string type</a>, e.g. <code class="lang-d"><span class="typ">string</span></code>, <code class="lang-d"><span class="typ">char</span><span class="pun">[]</span></code>, <code class="lang-d"><span class="typ">wchar</span><span class="pun">[]</span></code>, etc.</li>
+<li>A <code class="lang-d"><span class="kwd">struct</span></code> type</li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/World.html"><span class="typ">World</span></a></code></li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code></li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code></li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code> or any of its derivations</li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code></li>
+</ul>
+<li><i>All</i> of <code class="lang-d"><span class="pln">T</span></code>'s parameters <b>MUST NOT</b> use the <code class="lang-d"><span class="kwd">immutable</span></code> <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>. <p>Use <code class="lang-d"><span class="kwd">const</span></code> instead.</p></li>
+<li><i>Certain</i> parameters <b>MUST</b> use specific Storage Classes:</li>
+<ul><li><code class="lang-d"><a href="../../teraflop/ecs/World.html"><span class="typ">World</span></a></code>, <code class="lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code>, <code class="lang-d"><a href="../../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code>, <code class="lang-d"><a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code>, and <code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code> parameters <b>MUST</b> use the <code class="lang-d"><span class="kwd">scope</span></code> Storage Class</li>
+<li><code class="lang-d"><a href="../../teraflop/ecs/World.html"><span class="typ">World</span></a></code>, <code class="lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code>, <code class="lang-d"><a href="../../teraflop/ecs/Entity.html"><span class="typ">Entity</span></a></code>, and <code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code> parameters <b>MUST</b> use the <code class="lang-d"><span class="kwd">const</span></code> Storage Class</li>
+<li>The <code class="lang-d"><span class="kwd">ref</span></code> Storage Class <b>MUST NOT</b> be used with the <code class="lang-d"><span class="kwd">const</span></code> Storage Class</li>
+</ul>
+<li><code class="lang-d"><span class="kwd">struct</span></code> and <code class="lang-d"><a href="../../teraflop/ecs/Component.html"><span class="typ">Component</span></a></code> parameters <b>MAY</b> use the <code class="lang-d"><span class="kwd">ref</span></code> Storage Class</li>
+</ol>
+</p>
+</section>
+
+			<section><h2>See Also</h2>
+<p><ul><li><code class="lang-d"><a href="../../teraflop/ecs/System.from.html"><span class="typ">System<wbr/></span><span class="pun">.</span><span class="pln">from</span></a></code></li>
+<li><a href="https://dlang.org/library/std/traits/is_callable.html" title="The D Language Website"><code class="lang-d"><span class="pln">isCallable</span></code></a></li>
+<li><a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Types</a></li>
+<li><a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">Derived Data Types</a></li>
+<li><a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">Strings</a></li>
+<li><a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Parameter Storage Classes</a></li>
+</ul>
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+				<div style="display: flex; justify-content: space-between; margin-top: 2em">  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span></div>
+			</footer>
+		</div>
+	</body>
+</html>
