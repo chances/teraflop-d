@@ -6,6 +6,8 @@
 
 An ECS game engine on a [wgpu](https://github.com/gfx-rs/wgpu-native) foundation.
 
+Ported from its original [C# implementation](https://github.com/chances/teraflop).
+
 ## Usage
 
 ```json
