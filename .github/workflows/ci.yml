@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install D compiler
-      uses: mihails-strasuns/setup-dlang@v0.5.0
+      uses: dlang-community/setup-dlang@v1
       with:
         compiler: ldc-latest
     - name: Install *nix Dependencies
