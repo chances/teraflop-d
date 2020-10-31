@@ -12,6 +12,7 @@
   "subPackages": [
     "examples/triangle"
   ],
+  "systemDependencies": "glfw >= 3.2.0, wgpu-native == 0.6.0",
   "dependencies": {
 		"bindbc-glfw": "~>0.10.1",
 		"wgpu-d": "~>0.6.1"
