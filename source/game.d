@@ -1,12 +1,20 @@
+/// Authors: Chance Snow
+/// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
+/// License: 3-Clause BSD License
 module teraflop.game;
 
-/// Derive from this class for your game application
+/// Derive this class for your game application.
 abstract class Game {
-  private bool active_;
+  import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
+
+  private bool active_;
   private auto time_ = Time.zero;
   private bool limitFrameRate = true;
   private int desiredFramerateHertz_ = 60;
+
+  private auto world = new World();
+  private auto systems = new System[0];
 
   bool active() const @property {
     return active_;
@@ -22,6 +30,15 @@ abstract class Game {
 
   int desiredFramerateHertz() const @property {
     return desiredFramerateHertz_;
+  }
+
+  /// Add a System that operates on resources and Components in the game's World.
+  void add(System system) {
+    systems ~= system;
+  }
+  /// Add a System, dynamically generated from a function, that operates on resources and Components in the game's World.
+  void add(SystemGenerator system) {
+    systems ~= system(world);
   }
 
   protected abstract void initialize();
@@ -69,8 +86,18 @@ abstract class Game {
   }
 
   /// Called when the game should update itself
-  protected void update() {}
-  private void render() {}
+  private void update() {
+    // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
+    foreach (system; systems)
+      system.run();
+  }
+
+  /// Called when the game should render itself
+  private void render() {
+    foreach (entity; world.entities) {
+      // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
+    }
+  }
 
   /// Stop the game loop and exit the game
   protected void exit() {
