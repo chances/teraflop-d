@@ -18,6 +18,7 @@ lib/glfw-3.3.2/
 # Executables
 *.exe
 bin/teraflop-test-library
+bin/triangle
 
 # DUB
 .dub
