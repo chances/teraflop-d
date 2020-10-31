@@ -3,19 +3,38 @@
 /// License: 3-Clause BSD License
 module teraflop.game;
 
+import teraflop.platform.window;
+
 /// Derive this class for your game application.
 abstract class Game {
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
 
+  private string name_;
   private bool active_;
   private auto time_ = Time.zero;
   private bool limitFrameRate = true;
-  private int desiredFramerateHertz_ = 60;
+  private int desiredFrameRateHertz_ = 60;
+
+  private Window[] windows_;
 
   private auto world = new World();
   private auto systems = new System[0];
 
+  /// Initialize a new Game.
+  ///
+  /// Params:
+  /// name = Name of the Game.
+  this(string name) {
+    name_ = name;
+  }
+
+  /// Name of the Game.
+  string name() const @property {
+    return name_;
+  }
+
+  /// Whether the Game is active, i.e. is open and running.
   bool active() const @property {
     return active_;
   }
@@ -24,43 +43,71 @@ abstract class Game {
     return time_;
   }
 
+  /// Whether the Game's framerate is being limited.
+  ///
+  /// See_Also: `desiredFrameRateHertz`
   bool frameRateLimited() const @property {
     return limitFrameRate;
   }
 
-  int desiredFramerateHertz() const @property {
-    return desiredFramerateHertz_;
+  /// Target frame rate of the Game, in hertz.
+  ///
+  /// If `frameRateLimited` is `true`, the main loop will make its best effort to reach this goal
+  /// while updating and rendering the Game.
+  ///
+  /// See_Also: `frameRateLimited`
+  int desiredFrameRateHertz() const @property {
+    return desiredFrameRateHertz_;
+  }
+  void desiredFrameRateHertz(int value) @property {
+    desiredFrameRateHertz_ = value;
   }
 
-  /// Add a System that operates on resources and Components in the game's World.
+  /// Add a System that operates on resources and Components in the game's `World`.
   void add(System system) {
     systems ~= system;
   }
-  /// Add a System, dynamically generated from a function, that operates on resources and Components in the game's World.
+  /// Add a System, dynamically generated from a function, that operates on resources and Components in the game's `World`.
   void add(SystemGenerator system) {
     systems ~= system(world);
   }
 
-  protected abstract void initialize();
+  private void initialize() {
+    initializeWorld();
+  }
 
-  private void initializeWorld() {}
+  /// Called when the Game should initialize its `World`.
+  protected abstract void initializeWorld();
 
   /// Run the game
   void run() {
-    active_ = true;
+    import std.algorithm.iteration : map;
+    import std.algorithm.searching : all;
+    import std.datetime.stopwatch : AutoStart, StopWatch;
+    import teraflop.platform.window : initGlfw, terminateGlfw;
+
+    if (!initGlfw()) {
+      return;
+    }
+    scope(exit) terminateGlfw();
+
+    windows_ ~= new Window(name);
 
     initialize();
-    initializeWorld();
+    active_ = true;
 
-    import std.datetime.stopwatch : AutoStart, StopWatch;
     auto stopwatch = StopWatch(AutoStart.yes);
-
     while (active) {
+      if (windows_.all!(w => !w.isValid())) {
+        active_ = false;
+        return;
+      }
+
       auto elapsed = stopwatch.peek();
       time_ = Time(time.total + elapsed, elapsed);
       auto deltaSeconds = time.deltaSeconds;
 
-      const desiredFrameTimeSeconds = 1.0f / desiredFramerateHertz;
+      const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
       while (limitFrameRate && deltaSeconds < desiredFrameTimeSeconds) {
         elapsed = stopwatch.peek();
         time_ = Time(time.total + elapsed, elapsed);
@@ -85,21 +132,21 @@ abstract class Game {
     }
   }
 
-  /// Called when the game should update itself
+  /// Called when the Game should update itself.
   private void update() {
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
   }
 
-  /// Called when the game should render itself
+  /// Called when the Game should render itself.
   private void render() {
     foreach (entity; world.entities) {
       // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
     }
   }
 
-  /// Stop the game loop and exit the game
+  /// Stop the game loop and exit the Game.
   protected void exit() {
     active_ = false;
   }
