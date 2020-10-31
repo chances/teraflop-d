@@ -142,13 +142,15 @@ abstract class Game {
 
   /// Called when the Game should update itself.
   private void update() {
+    import core.time : Duration;
     import std.string : format;
+
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_)
       window.update();
 
-    // Wait for events for 5 milliseconds
-    if (!eventLoop.loop(5.msecs)) {
+    // Raise callbacks on the event loop
+    if (!eventLoop.loop(Duration.zero)) {
       // TODO: Log that there was an unrecoverable error
       active_ = false;
       return;
