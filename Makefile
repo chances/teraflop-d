@@ -27,6 +27,7 @@ docs: docs/sitemap.xml
 clean:
 	rm -f bin/teraflop-test-library
 	rm -f docs.json
-	rm -rf docs
+	rm -f docs/sitemap.xml docs/file_hashes.json
+	rm -rf `find docs -name '*.html'`
 	rm -f -- *.lst
 .PHONY: clean
