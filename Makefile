@@ -16,13 +16,14 @@ lib/glfw-3.3.2/src/libglfw3.a: lib/glfw-3.3.2/CMakeLists.txt
 	make
 	@echo "Sanity check for static lib:"
 	ld -Llib/glfw-3.3.2/src -l glfw3
+	rm -f a.out
 	@echo "👍️"
+glfw: lib/glfw-3.3.2/src/libglfw3.a
+.PHONY: glfw
+
+SOURCES := glfw $(SOURCES)
 
 TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
-ifeq ($(TARGET_OS),Linux)
-	TRIANGLE_SOURCES := $(TRIANGLE_SOURCES) lib/glfw-3.3.2/src/libglfw3.a
-endif
-
 bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 

@@ -18,7 +18,7 @@ jobs:
         compiler: ldc-latest
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev
+      run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
     - name: Lint
       run: dub lint
     - name: Test
