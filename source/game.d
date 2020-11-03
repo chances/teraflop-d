@@ -99,13 +99,15 @@ abstract class Game {
     }
     scope(exit) terminateGlfw();
 
+    windows_ ~= new Window(name);
+    auto mainWindow = windows_[0];
+    if (!mainWindow.valid) return;
+
     // Setup root graphics resources
-    adapter = Adapter(RequestAdapterOptions(PowerPreference.Default, windows_[0].surface.id));
+    adapter = Adapter(RequestAdapterOptions(PowerPreference.Default, mainWindow.surface.id));
     assert(adapter.ready);
     device = adapter.requestDevice(adapter.limits);
     assert(device.ready);
-
-    windows_ ~= new Window(name);
 
     initialize();
     active_ = true;
@@ -114,12 +116,10 @@ abstract class Game {
 
     auto stopwatch = StopWatch(AutoStart.yes);
     while (active) {
-      if (windows_.all!(w => !w.isValid())) {
+      if (windows_.all!(w => !w.valid)) {
         active_ = false;
         return;
       }
-      foreach (window; windows_)
-        updateSwapChain(window);
 
       auto elapsed = stopwatch.peek();
       time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
@@ -160,8 +160,10 @@ abstract class Game {
     import std.string : format;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
-    foreach (window; windows_)
+    foreach (window; windows_) {
       window.update();
+      updateSwapChain(window);
+    }
 
     // Raise callbacks on the event loop
     if (!eventLoop.loop(Duration.zero)) {
@@ -179,14 +181,49 @@ abstract class Game {
     // TODO: Release existing swap chain, if any
     // TODO: Add a `dirty` flag to `Window` when to help signal a new swap chain, i.e. resizing, fullscreen, etc.
     if ((window in swapChains) is null)
+      // Fails... 😒️ https://github.com/gfx-rs/wgpu-native/issues/56
       swapChains[window] = device.createSwapChain(window.surface, window.swapChainDescriptor);
+    else if (window.dirty) {
+      // TODO: Destroy old swap chain
+      // auto oldSwapChain = swapChains[window];
+      // oldSwapChain.destroy();
+      swapChains[window] = device.createSwapChain(window.surface, window.swapChainDescriptor);
+    }
   }
 
   /// Called when the Game should render itself.
   private void render() {
+    import std.string : toStringz;
+    import wgpu.api : Color, CommandEncoderDescriptor, LoadOp, PassChannel_Color,
+      RenderPassColorAttachmentDescriptor, RenderPassDescriptor, StoreOp;
+
+    auto frame = swapChains[windows_[0]].getNextTexture();
+    if (!frame.success) {
+      // TODO: Log an error
+      return;
+    }
+    auto encoder = device.createCommandEncoder(CommandEncoderDescriptor(toStringz(name)));
+    auto colorAttachment = RenderPassColorAttachmentDescriptor(
+      frame.view.id,
+      0, // Resolve target
+      PassChannel_Color(
+        LoadOp.Clear,
+        StoreOp.Store,
+        Color(255 / 100, 255 / 149, 255 / 237, 1), // Cornflower Blue #6495ed
+        false // Is *not* read only
+      )
+    );
+    auto renderPass = encoder.beginRenderPass(RenderPassDescriptor(
+      &colorAttachment,
+      1,
+      null // depth stencil attachment
+    ));
+
     foreach (entity; world.entities) {
       // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
     }
+
+    device.queue.submit(encoder.finish());
   }
 
   /// Stop the game loop and exit the Game.

@@ -20,7 +20,7 @@ class Window {
 
   private GLFWwindow* window;
   private WindowData data;
-  private Surface* surface_ = null;
+  private Surface surface_;
   private SwapChainDescriptor swapChainDescriptor_;
   private bool valid_ = false;
   private string title_;
@@ -33,6 +33,8 @@ class Window {
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
   this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+    import wgpu.api : PresentMode, TextureFormat, TextureUsage;
+
     id = lastWindowId += 1;
     title_ = title;
 
@@ -49,17 +51,31 @@ class Window {
       return;
     }
     glfwSetWindowUserPointer(window, &data);
-
     data.update(window);
-    initSurfaceAndSwapChainDesc();
-    if (!valid_) {
+
+    // Initialize GPU surface and swap chain descriptor
+    version (linux) {
+      auto display = glfwGetX11Display();
+      auto x11Window = glfwGetX11Window(window);
+      if (display != null && x11Window > 0)
+        surface_ = Surface.fromXlib(cast(const(void)**) display, x11Window);
+    }
+    valid_ = surface_.id > 0;
+    if (!valid) {
+      glfwDestroyWindow(window);
       errorCallback(0, toStringz("Failed to initialize a new GPU surface"));
       return;
     }
+
+    swapChainDescriptor_ = SwapChainDescriptor(
+      TextureUsage.outputAttachment, TextureFormat.Bgra8UnormSrgb,
+      data.width, data.height,
+      PresentMode.Fifo
+    );
   }
 
   ~this() {
-    if (isValid) glfwDestroyWindow(window);
+    if (valid) glfwDestroyWindow(window);
   }
 
   // Swap chains are keyed on their windows
@@ -73,58 +89,48 @@ class Window {
   }
 
   /// Title of this Window.
-  string title() const @property {
+  string title() @property const {
     return title_;
   }
   void title(string value) @property {
     title_ = value;
   }
 
+  /// Whether the native window handle is valid.
+  ///
+  /// May be `false` if Window initialization failed .
+  bool valid() @property const {
+    return valid_;
+  }
+
   package (teraflop) Surface surface() @property const {
-    return *surface_;
+    return surface_;
+  }
+  package (teraflop) bool dirty() @property const {
+    return data.dirty;
   }
   package (teraflop) SwapChainDescriptor swapChainDescriptor() @property const {
     return swapChainDescriptor_;
   }
 
-  /// Whether the native window handle is valid.
-  ///
-  /// May be `false` if Window initialization failed .
-  bool isValid() {
+  package (teraflop) void update() {
     if (glfwWindowShouldClose(window)) {
       glfwDestroyWindow(window);
       valid_ = false;
+      return;
     }
 
-    return valid_;
-  }
-
-  package (teraflop) void update() {
     data.update(window);
+    if (data.dirty) updateSwapChainDesc();
 
     glfwSetWindowTitle(window, toStringz(title_));
 
     // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
   }
 
-  private void initSurfaceAndSwapChainDesc() {
-    import wgpu.api : PresentMode, TextureFormat, TextureUsage;
-
-    Surface newSurface;
-    version (Linux) {
-      newSurface = Surface.fromXlib(glfwGetX11Display(), glfwGetX11Window(window));
-    } else {
-      // TODO: Log that this in an unsupported platform
-      glfwDestroyWindow(window);
-      valid_ = false;
-    }
-
-    surface_ = &newSurface;
-    swapChainDescriptor_ = SwapChainDescriptor(
-      TextureUsage.outputAttachment, TextureFormat.Bgra8UnormSrgb,
-      data.width, data.height,
-      PresentMode.Fifo
-    );
+  private void updateSwapChainDesc() {
+    swapChainDescriptor_.width = data.width;
+    swapChainDescriptor_.height = data.height;
   }
 
   // https://github.com/dkorpel/glfw-d/blob/master/example/app.d
@@ -134,13 +140,19 @@ class Window {
     int ypos;
     int width;
     int height;
+    bool dirty = false;
 
     void update(GLFWwindow* window) @nogc nothrow {
       assert(window !is null);
 
+      const size_t oldData = xpos + ypos + width + height;
+
       glfwPollEvents();
       glfwGetWindowPos(window, &this.xpos, &this.ypos);
       glfwGetWindowSize(window, &this.width, &this.height);
+
+      // TODO: Mark the window dirty if the window's display's DPI changed. Use adjusted, physical size for swap chains?
+      dirty = oldData != xpos + ypos + width + height;
     }
   }
 }
@@ -153,18 +165,22 @@ class Window {
 // TODO: Stub these dependent types with aliases? Do I even need to if I'm giving the window handle from below to wgpu?
 // mixin(bindGLFW_Vulkan);
 
-version(Linux) {
-  // Mixin function declarations and loader
-  mixin(bindGLFW_X11);
+version (linux) {
+  import std.meta : Alias;
+  alias Display = Alias!(void*);
+  // https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/bindstatic.d#L224
+  extern(C) @nogc nothrow {
+    private Display* glfwGetX11Display();
+    private ulong glfwGetX11Window(GLFWwindow*);
+  }
 }
 
-version(OSX) {
-  // Mixin function declarations and loader
+version (OSX) {
   mixin(bindGLFW_Cocoa);
 }
 
-version(Windows) {
-  // Import the platform API bindings
+version (Windows) {
+  // Import platform API bindings
   import core.sys.windows.windows;
   // Mixin function declarations and loader
   mixin(bindGLFW_Windows);
@@ -173,30 +189,28 @@ version(Windows) {
 package (teraflop) bool initGlfw() {
   const GLFWSupport loadResult;
 
-  version (Linux) {
-    loadResult = loadGLFW_X11();
-  }
-  version(OSX) {
-    loadResult = loadGLFW_Cocoa();
-  }
   version (Windows) {
     loadResult = loadGLFW_Windows();
   }
 
-  if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
-      errorCallback(0, toStringz("GLFW shared library failed to load."));
-  } else if (GLFWSupport.badLibrary) {
-    // One or more symbols failed to load. The likely cause is that the
-    // shared library is for a lower version than bindbc-glfw was configured
-    // to load (via GLFW_31, GLFW_32 etc.)
-    errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
-  }
+  version(OSX) {
+    loadResult = loadGLFW_Cocoa();
 
-  // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
-  // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
-  //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
-  //   return false;
-  // }
+    if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
+        errorCallback(0, toStringz("GLFW shared library failed to load."));
+    } else if (GLFWSupport.badLibrary) {
+      // One or more symbols failed to load. The likely cause is that the
+      // shared library is for a lower version than bindbc-glfw was configured
+      // to load (via GLFW_31, GLFW_32 etc.)
+      errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
+    }
+
+    // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
+    // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
+    //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
+    //   return false;
+    // }
+  }
 
   if (!glfwInit()) {
 		return false;

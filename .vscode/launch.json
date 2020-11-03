@@ -10,7 +10,11 @@
       "name": "Debug Triangle",
       "program": "${workspaceFolder}/bin/triangle",
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "LD_LIBRARY_PATH": "bin/wgpu-64-debug",
+        "RUST_BACKTRACE": "1"
+      }
     },
     {
       "type": "lldb",

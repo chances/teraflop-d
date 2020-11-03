@@ -26,6 +26,10 @@ endif
 bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 
+triangle: bin/triangle
+	env LD_LIBRARY_PATH=bin/wgpu-64-debug bin/triangle
+.PHONY: triangle
+
 test:
 	dub test --parallel
 .PHONY: test
