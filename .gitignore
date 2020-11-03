@@ -21,6 +21,7 @@ bin/teraflop-test-library
 bin/triangle
 
 # DUB
+dub.selections.json
 .dub
 docs.json
 __dummy.html
