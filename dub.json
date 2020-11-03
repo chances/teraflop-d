@@ -16,7 +16,7 @@
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
     "libasync": "~>0.8.6",
-		"wgpu-d": "~>0.6.1"
+		"wgpu-d": "~>0.6.3"
   },
   "subConfigurations": {
     "bindbc-glfw": "static"
