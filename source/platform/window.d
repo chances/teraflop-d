@@ -44,11 +44,11 @@ class Window {
   }
 
   ~this() {
-    if (isValid) glfwDestroyWindow(window);
+    if (valid) glfwDestroyWindow(window);
   }
 
   /// Title of this Window.
-  string title() const @property {
+  string title() @property const {
     return title_;
   }
   void title(string value) @property {
@@ -58,16 +58,17 @@ class Window {
   /// Whether the native window handle is valid.
   ///
   /// May be `false` if Window initialization failed .
-  bool isValid() {
-    if (glfwWindowShouldClose(window)) {
-      glfwDestroyWindow(window);
-      valid_ = false;
-    }
-
+  bool valid() @property const {
     return valid_;
   }
 
   package (teraflop) void update() {
+    if (glfwWindowShouldClose(window)) {
+      glfwDestroyWindow(window);
+      valid_ = false;
+      return;
+    }
+
     data.update(window);
 
     glfwSetWindowTitle(window, toStringz(title_));
@@ -103,9 +104,14 @@ class Window {
 // TODO: Stub these dependent types with aliases? Do I even need to if I'm giving the window handle from below to wgpu?
 // mixin(bindGLFW_Vulkan);
 
-version(Linux) {
-  // Mixin function declarations and loader
-  mixin(bindGLFW_X11);
+version(linux) {
+  import std.meta : Alias;
+  alias Display = Alias!(void*);
+  // https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/bindstatic.d#L224
+  extern(C) @nogc nothrow {
+    private Display* glfwGetX11Display();
+    private ulong glfwGetX11Window(GLFWwindow*);
+  }
 }
 
 version(OSX) {
@@ -123,30 +129,27 @@ version(Windows) {
 package (teraflop) bool initGlfw() {
   const GLFWSupport loadResult;
 
-  version (Linux) {
-    loadResult = loadGLFW_X11();
-  }
-  version(OSX) {
-    loadResult = loadGLFW_Cocoa();
-  }
   version (Windows) {
     loadResult = loadGLFW_Windows();
   }
 
-  if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
-      errorCallback(0, toStringz("GLFW shared library failed to load."));
-  } else if (GLFWSupport.badLibrary) {
-    // One or more symbols failed to load. The likely cause is that the
-    // shared library is for a lower version than bindbc-glfw was configured
-    // to load (via GLFW_31, GLFW_32 etc.)
-    errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
-  }
+  version(OSX) {
+    loadResult = loadGLFW_Cocoa();
+    if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
+        errorCallback(0, toStringz("GLFW shared library failed to load."));
+    } else if (GLFWSupport.badLibrary) {
+      // One or more symbols failed to load. The likely cause is that the
+      // shared library is for a lower version than bindbc-glfw was configured
+      // to load (via GLFW_31, GLFW_32 etc.)
+      errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
+    }
 
-  // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
-  // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
-  //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
-  //   return false;
-  // }
+    // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
+    // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
+    //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
+    //   return false;
+    // }
+  }
 
   if (!glfwInit()) {
 		return false;

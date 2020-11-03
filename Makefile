@@ -26,6 +26,10 @@ endif
 bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 
+triangle: bin/triangle
+	bin/triangle
+.PHONY: triangle
+
 test:
 	dub test --parallel
 .PHONY: test

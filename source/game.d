@@ -88,12 +88,13 @@ abstract class Game {
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
 
+    // Setup main window
     if (!initGlfw()) {
       return;
     }
     scope(exit) terminateGlfw();
-
-    windows_ ~= new Window(name);
+    auto mainWindow = new Window(name);
+    windows_ ~= mainWindow;
 
     initialize();
     active_ = true;
@@ -102,7 +103,7 @@ abstract class Game {
 
     auto stopwatch = StopWatch(AutoStart.yes);
     while (active) {
-      if (windows_.all!(w => !w.isValid())) {
+      if (windows_.all!(w => !w.valid())) {
         active_ = false;
         return;
       }
