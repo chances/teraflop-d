@@ -14,6 +14,10 @@
       "path": "../../"
     }
   },
+  "lflags": [
+    "-L../../bin/wgpu-64-debug",
+    "-L../../bin/wgpu-64-release"
+  ],
   "lflags-linux": [
     "-L../../lib/glfw-3.3.2/src"
   ]

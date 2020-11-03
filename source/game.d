@@ -11,6 +11,7 @@ abstract class Game {
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
+  import wgpu.api : Adapter, Device, SwapChain;
 
   private string name_;
   private bool active_;
@@ -18,7 +19,10 @@ abstract class Game {
   private bool limitFrameRate = true;
   private int desiredFrameRateHertz_ = 60;
 
+  private Adapter adapter;
+  private Device device;
   private Window[] windows_;
+  private SwapChain[const Window] swapChains;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -87,11 +91,19 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
+    import wgpu.api : PowerPreference, RequestAdapterOptions;
 
+    // Setup main window
     if (!initGlfw()) {
       return;
     }
     scope(exit) terminateGlfw();
+
+    // Setup root graphics resources
+    adapter = Adapter(RequestAdapterOptions(PowerPreference.Default, windows_[0].surface.id));
+    assert(adapter.ready);
+    device = adapter.requestDevice(adapter.limits);
+    assert(device.ready);
 
     windows_ ~= new Window(name);
 
@@ -106,6 +118,8 @@ abstract class Game {
         active_ = false;
         return;
       }
+      foreach (window; windows_)
+        updateSwapChain(window);
 
       auto elapsed = stopwatch.peek();
       time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
@@ -159,6 +173,13 @@ abstract class Game {
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
+  }
+
+  private void updateSwapChain(const Window window) {
+    // TODO: Release existing swap chain, if any
+    // TODO: Add a `dirty` flag to `Window` when to help signal a new swap chain, i.e. resizing, fullscreen, etc.
+    if ((window in swapChains) is null)
+      swapChains[window] = device.createSwapChain(window.surface, window.swapChainDescriptor);
   }
 
   /// Called when the Game should render itself.
