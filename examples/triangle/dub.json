@@ -1,0 +1,20 @@
+{
+  "name": "triangle",
+  "description": "Triangle example for teraflop",
+  "authors": [
+    "Chance Snow"
+  ],
+  "license": "BSD 3-clause",
+  "copyright": "Copyright © 2020, Chance Snow",
+  "targetType": "executable",
+  "targetPath": "../../bin",
+  "systemDependencies": "glfw >= 3.2.0, wgpu-native == 0.6.0",
+  "dependencies": {
+    "teraflop": {
+      "path": "../../"
+    }
+  },
+  "lflags-linux": [
+    "-L../../lib/glfw-3.3.2/src"
+  ]
+}
