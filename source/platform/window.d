@@ -6,12 +6,14 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
+import erupted : VkInstance, VkSurfaceKHR;
 import libasync.notifier : AsyncNotifier;
 import std.string : toStringz;
 
 /// A native window.
 class Window {
   private GLFWwindow* window;
+  private VkSurfaceKHR surface;
   private WindowData data;
   private bool valid_ = false;
   private string title_;
@@ -60,6 +62,11 @@ class Window {
   /// May be `false` if Window initialization failed .
   bool valid() @property const {
     return valid_;
+  }
+
+  package (teraflop) void createSurface(VkInstance instance) {
+    import teraflop.vulkan : enforceVk, glfwCreateWindowSurface;
+    enforceVk(glfwCreateWindowSurface(instance, window, null, &surface));
   }
 
   package (teraflop) void update() {

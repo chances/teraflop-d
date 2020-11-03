@@ -4,6 +4,7 @@
 module teraflop.game;
 
 import teraflop.platform.window;
+import teraflop.vulkan;
 
 /// Derive this class for your game application.
 abstract class Game {
@@ -18,6 +19,7 @@ abstract class Game {
   private bool limitFrameRate = true;
   private int desiredFrameRateHertz_ = 60;
 
+  private Device device;
   private Window[] windows_;
   private EventLoop eventLoop;
 
@@ -75,10 +77,6 @@ abstract class Game {
     systems ~= system(world);
   }
 
-  private void initialize() {
-    initializeWorld();
-  }
-
   /// Called when the Game should initialize its `World`.
   protected abstract void initializeWorld();
 
@@ -87,9 +85,11 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
+    import teraflop.vulkan : initVulkan;
 
     // Setup main window
-    if (!initGlfw()) {
+    if (!initGlfw() || !initVulkan()) {
+      // TODO: Log an error
       return;
     }
     scope(exit) terminateGlfw();
@@ -139,6 +139,14 @@ abstract class Game {
       destroy(window);
 
     eventLoop.exit();
+  }
+
+  private void initialize() {
+    auto mainWindow = windows_[0];
+    device = new Device(name);
+    mainWindow.createSurface(device.instance);
+
+    initializeWorld();
   }
 
   /// Called when the Game should update itself.

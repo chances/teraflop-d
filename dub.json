@@ -12,10 +12,11 @@
   "subPackages": [
     "examples/triangle"
   ],
-  "systemDependencies": "glfw >= 3.2, wgpu-native == 0.6.0",
+  "systemDependencies": "glfw >= 3.2, vulkan >= 1.2.0",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
-    "libasync": "~>0.8.6"
+    "libasync": "~>0.8.6",
+    "erupted": "~>2.1.0"
   },
   "subConfigurations": {
     "bindbc-glfw": "static"
