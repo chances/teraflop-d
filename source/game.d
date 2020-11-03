@@ -213,7 +213,7 @@ abstract class Game {
         false // Is *not* read only
       )
     );
-    auto renderPass = encoder.beginRenderPass(RenderPassDescriptor(
+    encoder.beginRenderPass(RenderPassDescriptor(
       &colorAttachment,
       1,
       null // depth stencil attachment
