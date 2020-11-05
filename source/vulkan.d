@@ -223,6 +223,7 @@ package (teraflop) class SwapChain {
   private VkPresentModeKHR presentMode;
   private VkExtent2D extent;
   private VkSwapchainKHR handle;
+  VkImage[] swapChainImages;
 
   this(const Device device, const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
     this.device = device;
@@ -251,6 +252,11 @@ package (teraflop) class SwapChain {
       oldSwapchain: oldSwapChain is null ? VK_NULL_HANDLE : cast(VkSwapchainKHR) oldSwapChain.handle,
     };
     enforceVk(vkCreateSwapchainKHR(device.handle, &createInfo, null, &handle));
+
+    // Get the swap chain's images
+    vkGetSwapchainImagesKHR(device.handle, handle, &imageCount, null);
+    swapChainImages = new VkImage[imageCount];
+    vkGetSwapchainImagesKHR(device.handle, handle, &imageCount, swapChainImages.ptr);
   }
 
   ~this() {
