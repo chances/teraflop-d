@@ -12,7 +12,7 @@
   "subPackages": [
     "examples/triangle"
   ],
-  "systemDependencies": "glfw >= 3.2, vulkan >= 1.2.0",
+  "systemDependencies": "glfw >= 3.2, vulkan >= 1.1.0",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
     "libasync": "~>0.8.6",
