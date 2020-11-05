@@ -80,7 +80,7 @@ abstract class Game {
   }
 
   /// Called when the Game should initialize its `World`.
-  protected abstract void initializeWorld();
+  protected abstract void initializeWorld(scope World world);
 
   /// Run the game
   void run() {
@@ -145,7 +145,9 @@ abstract class Game {
 
   private void initialize() {
     import std.exception : enforce;
+    import teraflop.systems : ResourceInitializer;
 
+    // Setup main window
     auto mainWindow = windows_[0];
     device = new Device(name);
     mainWindow.createSurface(device.instance);
@@ -156,7 +158,10 @@ abstract class Game {
     );
     swapChains[mainWindow] = device.createSwapChain(mainWindow.surface, mainWindow.framebufferSize);
 
-    initializeWorld();
+    // Setup built-in Systems
+    systems ~= new ResourceInitializer(world, device);
+
+    initializeWorld(world);
   }
 
   /// Called when the Game should update itself.

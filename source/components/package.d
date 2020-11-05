@@ -14,5 +14,5 @@ interface IResource {
   /// Whether this Resource has been successfully initialized.
   bool initialized() @property const;
   /// Initialize this Resource. `intiialized` should be `true` if successful.
-  void initialize(Device device);
+  void initialize(const Device device);
 }

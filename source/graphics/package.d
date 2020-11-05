@@ -87,8 +87,8 @@ class Shader : IResource {
   }
 
   /// Initialize this Shader.
-  void initialize(Device device) {
-    this.device = device;
+  void initialize(const Device device) {
+    this.device = cast(Device) device;
 
     VkShaderModuleCreateInfo createInfo = {
       codeSize: spv.length,

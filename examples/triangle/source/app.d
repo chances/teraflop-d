@@ -10,18 +10,20 @@ void main()
 }
 
 private final class Triangle : Game {
-  import teraflop.graphics : Shader, ShaderStage;
+  import teraflop.ecs : World;
+  import teraflop.graphics : Material, Shader, ShaderStage;
 
   this() {
     super("Triangle");
   }
 
-  override void initializeWorld() {
+  override void initializeWorld(scope World world) {
     auto shaders = [
       new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv"),
       new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv")
     ];
 
     // TODO: Add a triangle Entity
+    world.spawn(new Material(shaders));
   }
 }

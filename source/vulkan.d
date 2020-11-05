@@ -360,7 +360,7 @@ package (teraflop) class SwapChain {
   }
 }
 
-package (teraflop) class Pipeline : IResource {
+package (teraflop) class Pipeline {
   import teraflop.graphics : Shader;
 
   private Device device;
@@ -370,8 +370,9 @@ package (teraflop) class Pipeline : IResource {
   private VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-  this(Size viewport, Shader[] shaders) {
+  this(Device device, Size viewport, Shader[] shaders) {
     this.shaders = shaders;
+    initialize(device);
   }
 
   ~this() {
@@ -384,13 +385,7 @@ package (teraflop) class Pipeline : IResource {
     shaders = [];
   }
 
-  /// Whether this Pipeline has been successfully initialized.
-  bool initialized() @property const {
-    return graphicsPipeline != VK_NULL_HANDLE;
-  }
-
-  /// Initialize this Pipeline.
-  void initialize(Device device) {
+  private void initialize(Device device) {
     import std.algorithm.iteration : map;
     import std.array : array;
 

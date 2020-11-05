@@ -15,7 +15,7 @@ import std.meta : templateOr;
 import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
-import teraflop.traits : inheritsFrom, isStruct;
+import teraflop.traits : inheritsFrom, isInterface, isStruct;
 
 /// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
@@ -196,6 +196,16 @@ final class Entity {
     }
   }
 
+  /// Get a mutable reference to Component data given its interface type.
+  T[] getMut(T)() const if (isInterface!T) {
+    import std.algorithm.iteration : filter, map;
+    import std.array : array;
+
+    return cast(T[]) components
+      .filter!(c => typeid(T).isBaseOf(c.classinfo))
+      .map!(c => cast(T) c).array;
+  }
+
   /// Get a mutable reference to Component data given its type and optionally its name.
   T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : filter, map;
@@ -286,7 +296,8 @@ template isComponent(T) {
 /// Detect whether `T` may be stored as Component data.
 template storableAsComponent(T) {
   alias isStructOrComponent = templateOr!(isStruct, isComponent);
-  enum bool storableAsComponent = isStructOrComponent!T;
+  alias isStructOrComponentAndNotInterface = templateAnd!(templateNot!isInterface, isStructOrComponent);
+  enum bool storableAsComponent = isStructOrComponentAndNotInterface!T;
 }
 
 /// A container for specialized `Entity` data.
