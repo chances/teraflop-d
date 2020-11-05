@@ -78,6 +78,7 @@ package (teraflop) final class Device {
   private VkDevice device = VK_NULL_HANDLE;
   private VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   private uint graphicsQueueFamilyIndex = uint.max;
+  private VkCommandPool commandPool;
   private VkQueue queue_;
 
   this(string appName) {
@@ -114,6 +115,7 @@ package (teraflop) final class Device {
   ~this() {
     if (device != VK_NULL_HANDLE) {
       vkDeviceWaitIdle(device);
+      vkDestroyCommandPool(device, commandPool, null);
       vkDestroyDevice(device, null);
     }
     if (instance_ != VK_NULL_HANDLE) vkDestroyInstance(instance_, null);
@@ -182,6 +184,13 @@ package (teraflop) final class Device {
     };
     enforceVk(vkCreateDevice(physicalDevices[0], &deviceCreateInfo, null, &device));
     loadDeviceLevelFunctions(device);
+
+    // Create the command buffer pool
+    VkCommandPoolCreateInfo poolInfo = {
+      queueFamilyIndex: graphicsQueueFamilyIndex,
+      flags: 0, // TODO: Set the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
+    };
+    enforceVk(vkCreateCommandPool(device, &poolInfo, null, &commandPool));
 
     // Get the command buffer queue
     vkGetDeviceQueue(device, graphicsQueueFamilyIndex, 0, &queue_);
