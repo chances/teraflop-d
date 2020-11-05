@@ -20,6 +20,6 @@ interface IUpdatable {
 interface IResource {
   /// Whether this Resource has been successfully initialized.
   bool initialized() @property const;
-  /// Initialize this Resource. Sets `intiialized` to `true` when successful.
+  /// Initialize this Resource. `intiialized` should be `true` if successful.
   void initialize(Device device);
 }
