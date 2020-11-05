@@ -9,6 +9,7 @@ import concepts : implements;
 import erupted;
 
 import teraflop.components : IResource;
+import teraflop.ecs : NamedComponent;
 import teraflop.math : Size;
 import teraflop.vulkan : Device, enforceVk;
 
@@ -103,3 +104,56 @@ class Shader : IResource {
   }
 }
 
+/// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
+enum CullMode {
+  /// Disable face culling.
+  none,
+  /// Cull front faces.
+  frontFace,
+  /// Cull back faces.
+  backFace,
+  /// Cull both front and back faces.
+  both
+}
+
+/// Specifies the vertex order for faces to be considered front-facing.
+enum FrontFace {
+  clockwise,
+  counterClockwise
+}
+
+/// A shaded material for geometry encapsulating its `Shader`s and graphics pipeline state.
+class Material : NamedComponent, IResource {
+  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
+  CullMode cullMode = CullMode.backFace;
+  /// Specifies the vertex order for faces to be considered front-facing.
+  FrontFace frontFace = FrontFace.clockwise;
+
+  private Shader[] shaders;
+
+  /// Initialize a new Material.
+  this(Shader[] shaders) {
+    import std.traits : fullyQualifiedName;
+
+    super(fullyQualifiedName!Material);
+    this.shaders = shaders;
+  }
+  /// Initialize a new named Material.
+  this(string name, Shader[] shaders) {
+    super(name);
+    this.shaders = shaders;
+  }
+
+  /// Whether this Shader has been successfully initialized.
+  bool initialized() @property const {
+    import std.algorithm.searching : all;
+
+    if (!shaders.length) return true;
+    return shaders.all!(shader => shader.initialized);
+  }
+
+  /// Initialize this Shader.
+  void initialize(const Device device) {
+    foreach (shader; shaders) shader.initialize(device);
+  }
+}
