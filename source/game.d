@@ -144,6 +144,7 @@ abstract class Game {
   private void initialize() {
     auto mainWindow = windows_[0];
     device = new Device(name);
+    device.acquire();
     mainWindow.createSurface(device.instance);
 
     initializeWorld();

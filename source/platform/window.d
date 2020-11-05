@@ -6,14 +6,16 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
-import erupted : VkInstance, VkSurfaceKHR;
+import erupted : VkInstance;
 import libasync.notifier : AsyncNotifier;
 import std.string : toStringz;
 
 /// A native window.
 class Window {
+  import teraflop.vulkan : Device, Surface;
+
   private GLFWwindow* window;
-  private VkSurfaceKHR surface;
+  private Surface surface;
   private WindowData data;
   private bool valid_ = false;
   private string title_;
@@ -65,8 +67,7 @@ class Window {
   }
 
   package (teraflop) void createSurface(VkInstance instance) {
-    import teraflop.vulkan : enforceVk, glfwCreateWindowSurface;
-    enforceVk(glfwCreateWindowSurface(instance, window, null, &surface));
+    surface = Surface.fromGlfw(instance, window);
   }
 
   package (teraflop) void update() {
@@ -102,14 +103,6 @@ class Window {
     }
   }
 }
-
-// VkInstance
-// VkPhysicalDevice
-// VkResult
-// const(VkAllocationCallbacks)*
-// VkSurfaceKHR*
-// TODO: Stub these dependent types with aliases? Do I even need to if I'm giving the window handle from below to wgpu?
-// mixin(bindGLFW_Vulkan);
 
 version(linux) {
   import std.meta : Alias;
