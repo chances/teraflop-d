@@ -52,6 +52,25 @@ class Shader : IResource {
   ///
   /// Params:
   /// stage = The stage in the graphics pipeline in which this Shader performs.
+  /// filePath = Path to a file containing SPIR-V source bytecode.
+  this(ShaderStage stage, string filePath) {
+    import std.exception : enforce;
+    import std.file : exists;
+    import std.stdio : File;
+    import std.string : format;
+
+    enforce(exists(filePath), format!"File not found: %s"(filePath));
+
+    auto file = File(filePath, "rb");
+    auto spvBuffer = file.rawRead(new ubyte[file.size()]);
+    file.close();
+
+    this(stage, spvBuffer);
+  }
+  /// Initialize a new Shader.
+  ///
+  /// Params:
+  /// stage = The stage in the graphics pipeline in which this Shader performs.
   /// spv = SPIR-V source bytecode.
   this(ShaderStage stage, ubyte[] spv) {
     this.stage = stage;
