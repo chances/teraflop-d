@@ -10,12 +10,18 @@ import erupted : VkInstance;
 import libasync.notifier : AsyncNotifier;
 import std.string : toStringz;
 
+private uint lastWindowId = 0;
+
 /// A native window.
 class Window {
+  import teraflop.math : Size;
   import teraflop.vulkan : Device, Surface;
 
+  /// Window identifier
+  const int id;
+
   private GLFWwindow* window;
-  private Surface surface;
+  private Surface surface_;
   private WindowData data;
   private bool valid_ = false;
   private string title_;
@@ -28,6 +34,7 @@ class Window {
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
   this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+    id = lastWindowId += 1;
     title_ = title;
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
@@ -51,12 +58,14 @@ class Window {
     if (valid) glfwDestroyWindow(window);
   }
 
-  /// Title of this Window.
-  string title() @property const {
-    return title_;
+  // Swap chains are keyed on their windows
+  // https://dlang.org/spec/hash-map.html#using_classes_as_key
+  override size_t toHash() @safe @nogc const pure {
+    return id;
   }
-  void title(string value) @property {
-    title_ = value;
+  override bool opEquals(Object o) @safe @nogc const pure {
+    Window other = cast(Window) o;
+    return other && id == other.id;
   }
 
   /// Whether the native window handle is valid.
@@ -66,8 +75,35 @@ class Window {
     return valid_;
   }
 
+  /// Title of this Window.
+  string title() @property const {
+    return title_;
+  }
+  void title(string value) @property {
+    title_ = value;
+  }
+
+  /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  ///
+  /// This value may not necessarily match `Window.framebufferSize`. For example on mac OS machines with high-DPI Retina displays.
+  const(Size) size() @property const {
+    return data.size;
+  }
+  /// Size of this Window, in pixels.
+  ///
+  /// This value may not necessarily match `Window.size`. For example on mac OS machines with high-DPI Retina displays.
+  const(Size) framebufferSize() @property const {
+    return data.framebufferSize;
+  }
+
+  package (teraflop) bool dirty() @property const {
+    return data.dirty;
+  }
+  package (teraflop) const(Surface) surface() @property const {
+    return surface_;
+  }
   package (teraflop) void createSurface(VkInstance instance) {
-    surface = Surface.fromGlfw(instance, window);
+    surface_ = Surface.fromGlfw(instance, window);
   }
 
   package (teraflop) void update() {
@@ -91,15 +127,29 @@ class Window {
     // instead of resetting to e.g. (0, 0)
     int xpos;
     int ypos;
-    int width;
-    int height;
+    Size size;
+    Size framebufferSize;
+    bool dirty = false;
 
     void update(GLFWwindow* window) @nogc nothrow {
       assert(window !is null);
 
+      const size_t oldData = xpos + ypos + size.width + size.height;
       glfwPollEvents();
       glfwGetWindowPos(window, &this.xpos, &this.ypos);
-      glfwGetWindowSize(window, &this.width, &this.height);
+      int w, h;
+      // Size in screen coordinates
+      glfwGetWindowSize(window, &w, &h);
+      this.size.width = w;
+      this.size.height = h;
+      // Size of framebuffer, in pixels
+      glfwGetFramebufferSize(window, &w, &h);
+      assert(w > 0 && h > 0);
+      this.framebufferSize.width = w;
+      this.framebufferSize.height = h;
+      // TODO: Mark the window dirty if the window's display's DPI changed. Use adjusted, physical size for swap chains?
+      // https://www.glfw.org/docs/3.3/window_guide.html#window_scale
+      dirty = oldData != xpos + ypos + framebufferSize.width + framebufferSize.height;
     }
   }
 }

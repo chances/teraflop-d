@@ -12,6 +12,7 @@ abstract class Game {
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
+  import teraflop.vulkan : SwapChain;
 
   private string name_;
   private bool active_;
@@ -21,6 +22,7 @@ abstract class Game {
 
   private Device device;
   private Window[] windows_;
+  private SwapChain[const Window] swapChains;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -142,10 +144,17 @@ abstract class Game {
   }
 
   private void initialize() {
+    import std.exception : enforce;
+
     auto mainWindow = windows_[0];
     device = new Device(name);
-    device.acquire();
     mainWindow.createSurface(device.instance);
+    device.acquire();
+    enforce(device.ready, "GPU Device initialization failed");
+    enforce(SwapChain.supported(device, mainWindow.surface),
+      "GPU not supported. Try upgrading your graphics drivers."
+    );
+    swapChains[mainWindow] = device.createSwapChain(mainWindow.surface, mainWindow.framebufferSize);
 
     initializeWorld();
   }
@@ -169,6 +178,17 @@ abstract class Game {
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
+  }
+
+  private void updateSwapChain(const Window window) {
+    if ((window in swapChains) is null)
+      swapChains[window] = device.createSwapChain(window.surface, window.size);
+    else if (window.dirty) {
+      // TODO: Destroy old swap chain
+      // auto oldSwapChain = swapChains[window];
+      // oldSwapChain.destroy();
+      swapChains[window] = device.createSwapChain(window.surface, window.size, swapChains[window]);
+    }
   }
 
   /// Called when the Game should render itself.
