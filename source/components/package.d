@@ -5,14 +5,7 @@
 /// License: 3-Clause BSD License
 module teraflop.components;
 
-import teraflop.time : Time;
 import teraflop.vulkan : Device;
-
-/// A Component that should be updated every frame.
-interface IUpdatable {
-  /// Update the component given the current `Time`.
-  void update(Time gameTime);
-}
 
 /// A Component that holds one or more handles to GPU resources.
 ///
