@@ -156,7 +156,7 @@ abstract class Game {
     enforce(SwapChain.supported(device, mainWindow.surface),
       "GPU not supported. Try upgrading your graphics drivers."
     );
-    swapChains[mainWindow] = device.createSwapChain(mainWindow.surface, mainWindow.framebufferSize);
+    updateSwapChain(mainWindow);
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
@@ -170,8 +170,10 @@ abstract class Game {
     import std.string : format;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
-    foreach (window; windows_)
+    foreach (window; windows_) {
       window.update();
+      updateSwapChain(window);
+    }
 
     // Raise callbacks on the event loop
     if (!eventLoop.loop(Duration.zero)) {
@@ -189,12 +191,12 @@ abstract class Game {
 
   private void updateSwapChain(const Window window) {
     if ((window in swapChains) is null)
-      swapChains[window] = device.createSwapChain(window.surface, window.size);
+      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize);
     else if (window.dirty) {
       // TODO: Destroy old swap chain
       // auto oldSwapChain = swapChains[window];
       // oldSwapChain.destroy();
-      swapChains[window] = device.createSwapChain(window.surface, window.size, swapChains[window]);
+      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChains[window]);
     }
   }
 
