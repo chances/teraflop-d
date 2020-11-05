@@ -3,6 +3,7 @@
 	"versions": {
 		"bindbc-glfw": "0.10.1",
 		"bindbc-loader": "0.3.2",
+		"concepts": "0.0.8",
 		"erupted": "2.1.9+v1.2.159",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",

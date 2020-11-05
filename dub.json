@@ -15,8 +15,9 @@
   "systemDependencies": "glfw >= 3.2, vulkan >= 1.1.0",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
-    "libasync": "~>0.8.6",
-    "erupted": "~>2.1.0"
+    "concepts": "~>0.0.8",
+    "erupted": "~>2.1.0",
+    "libasync": "~>0.8.6"
   },
   "subConfigurations": {
     "bindbc-glfw": "static"
