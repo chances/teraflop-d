@@ -180,6 +180,8 @@ abstract class Game {
       return;
     }
 
+    world.resources.add(time_);
+
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
