@@ -223,7 +223,8 @@ package (teraflop) class SwapChain {
   private VkPresentModeKHR presentMode;
   private VkExtent2D extent;
   private VkSwapchainKHR handle;
-  VkImage[] swapChainImages;
+  private VkImage[] swapChainImages;
+  private VkImageView[] imageViews;
 
   this(const Device device, const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
     this.device = device;
@@ -257,9 +258,32 @@ package (teraflop) class SwapChain {
     vkGetSwapchainImagesKHR(device.handle, handle, &imageCount, null);
     swapChainImages = new VkImage[imageCount];
     vkGetSwapchainImagesKHR(device.handle, handle, &imageCount, swapChainImages.ptr);
+
+    // Create image views for the swap chain's images
+    imageViews = new VkImageView[imageCount];
+    for (auto i = 0; i < imageCount; i += 1) {
+      VkImageViewCreateInfo view = {
+        image: swapChainImages[i],
+        viewType: VK_IMAGE_VIEW_TYPE_2D,
+        format: surfaceFormat.format,
+      };
+      view.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+      view.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+      view.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+      view.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+      view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      view.subresourceRange.baseMipLevel = 0;
+      view.subresourceRange.levelCount = 1;
+      view.subresourceRange.baseArrayLayer = 0;
+      view.subresourceRange.layerCount = 1;
+      enforceVk(vkCreateImageView(device.handle, &view, null, &imageViews[i]));
+    }
   }
 
   ~this() {
+    foreach (imageView; imageViews) {
+      vkDestroyImageView(device.handle, imageView, null);
+    }
     vkDestroySwapchainKHR(device.handle, handle, null);
   }
 
