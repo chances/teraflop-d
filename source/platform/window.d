@@ -17,7 +17,7 @@ class Window {
   import teraflop.math : Size;
   import teraflop.vulkan : Device, Surface;
 
-  /// Window identifier
+  /// Window identifier.
   const int id;
 
   private GLFWwindow* window;
@@ -85,13 +85,13 @@ class Window {
 
   /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
   ///
-  /// This value may not necessarily match `Window.framebufferSize`. For example on mac OS machines with high-DPI Retina displays.
+  /// This value may not necessarily match `Window.framebufferSize`. For example, on mac OS machines with high-DPI Retina displays.
   const(Size) size() @property const {
     return data.size;
   }
   /// Size of this Window, in pixels.
   ///
-  /// This value may not necessarily match `Window.size`. For example on mac OS machines with high-DPI Retina displays.
+  /// This value may not necessarily match `Window.size`. For example, on mac OS machines with high-DPI Retina displays.
   const(Size) framebufferSize() @property const {
     return data.framebufferSize;
   }
