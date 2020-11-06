@@ -110,6 +110,7 @@ class Shader : IResource {
 
   ~this() {
     vkDestroyShaderModule(device.handle, shaderModule, null);
+    spv = new ubyte[0];
   }
 
   /// Whether this Shader has been successfully initialized.
@@ -126,7 +127,6 @@ class Shader : IResource {
       pCode: cast(uint*) spv.ptr,
     };
     enforceVk(vkCreateShaderModule(device.handle, &createInfo, null, &shaderModule));
-    spv = new ubyte[0];
 
     this.stageCreateInfo.stage = vkShaderStage(stage);
     this.stageCreateInfo.module_ = shaderModule;
