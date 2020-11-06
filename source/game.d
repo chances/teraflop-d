@@ -139,10 +139,14 @@ abstract class Game {
       render();
     }
 
-    foreach (window; windows_)
-      destroy(window);
-
     eventLoop.exit();
+
+    foreach (window; windows_) {
+      destroy(swapChains[window]);
+      destroy(window);
+    }
+
+    destroy(device);
   }
 
   private void initialize() {
