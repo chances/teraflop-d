@@ -145,7 +145,7 @@ final class Entity {
   }
   /// Add a new Component given its type and, optionally, a default value and its name
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
   void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
     add(data.component(name));
   }
@@ -238,14 +238,14 @@ final class Entity {
     static if (isStruct!T) {
       return cast(T[]) namedComponents.map!(c => c.to!(const Structure!T).data).array;
     } else {
-      return cast(T[]) namedComponents.filter!(c => c.type == typeid(T).name)
+      return cast(T[]) namedComponents.filter!(c => typeid(T).isBaseOf(c.classinfo))
         .map!(c => c.to!(const T)).array;
     }
   }
 
   /// Replace a Component given new value.
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
   void replace(Component component) {
     assert(contains(component), "A Component must first be added before replacement.");
     components_[key(component)] = component;
@@ -273,6 +273,7 @@ final class Entity {
     assert(entity.contains(name));
     assert(entity.contains!Number());
     assert(entity.contains!Number(name));
+    assert(entity.contains!NamedComponent);
     assert(entity.contains(entity.components[0]));
 
     import std.conv : to;
@@ -287,7 +288,7 @@ enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
 
 private enum bool isRawComponent(T) = __traits(isSame, T, Component);
 
-/// Detect whether `T` is a `Component` or inherits from `Component`.
+/// Detect whether `T` is the `Component` class or inherits from `Component`.
 template isComponent(T) {
   alias isRawOrInherited = templateOr!(isRawComponent, inheritsComponent);
   enum bool isComponent = isRawOrInherited!T;
@@ -302,7 +303,7 @@ template storableAsComponent(T) {
 
 /// A container for specialized `Entity` data.
 ///
-/// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+/// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
 abstract class Component {
   private string type_;
 
@@ -324,7 +325,15 @@ abstract class Component {
 }
 
 /// Detect whether `T` inherits from `NamedComponent`.
-enum bool isNamedComponent(T) = inheritsFrom!(T, NamedComponent);
+enum bool inheritsNamedComponent(T) = inheritsFrom!(T, NamedComponent);
+
+private enum bool isRawNamedComponent(T) = __traits(isSame, T, NamedComponent);
+
+/// Detect whether `T` is the `NamedComponent` class or inherits from `NamedComponent`.
+template isNamedComponent(T) {
+  alias isRawOrInherited = templateOr!(isRawNamedComponent, inheritsComponent);
+  enum bool isNamedComponent = isRawOrInherited!T;
+}
 
 /// A named container for specialized `Entity` data.
 abstract class NamedComponent : Component {
