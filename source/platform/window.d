@@ -163,7 +163,7 @@ class Window {
     void update(GLFWwindow* window) @nogc nothrow {
       assert(window !is null);
 
-      const size_t oldData = xpos + ypos + framebufferSize.width + framebufferSize.height;
+      const size_t oldData = framebufferSize.width + framebufferSize.height;
       glfwGetWindowPos(window, &this.xpos, &this.ypos);
       glfwGetWindowSize(window, cast(int*) &this.size.width, cast(int*) &this.size.height);
       glfwGetFramebufferSize(window, cast(int*) &this.framebufferSize.width, cast(int*) &this.framebufferSize.height);
@@ -171,7 +171,7 @@ class Window {
         minimized = true;
       // TODO: Mark the window dirty if the window's display's DPI changed
       // https://www.glfw.org/docs/3.3/window_guide.html#window_scale
-      dirty = oldData != xpos + ypos + framebufferSize.width + framebufferSize.height;
+      dirty = oldData != framebufferSize.width + framebufferSize.height;
     }
   }
 }
