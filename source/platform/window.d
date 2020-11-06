@@ -50,6 +50,8 @@ class Window {
       return;
     }
     glfwSetWindowUserPointer(window, &data);
+    glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
+    glfwSetWindowIconifyCallback(window, &iconifyCallback);
 
     data.update(window);
   }
@@ -86,14 +88,22 @@ class Window {
   /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
   ///
   /// This value may not necessarily match `Window.framebufferSize`. For example, on mac OS machines with high-DPI Retina displays.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_size">Window size</a> in the GLFW documentation
   const(Size) size() @property const {
     return data.size;
   }
   /// Size of this Window, in pixels.
   ///
   /// This value may not necessarily match `Window.size`. For example, on mac OS machines with high-DPI Retina displays.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_fbsize">Framebuffer size</a> in the GLFW documentation
   const(Size) framebufferSize() @property const {
     return data.framebufferSize;
+  }
+
+  /// Whether this window is minimized.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_iconify">Window iconification</a> in the GLFW documentation
+  bool minimized() @property const {
+    return data.minimized;
   }
 
   package (teraflop) bool dirty() @property const {
@@ -113,11 +123,29 @@ class Window {
       return;
     }
 
+    glfwPollEvents();
     data.update(window);
 
     glfwSetWindowTitle(window, toStringz(title_));
 
     // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
+  }
+
+  extern(C) {
+    private static void framebufferResizeCallback(GLFWwindow* window, int width, int height) nothrow {
+      auto data = cast(WindowData*) glfwGetWindowUserPointer(window);
+      assert(data !is null, "Could not retrieve GLFW window data");
+      data.update(window);
+    }
+
+    private static void iconifyCallback(GLFWwindow* window, int iconified) nothrow {
+      auto data = cast(WindowData*) glfwGetWindowUserPointer(window);
+      assert(data !is null, "Could not retrieve GLFW window data");
+
+      const wasMinimized = data.minimized;
+      data.minimized = iconified == GLFW_TRUE;
+      if (!wasMinimized && data.minimized) data.dirty = true;
+    }
   }
 
   // https://github.com/dkorpel/glfw-d/blob/master/example/app.d
@@ -129,25 +157,19 @@ class Window {
     int ypos;
     Size size;
     Size framebufferSize;
+    bool minimized = false;
     bool dirty = false;
 
     void update(GLFWwindow* window) @nogc nothrow {
       assert(window !is null);
 
-      const size_t oldData = xpos + ypos + size.width + size.height;
-      glfwPollEvents();
+      const size_t oldData = xpos + ypos + framebufferSize.width + framebufferSize.height;
       glfwGetWindowPos(window, &this.xpos, &this.ypos);
-      int w, h;
-      // Size in screen coordinates
-      glfwGetWindowSize(window, &w, &h);
-      this.size.width = w;
-      this.size.height = h;
-      // Size of framebuffer, in pixels
-      glfwGetFramebufferSize(window, &w, &h);
-      assert(w > 0 && h > 0);
-      this.framebufferSize.width = w;
-      this.framebufferSize.height = h;
-      // TODO: Mark the window dirty if the window's display's DPI changed. Use adjusted, physical size for swap chains?
+      glfwGetWindowSize(window, cast(int*) &this.size.width, cast(int*) &this.size.height);
+      glfwGetFramebufferSize(window, cast(int*) &this.framebufferSize.width, cast(int*) &this.framebufferSize.height);
+      if (!minimized && framebufferSize.width == 0 && framebufferSize.height == 0)
+        minimized = true;
+      // TODO: Mark the window dirty if the window's display's DPI changed
       // https://www.glfw.org/docs/3.3/window_guide.html#window_scale
       dirty = oldData != xpos + ypos + framebufferSize.width + framebufferSize.height;
     }

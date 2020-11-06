@@ -24,6 +24,7 @@ private final class Triangle : Game {
     ];
 
     // TODO: Add a triangle Entity
+    // TODO: Add a `Mesh` component with vertex layouts/buffers and uniform buffers
     world.spawn(new Material(shaders));
   }
 }

@@ -24,7 +24,6 @@ abstract class Game {
   private Device device;
   private Window[] windows_;
   private SwapChain[const Window] swapChains;
-  private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -180,6 +179,8 @@ abstract class Game {
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
       window.update();
+      // Wait for minimized windows to restore
+      if (window.minimized) continue;
       updateSwapChain(window);
       updatePipelines();
     }
@@ -199,13 +200,12 @@ abstract class Game {
   }
 
   private void updateSwapChain(const Window window) {
-    if ((window in swapChains) is null)
+    if ((window in swapChains) is null) {
       swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize);
-    else if (window.dirty) {
-      // TODO: Destroy old swap chain
-      // auto oldSwapChain = swapChains[window];
-      // oldSwapChain.destroy();
-      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChains[window]);
+    } else {
+      auto swapChain = swapChains[window];
+      if (window.dirty || swapChain.dirty)
+        swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChain);
     }
   }
 
@@ -215,16 +215,17 @@ abstract class Game {
     foreach (entity; world.entities) {
       if (!entity.contains!Material) continue;
       const material = entity.get!Material()[0];
-      if (!material.initialized || (material in pipelines) !is null) continue;
+      if (!material.initialized) continue;
 
       const window = world.resources.get!Window;
       auto swapChain = swapChains[window];
-      pipelines[material] = new Pipeline(device, window.framebufferSize, material, swapChain.presentationPass);
-      auto clearColor = Color.black.toVulkan;
+      if (swapChain.hasPipeline(material)) continue;
 
+      const pipeline = swapChain.trackPipeline(material);
       auto buffer = device.createCommandBuffer(swapChain);
+      auto clearColor = Color.black.toVulkan;
       buffer.beginRenderPass(&clearColor);
-      buffer.bindPipeline(pipelines[material]);
+      buffer.bindPipeline(pipeline);
       buffer.draw(3, 1, 0, 0);
       buffer.endRenderPass();
     }
@@ -232,12 +233,11 @@ abstract class Game {
 
   /// Called when the Game should render itself.
   private void render() {
-    const window = world.resources.get!Window;
-    auto swapChain = swapChains[window];
-    if (swapChain.ready) swapChain.drawFrame();
-
-    foreach (entity; world.entities) {
-      // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
+    foreach (window; windows_) {
+      // Wait for minimized windows to restore
+      if (window.minimized) continue;
+      auto swapChain = swapChains[window];
+      if (swapChain.ready) swapChain.drawFrame();
     }
   }
 

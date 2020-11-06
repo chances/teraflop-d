@@ -237,6 +237,8 @@ package (teraflop) class Surface {
 
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VK_KHR_swapchain.html
 package (teraflop) class SwapChain {
+  import teraflop.graphics : Material;
+
   const int MAX_FRAMES_IN_FLIGHT = 2;
 
   private Device device;
@@ -252,16 +254,17 @@ package (teraflop) class SwapChain {
   package (teraflop) RenderPass presentationPass_;
   private VkFramebuffer[] framebuffers;
   package CommandBuffer presentationCommands;
+  private Pipeline[const Material] pipelines;
   private VkSemaphore[MAX_FRAMES_IN_FLIGHT] imageAvailableSemaphores;
   private VkSemaphore[MAX_FRAMES_IN_FLIGHT] renderFinishedSemaphores;
   private VkFence[MAX_FRAMES_IN_FLIGHT] inFlightFences;
   private VkFence[] imagesInFlight;
+  private auto dirty_ = false;
   private auto currentFrame = 0;
-
-  private Pipeline pipeline;
 
   this(Device device, const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
     this.device = device;
+
     SupportDetails details = getSupportDetails(device, surface);
     presentMode = choosePresentMode(details.presentModes);
     extent = chooseExtent(details.capabilities, framebufferSize);
@@ -342,20 +345,29 @@ package (teraflop) class SwapChain {
       }
       imagesInFlight[i] = VK_NULL_HANDLE;
     }
+
+    if (oldSwapChain !is null) {
+      vkDeviceWaitIdle(device.handle);
+      destroy(oldSwapChain);
+    }
   }
 
   ~this() {
+    vkDeviceWaitIdle(device.handle);
     foreach (framebuffer; framebuffers)
       vkDestroyFramebuffer(device.handle, framebuffer, null);
+    destroy(presentationCommands);
+    foreach (pipeline; pipelines.values)
+      destroy(pipeline);
+    destroy(presentationPass_);
     foreach (imageView; imageViews)
       vkDestroyImageView(device.handle, imageView, null);
-    vkDestroySwapchainKHR(device.handle, handle, null);
-    vkDeviceWaitIdle(device.handle);
     for (auto i = 0; i < MAX_FRAMES_IN_FLIGHT; i += 1) {
       vkDestroySemaphore(device.handle, renderFinishedSemaphores[i], null);
       vkDestroySemaphore(device.handle, imageAvailableSemaphores[i], null);
       vkDestroyFence(device.handle, inFlightFences[i], null);
     }
+    vkDestroySwapchainKHR(device.handle, handle, null);
   }
 
   bool ready() @property const {
@@ -366,6 +378,19 @@ package (teraflop) class SwapChain {
     return presentationPass_;
   }
 
+  bool hasPipeline(const Material material) {
+    return (material in pipelines) !is null;
+  }
+  const(Pipeline) trackPipeline(const Material material) {
+    return pipelines[material] = new Pipeline(
+      device, extent, material, presentationPass_
+    );
+  }
+
+  bool dirty() @property const {
+    return dirty_;
+  }
+
   void drawFrame() {
     assert(ready);
     assert(presentationCommands.handles.length == swapChainImages.length);
@@ -373,9 +398,12 @@ package (teraflop) class SwapChain {
     vkWaitForFences(device.handle, 1, &inFlightFences[currentFrame], VK_TRUE, ulong.max);
 
     uint imageIndex;
-    vkAcquireNextImageKHR(
+    VkResult result = vkAcquireNextImageKHR(
       device.handle, handle, ulong.max, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex
-    ); // TODO: Add error handling
+    );
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) return;
+    enforce(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image!");
 
     // Check if a previous frame is using this image, i.e. it has a fence to wait on
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
@@ -410,7 +438,11 @@ package (teraflop) class SwapChain {
       pImageIndices: &imageIndex,
       pResults: null,
     };
-    vkQueuePresentKHR(device.presentQueue, &presentInfo); // TODO: Add error handling
+    result = vkQueuePresentKHR(device.presentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+      dirty_ = true;
+    } else enforce(result == VK_SUCCESS, "Failed to present swap chain image!");
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
   }
@@ -487,12 +519,16 @@ package (teraflop) class SwapChain {
 }
 
 package (teraflop) class CommandBuffer {
-  private VkExtent2D extent;
+  private const Device device;
+  private const VkExtent2D extent;
   private const RenderPass presentationPass;
-  private VkFramebuffer[] framebuffers;
+  private const VkFramebuffer[] framebuffers;
   private VkCommandBuffer[] buffers;
 
-  this(const Device device, VkFramebuffer[] framebuffers, const RenderPass presentationPass, VkExtent2D extent) {
+  this(
+    const Device device, const VkFramebuffer[] framebuffers, const RenderPass presentationPass, const VkExtent2D extent
+  ) {
+    this.device = device;
     this.framebuffers = framebuffers;
     this.presentationPass = presentationPass;
     this.extent = extent;
@@ -504,6 +540,10 @@ package (teraflop) class CommandBuffer {
       commandBufferCount: cast(uint) buffers.length,
     };
     enforceVk(vkAllocateCommandBuffers(device.handle, &allocInfo, buffers.ptr));
+  }
+
+  ~this() {
+    vkFreeCommandBuffers(device.handle, device.commandPool, cast(uint) buffers.length, buffers.ptr);
   }
 
   VkCommandBuffer[] handles() @property const {
@@ -519,10 +559,10 @@ package (teraflop) class CommandBuffer {
 
       VkRenderPassBeginInfo renderPassInfo = {
         renderPass: presentationPass.handle,
-        framebuffer: framebuffers[i],
+        framebuffer: cast(VkFramebuffer) framebuffers[i],
       };
       renderPassInfo.renderArea.offset = VkOffset2D(0, 0);
-      renderPassInfo.renderArea.extent = extent;
+      renderPassInfo.renderArea.extent = cast(VkExtent2D) extent;
       if (clearColor !is null) {
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = clearColor;
@@ -538,7 +578,7 @@ package (teraflop) class CommandBuffer {
     }
   }
 
-  void bindPipeline(Pipeline pipeline) {
+  void bindPipeline(const Pipeline pipeline) {
     foreach (buffer; buffers)
       vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
   }
@@ -609,13 +649,13 @@ package (teraflop) class Pipeline {
   import teraflop.graphics : Material, Shader;
 
   private Device device;
-  private const Size viewport;
+  private const VkExtent2D viewport;
   private const Material material;
   private const RenderPass renderPass;
   private VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-  this(Device device, const Size viewport, const Material material, const RenderPass renderPass) {
+  this(Device device, const VkExtent2D viewport, const Material material, const RenderPass renderPass) {
     this.device = device;
     this.viewport = viewport;
     this.material = material;
@@ -625,9 +665,8 @@ package (teraflop) class Pipeline {
   }
 
   ~this() {
-    if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device.handle, pipelineLayout, null);
     if (graphicsPipeline != VK_NULL_HANDLE) vkDestroyPipeline(device.handle, graphicsPipeline, null);
-    destroy(material);
+    if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device.handle, pipelineLayout, null);
   }
 
   VkPipeline handle() @property const {
