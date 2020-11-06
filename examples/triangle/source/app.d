@@ -27,10 +27,9 @@ private final class Triangle : Game {
     // TODO: Add a triangle Entity
     // TODO: Add a `Mesh` component with vertex layouts/buffers and uniform buffers
     world.spawn(new Material(shaders), new Mesh!VertexPosColor([
-      VertexPosColor(vec2f(-0.5f, -0.5f), Color.red.vec3f),
-      VertexPosColor(vec2f(0.5f, -0.5f), Color.green.vec3f),
-      VertexPosColor(vec2f(0.5f, 0.5f), Color.blue.vec3f),
-      VertexPosColor(vec2f(-0.5f, 0.5f), Color(1.0f, 1.0f, 1.0f).vec3f),
-    ], [0, 1, 2, 2, 3, 0]));
+      VertexPosColor(vec2f(0.0f, -0.5f), Color.red.vec3f),
+      VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
+      VertexPosColor(vec2f(-0.5f, 0.5f), Color.blue.vec3f),
+    ], [0, 1, 2]));
   }
 }
