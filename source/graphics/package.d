@@ -7,11 +7,13 @@ module teraflop.graphics;
 
 import concepts : implements;
 import erupted;
+import std.traits : fullyQualifiedName;
 
 import teraflop.components : IResource;
 import teraflop.ecs : NamedComponent;
-import teraflop.math : Size;
-import teraflop.vulkan : Device, enforceVk;
+import teraflop.math;
+import teraflop.traits : isStruct;
+import teraflop.vulkan : Buffer, Device, enforceVk;
 
 /// RGBA double precision color.
 struct Color {
@@ -40,6 +42,146 @@ struct Color {
       color: VkClearColorValue([cast(float) r, cast(float) g, cast(float) b, cast(float) a])
     };
     return color;
+  }
+}
+
+/// Detect whether `T` is vertex attribute data.
+template isVertexData(T) if (isStruct!T) {
+  // import std.algorithm.searching : all;
+  // static immutable attributes = [__traits(allMembers, T)];
+}
+
+/// Vertex attribute data comprising a 2D position and opaque color.
+struct VertexPosColor {
+  /// 2D position.
+  vec2f position;
+  /// Opaque color.
+  vec3f color;
+
+  /// Describes how vertex attributes should be bound to the vertex shader.
+  static VkVertexInputBindingDescription bindingDescription() {
+    VkVertexInputBindingDescription bindingDescription = {
+      binding: 0,
+      stride: VertexPosColor.sizeof,
+      inputRate: VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+    return bindingDescription;
+  }
+
+  /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
+  static VkVertexInputAttributeDescription[2] attributeDescriptions() {
+    VkVertexInputAttributeDescription[2] attributeDescriptions;
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = VertexPosColor.position.offsetof;
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = VertexPosColor.color.offsetof;
+    return attributeDescriptions;
+  }
+}
+
+package (teraflop) abstract class MeshBase : NamedComponent, IResource {
+  package (teraflop) Buffer buffer;
+  private auto dirty_ = true;
+
+  this(string name) {
+    super(name);
+  }
+  ~this() {
+    destroy(buffer);
+  }
+
+  /// Whether this mesh's vertex data is new or changed and needs to be uploaded to the GPU.
+  bool dirty() @property const {
+    return dirty_;
+  }
+  package (teraflop) void dirty(bool value) @property {
+    dirty_ = value;
+  }
+
+  abstract ulong vertexCount() @property const;
+  abstract size_t size() @property const;
+  abstract const(ubyte[]) data() @property const;
+
+  /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
+  abstract VkVertexInputBindingDescription bindingDescription() @property const;
+  /// Describes the format of this mesh's vertex attributes so that they can be applied to the vertex shader.
+  abstract VkVertexInputAttributeDescription[] attributeDescriptions() @property const;
+
+  /// Whether this Mesh has been successfully initialized.
+  bool initialized() @property const {
+    return buffer !is null && buffer.ready;
+  }
+
+  /// Initialize this Mesh.
+  void initialize(const Device device) {
+    import std.algorithm.mutation : copy;
+
+    buffer = device.createBuffer(size);
+    auto vertexBuffer = buffer.map();
+    const unfilled = data.copy(vertexBuffer);
+    assert(unfilled.length == 0);
+    buffer.unmap();
+  }
+}
+
+/// A renderable mesh encapsulating vertex data.
+class Mesh(T) : MeshBase if (isStruct!T) {
+  // TODO: Make type contraint more robust, e.g. NO pointers/reference types in vertex data
+  /// This mesh's vertex data
+  private T[] vertices_;
+
+  /// Initialize a new mesh.
+  ///
+  /// Params:
+  /// vertices = Mesh vertex data to optionally pre-populate
+  this(T[] vertices = []) {
+    this(fullyQualifiedName!(Mesh!T), vertices);
+  }
+  /// Initialize a new named mesh.
+  ///
+  /// Params:
+  /// name = The name of this mesh.
+  /// vertices = Mesh vertex data to optionally pre-populate
+  this(string name, T[] vertices = []) {
+    super(name);
+    this.vertices_ = vertices;
+  }
+
+  const(T[]) vertices() @property const {
+    return vertices_;
+  }
+  override ulong vertexCount() @property const {
+    return vertices_.length;
+  }
+
+  /// Size of this mesh, in bytes.
+  override size_t size() @property const {
+    return T.sizeof * vertices_.length;
+  }
+
+  override const(ubyte[]) data() @property const {
+    const(void[]) vertexData = vertices_;
+    assert(vertexData.length == size);
+    return cast(ubyte[]) vertexData;
+  }
+
+  /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
+  override VkVertexInputBindingDescription bindingDescription() @property const {
+    return __traits(getMember, T, "bindingDescription");
+  }
+  /// Describes the format of this mesh's vertex attributes so that they can be applied to the vertex shader.
+  override VkVertexInputAttributeDescription[] attributeDescriptions() @property const {
+    return __traits(getMember, T, "attributeDescriptions").dup;
+  }
+
+  /// Update this mesh's vertex data.
+  void update(T[] vertices) {
+    this.vertices_ = vertices;
+    dirty_ = true;
   }
 }
 
@@ -163,8 +305,6 @@ class Material : NamedComponent, IResource {
 
   /// Initialize a new Material.
   this(Shader[] shaders) {
-    import std.traits : fullyQualifiedName;
-
     super(fullyQualifiedName!Material);
     this.shaders = shaders;
   }

@@ -164,7 +164,7 @@ package (teraflop) final class Device {
       // Presumably, this checks for VK_QUEUE_GRAPHICS_BIT
       if (glfwGetPhysicalDevicePresentationSupport(instance_, physicalDevices[0], i)) {
         assert(queueFamilyProperties[i].queueCount >= 1);
-        graphicsQueueFamilyIndex = cast(uint) i;
+        graphicsQueueFamilyIndex = i.to!uint;
       }
     }
     // Use first queue if no graphics queue was found
@@ -208,6 +208,10 @@ package (teraflop) final class Device {
     ));
     enforce(supported == VK_TRUE, "Surface is not supported for presentation");
     return new SwapChain(this, surface, framebufferSize, oldSwapChain);
+  }
+
+  Buffer createBuffer(ulong size) const {
+    return new Buffer(this, size);
   }
 
   CommandBuffer createCommandBuffer(SwapChain swapChain) {
@@ -381,9 +385,9 @@ package (teraflop) class SwapChain {
   bool hasPipeline(const Material material) {
     return (material in pipelines) !is null;
   }
-  const(Pipeline) trackPipeline(const Material material) {
+  const(Pipeline) trackPipeline(const Material material, const VertexDataDescriptor vertexData) {
     return pipelines[material] = new Pipeline(
-      device, extent, material, presentationPass_
+      device, extent, presentationPass_, material, vertexData
     );
   }
 
@@ -518,12 +522,83 @@ package (teraflop) class SwapChain {
   }
 }
 
+package (teraflop) class Buffer {
+  private const Device device;
+  private VkBufferCreateInfo bufferInfo;
+  private VkBuffer buffer = VK_NULL_HANDLE;
+  private VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
+
+  this(const Device device, ulong size) {
+    this.device = device;
+
+    bufferInfo.size = size;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    enforceVk(vkCreateBuffer(device.handle, &bufferInfo, null, &buffer));
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(device.handle, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {
+      allocationSize: memRequirements.size,
+      memoryTypeIndex: findMemoryType(
+        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+      ),
+    };
+    enforceVk(vkAllocateMemory(device.handle, &allocInfo, null, &bufferMemory));
+
+    vkBindBufferMemory(device.handle, buffer, bufferMemory, 0);
+  }
+
+  ~this() {
+    vkDestroyBuffer(device.handle, buffer, null);
+    vkFreeMemory(device.handle, bufferMemory, null);
+  }
+
+  VkBuffer handle() @property const {
+    return cast(VkBuffer) buffer;
+  }
+
+  bool ready() @property const {
+    return buffer != VK_NULL_HANDLE && bufferMemory != VK_NULL_HANDLE;
+  }
+
+  ulong size() @property const {
+    return bufferInfo.size;
+  }
+
+  ubyte[] map(ulong offset = 0, ulong size = VK_WHOLE_SIZE) {
+    ubyte* data;
+    enforceVk(vkMapMemory(device.handle, bufferMemory, offset, size, 0, cast(void**) &data));
+    const mappedSize = size == VK_WHOLE_SIZE ? bufferInfo.size : size;
+    return data[0 .. mappedSize];
+  }
+
+  void unmap() {
+    vkUnmapMemory(device.handle, bufferMemory);
+  }
+
+  private uint findMemoryType(uint typeFilter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(device.physicalDevice, &memProperties);
+
+    for (uint i = 0; i < memProperties.memoryTypeCount; i += 1) {
+      if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+        return i;
+      }
+    }
+
+    enforce(false, "Failed to find suitable GPU memory type!");
+    assert(0);
+  }
+}
+
 package (teraflop) class CommandBuffer {
   private const Device device;
   private const VkExtent2D extent;
   private const RenderPass presentationPass;
   private const VkFramebuffer[] framebuffers;
-  private VkCommandBuffer[] buffers;
+  private VkCommandBuffer[] commandBuffers;
 
   this(
     const Device device, const VkFramebuffer[] framebuffers, const RenderPass presentationPass, const VkExtent2D extent
@@ -533,29 +608,29 @@ package (teraflop) class CommandBuffer {
     this.presentationPass = presentationPass;
     this.extent = extent;
 
-    buffers = new VkCommandBuffer[framebuffers.length];
+    commandBuffers = new VkCommandBuffer[framebuffers.length];
     VkCommandBufferAllocateInfo allocInfo = {
       commandPool: device.commandPool,
       level: VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-      commandBufferCount: cast(uint) buffers.length,
+      commandBufferCount: commandBuffers.length.to!uint,
     };
-    enforceVk(vkAllocateCommandBuffers(device.handle, &allocInfo, buffers.ptr));
+    enforceVk(vkAllocateCommandBuffers(device.handle, &allocInfo, commandBuffers.ptr));
   }
 
   ~this() {
-    vkFreeCommandBuffers(device.handle, device.commandPool, cast(uint) buffers.length, buffers.ptr);
+    vkFreeCommandBuffers(device.handle, device.commandPool, commandBuffers.length.to!uint, commandBuffers.ptr);
   }
 
   VkCommandBuffer[] handles() @property const {
-    return cast(VkCommandBuffer[]) buffers;
+    return cast(VkCommandBuffer[]) commandBuffers;
   }
 
   void beginRenderPass(VkClearValue* clearColor = null) {
-    assert(buffers.length == framebuffers.length);
+    assert(commandBuffers.length == framebuffers.length);
 
-    for (auto i = 0; i < buffers.length; i += 1) {
+    for (auto i = 0; i < commandBuffers.length; i += 1) {
       VkCommandBufferBeginInfo beginInfo;
-      enforceVk(vkBeginCommandBuffer(buffers[i], &beginInfo));
+      enforceVk(vkBeginCommandBuffer(commandBuffers[i], &beginInfo));
 
       VkRenderPassBeginInfo renderPassInfo = {
         renderPass: presentationPass.handle,
@@ -567,24 +642,34 @@ package (teraflop) class CommandBuffer {
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = clearColor;
       }
-      vkCmdBeginRenderPass(buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
   }
 
   void endRenderPass() {
-    foreach (buffer; buffers) {
+    foreach (buffer; commandBuffers) {
       vkCmdEndRenderPass(buffer);
       enforceVk(vkEndCommandBuffer(buffer));
     }
   }
 
   void bindPipeline(const Pipeline pipeline) {
-    foreach (buffer; buffers)
+    foreach (buffer; commandBuffers)
       vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
   }
 
+  void bindVertexBuffers(const(Buffer[]) buffers ...) {
+    import std.algorithm.iteration : map;
+    import std.array : array;
+
+    auto bufferHandles = buffers.map!(buf => buf.handle).array;
+    VkDeviceSize[1] offsets = [0];
+    foreach (buffer; commandBuffers)
+      vkCmdBindVertexBuffers(buffer, 0, 1, bufferHandles.ptr, offsets.ptr);
+  }
+
   void draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) {
-    foreach (buffer; buffers)
+    foreach (buffer; commandBuffers)
       vkCmdDraw(buffer, vertexCount, instanceCount, firstVertex, firstInstance);
   }
 }
@@ -645,21 +730,30 @@ package (teraflop) class RenderPass {
   }
 }
 
+package (teraflop) struct VertexDataDescriptor {
+  VkVertexInputBindingDescription bindingDescription;
+  VkVertexInputAttributeDescription[] attributeDescriptions;
+}
+
 package (teraflop) class Pipeline {
   import teraflop.graphics : Material, Shader;
 
   private Device device;
   private const VkExtent2D viewport;
-  private const Material material;
   private const RenderPass renderPass;
+  private const Material material;
+  private const VertexDataDescriptor vertexData;
   private VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-  this(Device device, const VkExtent2D viewport, const Material material, const RenderPass renderPass) {
+  this(Device device, const VkExtent2D viewport, const RenderPass renderPass,
+    const Material material, const VertexDataDescriptor vertexData
+  ) {
     this.device = device;
     this.viewport = viewport;
-    this.material = material;
     this.renderPass = renderPass;
+    this.material = material;
+    this.vertexData = vertexData;
 
     initialize();
   }
@@ -678,10 +772,10 @@ package (teraflop) class Pipeline {
     import std.array : array;
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {
-      vertexBindingDescriptionCount: 0,
-      pVertexBindingDescriptions: null,
-      vertexAttributeDescriptionCount: 0,
-      pVertexAttributeDescriptions: null,
+      vertexBindingDescriptionCount: 1,
+      pVertexBindingDescriptions: &vertexData.bindingDescription,
+      vertexAttributeDescriptionCount: vertexData.attributeDescriptions.length.to!uint,
+      pVertexAttributeDescriptions: vertexData.attributeDescriptions.ptr,
     };
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
       topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -690,8 +784,8 @@ package (teraflop) class Pipeline {
     VkViewport pipelineViewport = {
       x: 0.0f,
       y: 0.0f,
-      width: cast(float) this.viewport.width,
-      height: cast(float) this.viewport.height,
+      width: this.viewport.width.to!float,
+      height: this.viewport.height.to!float,
       minDepth: 0.0f,
       maxDepth: 1.0f,
     };
@@ -754,7 +848,7 @@ package (teraflop) class Pipeline {
     // Create the pipeline
     const shaderStages = material.shaders.map!(shader => shader.stageCreateInfo).array;
     VkGraphicsPipelineCreateInfo pipelineInfo = {
-      stageCount: cast(uint) shaderStages.length,
+      stageCount: shaderStages.length.to!uint,
       pStages: shaderStages.ptr,
       pVertexInputState: &vertexInputInfo,
       pInputAssemblyState: &inputAssembly,

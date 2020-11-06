@@ -17,6 +17,7 @@
     "bindbc-glfw": "~>0.10.1",
     "concepts": "~>0.0.8",
     "erupted": "~>2.1.0",
+    "gfm:math": "~>8.0",
     "libasync": "~>0.8.6"
   },
   "subConfigurations": {
