@@ -35,6 +35,19 @@ struct Color {
   /// Solid opaque black.
   static const black = Color(0, 0, 0, 1);
 
+  teraflop.math.vec3f vec3f() @property const {
+    return teraflop.math.vec3f(r, g, b);
+  }
+  teraflop.math.vec3d vec3d() @property const {
+    return teraflop.math.vec3d(r, g, b);
+  }
+  teraflop.math.vec4f vec4f() @property const {
+    return teraflop.math.vec4f(r, g, b, a);
+  }
+  teraflop.math.vec4d vec4d() @property const {
+    return teraflop.math.vec4d(r, g, b, a);
+  }
+
   package (teraflop) auto toVulkan() const {
     import erupted : VkClearValue;
 
