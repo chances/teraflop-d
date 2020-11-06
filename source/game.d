@@ -11,7 +11,6 @@ abstract class Game {
   import core.time : msecs;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
-  import teraflop.graphics : Material;
   import teraflop.time : Time;
   import teraflop.vulkan : Pipeline, SwapChain;
 
@@ -150,7 +149,6 @@ abstract class Game {
 
   private void initialize() {
     import std.exception : enforce;
-    import teraflop.graphics : Material;
     import teraflop.systems : ResourceInitializer;
 
     // Setup main window
@@ -210,23 +208,30 @@ abstract class Game {
   }
 
   private void updatePipelines() {
-    import teraflop.graphics : Color;
+    import std.conv : to;
+    import teraflop.graphics : Color, Material, MeshBase;
+    import teraflop.vulkan : VertexDataDescriptor;
 
     foreach (entity; world.entities) {
-      if (!entity.contains!Material) continue;
+      if (!entity.contains!Material || !entity.contains!MeshBase) continue;
       const material = entity.get!Material()[0];
       if (!material.initialized) continue;
+      const mesh = entity.get!MeshBase()[0];
+      if (!mesh.initialized) continue;
 
       const window = world.resources.get!Window;
       auto swapChain = swapChains[window];
       if (swapChain.hasPipeline(material)) continue;
 
-      const pipeline = swapChain.trackPipeline(material);
+      const pipeline = swapChain.trackPipeline(material, VertexDataDescriptor(
+        mesh.bindingDescription, mesh.attributeDescriptions
+      ));
       auto buffer = device.createCommandBuffer(swapChain);
       auto clearColor = Color.black.toVulkan;
       buffer.beginRenderPass(&clearColor);
       buffer.bindPipeline(pipeline);
-      buffer.draw(3, 1, 0, 0);
+      buffer.bindVertexBuffers(mesh.buffer);
+      buffer.draw(mesh.vertexCount.to!uint, 1, 0, 0);
       buffer.endRenderPass();
     }
   }

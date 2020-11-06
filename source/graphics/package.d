@@ -177,6 +177,7 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   }
 
   override const(ubyte[]) data() @property const {
+    // https://dlang.org/spec/arrays.html#void_arrays
     const(void[]) vertexData = vertices_;
     assert(vertexData.length == size);
     return cast(ubyte[]) vertexData;

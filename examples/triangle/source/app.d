@@ -1,6 +1,7 @@
 import std.stdio;
 
 import teraflop.game : Game;
+import teraflop.math;
 
 void main()
 {
@@ -11,7 +12,7 @@ void main()
 
 private final class Triangle : Game {
   import teraflop.ecs : World;
-  import teraflop.graphics : Material, Shader, ShaderStage;
+  import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, VertexPosColor;
 
   this() {
     super("Triangle");
@@ -25,6 +26,10 @@ private final class Triangle : Game {
 
     // TODO: Add a triangle Entity
     // TODO: Add a `Mesh` component with vertex layouts/buffers and uniform buffers
-    world.spawn(new Material(shaders));
+    world.spawn(new Material(shaders), new Mesh!VertexPosColor([
+      VertexPosColor(vec2f(0.0f, -0.5f), Color.red.vec3f),
+      VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
+      VertexPosColor(vec2f(-0.5f, 0.5f), Color.blue.vec3f),
+    ]));
   }
 }
