@@ -210,8 +210,8 @@ package (teraflop) final class Device {
     return new SwapChain(this, surface, framebufferSize, oldSwapChain);
   }
 
-  Buffer createBuffer(ulong size) const {
-    return new Buffer(this, size);
+  Buffer createBuffer(ulong size, BufferUsage usage = BufferUsage.vertexBuffer) const {
+    return new Buffer(this, size, usage);
   }
 
   CommandBuffer createCommandBuffer(SwapChain swapChain) {
@@ -538,6 +538,7 @@ enum BufferUsage : VkBufferUsageFlagBits {
 }
 
 package (teraflop) class Buffer {
+  const BufferUsage usage;
   private const Device device;
   private VkBufferCreateInfo bufferInfo;
   private VkBuffer buffer = VK_NULL_HANDLE;
@@ -545,6 +546,7 @@ package (teraflop) class Buffer {
 
   this(const Device device, ulong size, BufferUsage usage = BufferUsage.vertexBuffer, bool hostVisible = true) {
     this.device = device;
+    this.usage = usage;
 
     bufferInfo.size = size;
     bufferInfo.usage = usage;
@@ -680,15 +682,32 @@ package (teraflop) class CommandBuffer {
     import std.algorithm.iteration : map;
     import std.array : array;
 
+    debug {
+      foreach (buffer; buffers)
+        assert((buffer.usage & BufferUsage.vertexBuffer) == BufferUsage.vertexBuffer);
+    }
+
     auto bufferHandles = buffers.map!(buf => buf.handle).array;
     VkDeviceSize[1] offsets = [0];
     foreach (buffer; commandBuffers)
       vkCmdBindVertexBuffers(buffer, 0, 1, bufferHandles.ptr, offsets.ptr);
   }
 
+  void bindIndexBuffer(const Buffer indexBuffer) {
+    assert((indexBuffer.usage & BufferUsage.indexBuffer) == BufferUsage.indexBuffer);
+
+    foreach (buffer; commandBuffers)
+      vkCmdBindIndexBuffer(buffer, indexBuffer.handle, 0, VK_INDEX_TYPE_UINT32);
+  }
+
   void draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) {
     foreach (buffer; commandBuffers)
       vkCmdDraw(buffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  }
+
+  void drawIndexed(uint indexCount, uint instanceCount, uint firstIndex, uint indexOffset, uint firstInstance) {
+    foreach (buffer; commandBuffers)
+      vkCmdDrawIndexed(buffer, indexCount, instanceCount, firstIndex, indexOffset, firstInstance);
   }
 }
 

@@ -230,8 +230,10 @@ abstract class Game {
       auto clearColor = Color.black.toVulkan;
       buffer.beginRenderPass(&clearColor);
       buffer.bindPipeline(pipeline);
-      buffer.bindVertexBuffers(mesh.buffer);
-      buffer.draw(mesh.vertexCount.to!uint, 1, 0, 0);
+      // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+      buffer.bindVertexBuffers(mesh.vertexBuffer);
+      buffer.bindIndexBuffer(mesh.indexBuffer);
+      buffer.drawIndexed(mesh.indices.length.to!uint, 1, 0, 0, 0);
       buffer.endRenderPass();
     }
   }

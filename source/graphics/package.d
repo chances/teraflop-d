@@ -97,14 +97,15 @@ struct VertexPosColor {
 }
 
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
-  package (teraflop) Buffer buffer;
+  package (teraflop) Buffer vertexBuffer;
+  package (teraflop) Buffer indexBuffer;
   private auto dirty_ = true;
 
   this(string name) {
     super(name);
   }
   ~this() {
-    destroy(buffer);
+    destroy(vertexBuffer);
   }
 
   /// Whether this mesh's vertex data is new or changed and needs to be uploaded to the GPU.
@@ -118,6 +119,7 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   abstract ulong vertexCount() @property const;
   abstract size_t size() @property const;
   abstract const(ubyte[]) data() @property const;
+  abstract const(uint[]) indices() @property const;
 
   /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
   abstract VkVertexInputBindingDescription bindingDescription() @property const;
@@ -126,49 +128,63 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
 
   /// Whether this Mesh has been successfully initialized.
   bool initialized() @property const {
-    return buffer !is null && buffer.ready;
+    return vertexBuffer !is null && vertexBuffer.ready &&
+      indexBuffer !is null && indexBuffer.ready;
   }
 
   /// Initialize this Mesh.
   void initialize(const Device device) {
     import std.algorithm.mutation : copy;
+    import teraflop.vulkan : BufferUsage;
 
-    buffer = device.createBuffer(size);
-    auto vertexBuffer = buffer.map();
-    const unfilled = data.copy(vertexBuffer);
+    vertexBuffer = device.createBuffer(size);
+    auto unfilled = data.copy(vertexBuffer.map());
     assert(unfilled.length == 0);
-    buffer.unmap();
+    vertexBuffer.unmap();
+
+    indexBuffer = device.createBuffer(uint.sizeof * indices.length, BufferUsage.indexBuffer);
+    const(void[]) indexData = indices;
+    assert(indexData.length == indexBuffer.size);
+    unfilled = (cast(ubyte[]) indexData).copy(indexBuffer.map());
+    assert(unfilled.length == 0);
+    indexBuffer.unmap();
   }
 }
 
 /// A renderable mesh encapsulating vertex data.
 class Mesh(T) : MeshBase if (isStruct!T) {
   // TODO: Make type contraint more robust, e.g. NO pointers/reference types in vertex data
-  /// This mesh's vertex data
   private T[] vertices_;
+  private uint[] indices_;
 
   /// Initialize a new mesh.
   ///
   /// Params:
   /// vertices = Mesh vertex data to optionally pre-populate
-  this(T[] vertices = []) {
-    this(fullyQualifiedName!(Mesh!T), vertices);
+  this(T[] vertices = [], uint[] indices = []) {
+    this(fullyQualifiedName!(Mesh!T), vertices, indices);
   }
   /// Initialize a new named mesh.
   ///
   /// Params:
   /// name = The name of this mesh.
   /// vertices = Mesh vertex data to optionally pre-populate
-  this(string name, T[] vertices = []) {
+  this(string name, T[] vertices = [], uint[] indices = []) {
     super(name);
     this.vertices_ = vertices;
+    this.indices_ = indices;
   }
 
+  /// This mesh's vertex data.
   const(T[]) vertices() @property const {
     return vertices_;
   }
   override ulong vertexCount() @property const {
     return vertices_.length;
+  }
+  /// This mesh's vertex index data.
+  override const(uint[]) indices() @property const {
+    return indices_;
   }
 
   /// Size of this mesh, in bytes.
