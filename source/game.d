@@ -107,7 +107,7 @@ abstract class Game {
     while (active) {
       if (windows_.all!(w => !w.valid())) {
         active_ = false;
-        return;
+        break;
       }
 
       auto elapsed = stopwatch.peek();
@@ -139,11 +139,17 @@ abstract class Game {
 
     eventLoop.exit();
 
+    // Gracefully release GPU and other unmanaged resources
     foreach (window; windows_) {
       destroy(swapChains[window]);
       destroy(window);
     }
 
+    foreach (entity; world.entities) {
+      foreach (component; entity.components)
+        destroy(component);
+    }
+    destroy(world);
     destroy(device);
   }
 

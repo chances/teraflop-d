@@ -106,6 +106,7 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   }
   ~this() {
     destroy(vertexBuffer);
+    destroy(indexBuffer);
   }
 
   /// Whether this mesh's vertex data is new or changed and needs to be uploaded to the GPU.
@@ -342,6 +343,10 @@ class Material : NamedComponent, IResource {
   this(string name, Shader[] shaders) {
     super(name);
     this.shaders = shaders;
+  }
+  ~this() {
+    foreach (shader; shaders)
+      destroy(shader);
   }
 
   /// Whether this Shader has been successfully initialized.
