@@ -182,6 +182,19 @@ class Material : NamedComponent, IResource {
     return shaders.all!(shader => shader.initialized);
   }
 
+  // Pipelines are keyed on Material instances
+  // https://dlang.org/spec/hash-map.html#using_classes_as_key
+  override size_t toHash() const pure {
+    size_t accumulatedHash = cullMode.hashOf(frontFace);
+    foreach (shader; shaders)
+      accumulatedHash = shader.spv.hashOf(accumulatedHash);
+    return accumulatedHash;
+  }
+  override bool opEquals(Object o) const pure {
+    Material other = cast(Material) o;
+    return other && toHash() == other.toHash();
+  }
+
   /// Initialize this Shader.
   void initialize(const Device device) {
     foreach (shader; shaders) shader.initialize(device);
