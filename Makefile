@@ -4,7 +4,7 @@ TARGET_OS := $(shell uname -s)
 .DEFAULT_GOAL := docs
 all: docs
 
-EXAMPLES := bin/triangle
+EXAMPLES := bin/triangle bin/cube
 examples: $(EXAMPLES)
 .PHONY: examples
 
@@ -30,6 +30,14 @@ bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
 triangle: bin/triangle
 	bin/triangle
 .PHONY: triangle
+
+CUBE_SOURCES := $(shell find examples/cube/source -name '*.d')
+bin/cube: $(SOURCES) $(CUBE_SOURCES)
+	cd examples/cube && dub build
+
+cube: bin/cube
+	bin/cube
+.PHONY: cube
 
 test:
 	dub test --parallel

@@ -19,9 +19,10 @@ lib/glfw-3.3.2/
 *.exe
 bin/teraflop-test-library
 bin/triangle
+bin/cube
 
 # DUB
-dub.selections.json
+/dub.selections.json
 .dub
 docs.json
 __dummy.html

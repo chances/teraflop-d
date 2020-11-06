@@ -5,25 +5,26 @@ import teraflop.math;
 
 void main()
 {
-	writeln("Teraflop Triangle Example");
+	writeln("Teraflop Cube Example");
 
-  new Triangle().run();
+  new Cube().run();
 }
 
-private final class Triangle : Game {
+private final class Cube : Game {
   import teraflop.ecs : World;
   import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, VertexPosColor;
 
   this() {
-    super("Triangle");
+    super("Cube");
   }
 
   override void initializeWorld(scope World world) {
     auto shaders = [
-      new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv"),
-      new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv")
+      new Shader(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
+      new Shader(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
 
+    // TODO: Add a `Camera` component (resource?) with uniform buffers
     world.spawn(new Material(shaders), new Mesh!VertexPosColor([
       VertexPosColor(vec2f(0.0f, -0.5f), Color.red.vec3f),
       VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
