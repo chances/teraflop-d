@@ -129,6 +129,7 @@ abstract class Game {
 
       import std.typecons : Yes;
       if (deltaSeconds > desiredFrameTimeSeconds * 1.25) time_ = Time(time_, Yes.runningSlowly);
+      stopwatch.reset();
 
       // TODO: Calculate average FPS given deltaSeconds
 
