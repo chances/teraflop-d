@@ -161,6 +161,7 @@ abstract class Game {
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
 
+    world.resources.add(mainWindow);
     initializeWorld(world);
   }
 

@@ -82,7 +82,7 @@ struct Resources {
   }
 
   /// Returns a Resource from the collection given its type.
-  immutable(T) get(T)() const {
+  const(T) get(T)() const {
     assert(contains!T(), "Could not find Resource!");
     auto variant = (*resources)[typeid(T).toHash];
     assert(variant.peek!T !is null);
