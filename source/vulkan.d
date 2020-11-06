@@ -237,6 +237,8 @@ package (teraflop) class Surface {
 
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VK_KHR_swapchain.html
 package (teraflop) class SwapChain {
+  const int MAX_FRAMES_IN_FLIGHT = 2;
+
   private Device device;
   private const VkSurfaceFormatKHR surfaceFormat = {
     format: VK_FORMAT_B8G8R8A8_SRGB,
@@ -250,8 +252,11 @@ package (teraflop) class SwapChain {
   package (teraflop) RenderPass presentationPass_;
   private VkFramebuffer[] framebuffers;
   package CommandBuffer presentationCommands;
-  private VkSemaphore imageAvailableSemaphore;
-  private VkSemaphore renderFinishedSemaphore;
+  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] imageAvailableSemaphores;
+  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] renderFinishedSemaphores;
+  private VkFence[MAX_FRAMES_IN_FLIGHT] inFlightFences;
+  private VkFence[] imagesInFlight;
+  private auto currentFrame = 0;
 
   private Pipeline pipeline;
 
@@ -327,8 +332,16 @@ package (teraflop) class SwapChain {
 
     // Create the swap chain's synchronization primitives
     VkSemaphoreCreateInfo semaphoreInfo;
-    enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &imageAvailableSemaphore));
-    enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &renderFinishedSemaphore));
+    VkFenceCreateInfo fenceInfo = {flags: VK_FENCE_CREATE_SIGNALED_BIT};
+    imagesInFlight = new VkFence[imageCount];
+    for (auto i = 0; i < imageCount; i += 1) {
+      if (i < MAX_FRAMES_IN_FLIGHT) {
+        enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &imageAvailableSemaphores[i]));
+        enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &renderFinishedSemaphores[i]));
+        enforceVk(vkCreateFence(device.handle, &fenceInfo, null, &inFlightFences[i]));
+      }
+      imagesInFlight[i] = VK_NULL_HANDLE;
+    }
   }
 
   ~this() {
@@ -338,8 +351,11 @@ package (teraflop) class SwapChain {
       vkDestroyImageView(device.handle, imageView, null);
     vkDestroySwapchainKHR(device.handle, handle, null);
     vkDeviceWaitIdle(device.handle);
-    vkDestroySemaphore(device.handle, renderFinishedSemaphore, null);
-    vkDestroySemaphore(device.handle, imageAvailableSemaphore, null);
+    for (auto i = 0; i < MAX_FRAMES_IN_FLIGHT; i += 1) {
+      vkDestroySemaphore(device.handle, renderFinishedSemaphores[i], null);
+      vkDestroySemaphore(device.handle, imageAvailableSemaphores[i], null);
+      vkDestroyFence(device.handle, inFlightFences[i], null);
+    }
   }
 
   bool ready() @property const {
@@ -354,23 +370,36 @@ package (teraflop) class SwapChain {
     assert(ready);
     assert(presentationCommands.handles.length == swapChainImages.length);
 
+    vkWaitForFences(device.handle, 1, &inFlightFences[currentFrame], VK_TRUE, ulong.max);
+
     uint imageIndex;
-    vkAcquireNextImageKHR(device.handle, handle, ulong.max, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex); // TODO: Add error handling
+    vkAcquireNextImageKHR(
+      device.handle, handle, ulong.max, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex
+    ); // TODO: Add error handling
+
+    // Check if a previous frame is using this image, i.e. it has a fence to wait on
+    if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
+      vkWaitForFences(device.handle, 1, &imagesInFlight[imageIndex], VK_TRUE, ulong.max);
+    }
+    // Mark the image as now being in use by this frame
+    imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
     const commandBuffer = presentationCommands.handles[imageIndex];
 
     VkSubmitInfo submitInfo;
-    const VkSemaphore[] waitSemaphores = [imageAvailableSemaphore];
+    const VkSemaphore[] waitSemaphores = [imageAvailableSemaphores[currentFrame]];
     const VkPipelineStageFlags[] waitStages = [VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT];
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores.ptr;
     submitInfo.pWaitDstStageMask = waitStages.ptr;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    const VkSemaphore[] signalSemaphores = [renderFinishedSemaphore];
+    const VkSemaphore[] signalSemaphores = [renderFinishedSemaphores[currentFrame]];
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores.ptr;
 
-    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
+    vkResetFences(device.handle, 1, &inFlightFences[currentFrame]);
+    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, inFlightFences[currentFrame]));
 
     const VkSwapchainKHR[] swapChains = [handle];
     VkPresentInfoKHR presentInfo = {
@@ -382,6 +411,8 @@ package (teraflop) class SwapChain {
       pResults: null,
     };
     vkQueuePresentKHR(device.presentQueue, &presentInfo); // TODO: Add error handling
+
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
   }
 
   static bool supported(const Device device, const Surface surface) {
