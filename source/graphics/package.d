@@ -13,6 +13,36 @@ import teraflop.ecs : NamedComponent;
 import teraflop.math : Size;
 import teraflop.vulkan : Device, enforceVk;
 
+/// RGBA double precision color.
+struct Color {
+  /// Red component.
+  double r;
+  /// Blue component.
+  double g;
+  /// Green component.
+  double b;
+  /// Alpha component.
+  double a;
+
+  /// Solid opaque red.
+  static const red = Color(1, 0, 0, 1);
+  /// Solid opaque green.
+  static const green = Color(0, 1, 0, 1);
+  /// Solid opaque blue.
+  static const blue = Color(0, 0, 1, 1);
+  /// Solid opaque black.
+  static const black = Color(0, 0, 0, 1);
+
+  package (teraflop) auto toVulkan() const {
+    import erupted : VkClearValue;
+
+    VkClearValue color = {
+      color: VkClearColorValue([cast(float) r, cast(float) g, cast(float) b, cast(float) a])
+    };
+    return color;
+  }
+}
+
 /// A programmable stage in the graphics `Pipeline`.
 enum ShaderStage {
   /// For every vertex, generally applies transformations to turn vertex positions from model space to screen space.
