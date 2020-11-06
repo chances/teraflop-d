@@ -522,17 +522,32 @@ package (teraflop) class SwapChain {
   }
 }
 
+/// Allowed usage of a buffer. May be used in bitwise combinations.
+enum BufferUsage : VkBufferUsageFlagBits {
+  /// Buffer can be used as source in a memory transfer operation.
+  transferSrc = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  /// Buffer can be used as destination in a memory transfer operation.
+  transferDst = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+  uniformTexelBuffer = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+  storageTexelBuffer = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+  uniformBuffer = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+  storageBuffer = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+  indexBuffer = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+  vertexBuffer = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+  indirectBuffer = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+}
+
 package (teraflop) class Buffer {
   private const Device device;
   private VkBufferCreateInfo bufferInfo;
   private VkBuffer buffer = VK_NULL_HANDLE;
   private VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
 
-  this(const Device device, ulong size) {
+  this(const Device device, ulong size, BufferUsage usage = BufferUsage.vertexBuffer, bool hostVisible = true) {
     this.device = device;
 
     bufferInfo.size = size;
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     enforceVk(vkCreateBuffer(device.handle, &bufferInfo, null, &buffer));
 
@@ -542,7 +557,10 @@ package (teraflop) class Buffer {
     VkMemoryAllocateInfo allocInfo = {
       allocationSize: memRequirements.size,
       memoryTypeIndex: findMemoryType(
-        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        memRequirements.memoryTypeBits,
+        hostVisible
+          ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+          : VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
       ),
     };
     enforceVk(vkAllocateMemory(device.handle, &allocInfo, null, &bufferMemory));
