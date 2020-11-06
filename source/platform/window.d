@@ -132,7 +132,7 @@ class Window {
   }
 
   extern(C) {
-    private static void framebufferResizeCallback(GLFWwindow* window, int width, int height) nothrow {
+    private static void framebufferResizeCallback(GLFWwindow* window, int, int) nothrow {
       auto data = cast(WindowData*) glfwGetWindowUserPointer(window);
       assert(data !is null, "Could not retrieve GLFW window data");
       data.update(window);
