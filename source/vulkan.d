@@ -78,8 +78,9 @@ package (teraflop) final class Device {
   private VkDevice device = VK_NULL_HANDLE;
   private VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   private uint graphicsQueueFamilyIndex = uint.max;
-  private VkCommandPool commandPool;
-  private VkQueue queue_;
+  private VkCommandPool commandPool_;
+  private VkCommandBuffer[] commandBuffers;
+  private VkQueue presentQueue_;
 
   this(string appName) {
     // Create instance
@@ -115,7 +116,7 @@ package (teraflop) final class Device {
   ~this() {
     if (device != VK_NULL_HANDLE) {
       vkDeviceWaitIdle(device);
-      vkDestroyCommandPool(device, commandPool, null);
+      vkDestroyCommandPool(device, commandPool_, null);
       vkDestroyDevice(device, null);
     }
     if (instance_ != VK_NULL_HANDLE) vkDestroyInstance(instance_, null);
@@ -136,8 +137,12 @@ package (teraflop) final class Device {
     return cast(VkPhysicalDevice) physicalDevice_;
   }
 
-  VkQueue queue() @property const {
-    return cast(VkQueue) queue_;
+  VkCommandPool commandPool() @property const {
+    return cast(VkCommandPool) commandPool_;
+  }
+
+  VkQueue presentQueue() @property const {
+    return cast(VkQueue) presentQueue_;
   }
 
   void acquire() {
@@ -190,10 +195,10 @@ package (teraflop) final class Device {
       queueFamilyIndex: graphicsQueueFamilyIndex,
       flags: 0, // TODO: Set the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
     };
-    enforceVk(vkCreateCommandPool(device, &poolInfo, null, &commandPool));
+    enforceVk(vkCreateCommandPool(device, &poolInfo, null, &commandPool_));
 
     // Get the command buffer queue
-    vkGetDeviceQueue(device, graphicsQueueFamilyIndex, 0, &queue_);
+    vkGetDeviceQueue(device, graphicsQueueFamilyIndex, 0, &presentQueue_);
   }
 
   SwapChain createSwapChain(const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
@@ -203,6 +208,12 @@ package (teraflop) final class Device {
     ));
     enforce(supported == VK_TRUE, "Surface is not supported for presentation");
     return new SwapChain(this, surface, framebufferSize, oldSwapChain);
+  }
+
+  CommandBuffer createCommandBuffer(SwapChain swapChain) {
+    return swapChain.presentationCommands = new CommandBuffer(
+      this, swapChain.framebuffers, swapChain.presentationPass, swapChain.extent
+    );
   }
 }
 
@@ -226,22 +237,31 @@ package (teraflop) class Surface {
 
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VK_KHR_swapchain.html
 package (teraflop) class SwapChain {
-  const Device device;
-  const VkSurfaceFormatKHR surfaceFormat = {
+  private Device device;
+  private const VkSurfaceFormatKHR surfaceFormat = {
     format: VK_FORMAT_B8G8R8A8_SRGB,
     colorSpace: VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
   };
   private VkPresentModeKHR presentMode;
-  private VkExtent2D extent;
+  package VkExtent2D extent;
   private VkSwapchainKHR handle;
   private VkImage[] swapChainImages;
   private VkImageView[] imageViews;
+  package (teraflop) RenderPass presentationPass_;
+  private VkFramebuffer[] framebuffers;
+  package CommandBuffer presentationCommands;
+  private VkSemaphore imageAvailableSemaphore;
+  private VkSemaphore renderFinishedSemaphore;
 
-  this(const Device device, const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
+  private Pipeline pipeline;
+
+  this(Device device, const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
     this.device = device;
     SupportDetails details = getSupportDetails(device, surface);
     presentMode = choosePresentMode(details.presentModes);
     extent = chooseExtent(details.capabilities, framebufferSize);
+    presentationPass_ = new RenderPass(device);
+
     uint imageCount = details.capabilities.minImageCount + 1;
     if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
       imageCount = details.capabilities.maxImageCount;
@@ -255,7 +275,7 @@ package (teraflop) class SwapChain {
       imageArrayLayers: 1,
       imageUsage: VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
       imageSharingMode: VK_SHARING_MODE_EXCLUSIVE,
-      queueFamilyIndexCount: 0, // Optional
+      queueFamilyIndexCount: 0,
       pQueueFamilyIndices: null,
       preTransform: details.capabilities.currentTransform,
       compositeAlpha: VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -289,13 +309,79 @@ package (teraflop) class SwapChain {
       view.subresourceRange.layerCount = 1;
       enforceVk(vkCreateImageView(device.handle, &view, null, &imageViews[i]));
     }
+
+    // Create frame buffers for the swap chain's images
+    framebuffers = new VkFramebuffer[imageViews.length];
+    for (auto i = 0; i < imageViews.length; i += 1) {
+      VkFramebufferCreateInfo framebufferInfo = {
+        renderPass: presentationPass_.handle,
+        attachmentCount: 1,
+        pAttachments: &imageViews[i],
+        width: extent.width,
+        height: extent.height,
+        layers: 1,
+      };
+
+      enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffers[i]));
+    }
+
+    // Create the swap chain's synchronization primitives
+    VkSemaphoreCreateInfo semaphoreInfo;
+    enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &imageAvailableSemaphore));
+    enforceVk(vkCreateSemaphore(device.handle, &semaphoreInfo, null, &renderFinishedSemaphore));
   }
 
   ~this() {
-    foreach (imageView; imageViews) {
+    foreach (framebuffer; framebuffers)
+      vkDestroyFramebuffer(device.handle, framebuffer, null);
+    foreach (imageView; imageViews)
       vkDestroyImageView(device.handle, imageView, null);
-    }
     vkDestroySwapchainKHR(device.handle, handle, null);
+    vkDeviceWaitIdle(device.handle);
+    vkDestroySemaphore(device.handle, renderFinishedSemaphore, null);
+    vkDestroySemaphore(device.handle, imageAvailableSemaphore, null);
+  }
+
+  bool ready() @property const {
+    return presentationCommands !is null;
+  }
+
+  const(RenderPass) presentationPass() @property const {
+    return presentationPass_;
+  }
+
+  void drawFrame() {
+    assert(ready);
+    assert(presentationCommands.handles.length == swapChainImages.length);
+
+    uint imageIndex;
+    vkAcquireNextImageKHR(device.handle, handle, ulong.max, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex); // TODO: Add error handling
+    const commandBuffer = presentationCommands.handles[imageIndex];
+
+    VkSubmitInfo submitInfo;
+    const VkSemaphore[] waitSemaphores = [imageAvailableSemaphore];
+    const VkPipelineStageFlags[] waitStages = [VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT];
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores.ptr;
+    submitInfo.pWaitDstStageMask = waitStages.ptr;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    const VkSemaphore[] signalSemaphores = [renderFinishedSemaphore];
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores.ptr;
+
+    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
+
+    const VkSwapchainKHR[] swapChains = [handle];
+    VkPresentInfoKHR presentInfo = {
+      waitSemaphoreCount: 1,
+      pWaitSemaphores: signalSemaphores.ptr,
+      swapchainCount: 1,
+      pSwapchains: swapChains.ptr,
+      pImageIndices: &imageIndex,
+      pResults: null,
+    };
+    vkQueuePresentKHR(device.presentQueue, &presentInfo); // TODO: Add error handling
   }
 
   static bool supported(const Device device, const Surface surface) {
@@ -369,36 +455,157 @@ package (teraflop) class SwapChain {
   }
 }
 
+package (teraflop) class CommandBuffer {
+  private VkExtent2D extent;
+  private const RenderPass presentationPass;
+  private VkFramebuffer[] framebuffers;
+  private VkCommandBuffer[] buffers;
+
+  this(const Device device, VkFramebuffer[] framebuffers, const RenderPass presentationPass, VkExtent2D extent) {
+    this.framebuffers = framebuffers;
+    this.presentationPass = presentationPass;
+    this.extent = extent;
+
+    buffers = new VkCommandBuffer[framebuffers.length];
+    VkCommandBufferAllocateInfo allocInfo = {
+      commandPool: device.commandPool,
+      level: VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      commandBufferCount: cast(uint) buffers.length,
+    };
+    enforceVk(vkAllocateCommandBuffers(device.handle, &allocInfo, buffers.ptr));
+  }
+
+  VkCommandBuffer[] handles() @property const {
+    return cast(VkCommandBuffer[]) buffers;
+  }
+
+  void beginRenderPass(VkClearValue* clearColor = null) {
+    assert(buffers.length == framebuffers.length);
+
+    for (auto i = 0; i < buffers.length; i += 1) {
+      VkCommandBufferBeginInfo beginInfo;
+      enforceVk(vkBeginCommandBuffer(buffers[i], &beginInfo));
+
+      VkRenderPassBeginInfo renderPassInfo = {
+        renderPass: presentationPass.handle,
+        framebuffer: framebuffers[i],
+      };
+      renderPassInfo.renderArea.offset = VkOffset2D(0, 0);
+      renderPassInfo.renderArea.extent = extent;
+      if (clearColor !is null) {
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = clearColor;
+      }
+      vkCmdBeginRenderPass(buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+  }
+
+  void endRenderPass() {
+    foreach (buffer; buffers) {
+      vkCmdEndRenderPass(buffer);
+      enforceVk(vkEndCommandBuffer(buffer));
+    }
+  }
+
+  void bindPipeline(Pipeline pipeline) {
+    foreach (buffer; buffers)
+      vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
+  }
+
+  void draw(uint vertexCount, uint instanceCount, uint firstVertex, uint firstInstance) {
+    foreach (buffer; buffers)
+      vkCmdDraw(buffer, vertexCount, instanceCount, firstVertex, firstInstance);
+  }
+}
+
+package (teraflop) class RenderPass {
+  private const Device device;
+  private VkRenderPass renderPass = VK_NULL_HANDLE;
+
+  this(const Device device) {
+    this.device = device;
+
+    VkAttachmentDescription colorAttachment = {
+      format: VK_FORMAT_B8G8R8A8_SRGB,
+      samples: VK_SAMPLE_COUNT_1_BIT,
+      loadOp: VK_ATTACHMENT_LOAD_OP_CLEAR,
+      storeOp: VK_ATTACHMENT_STORE_OP_STORE,
+      stencilLoadOp: VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+      stencilStoreOp: VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
+      finalLayout: VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+    VkAttachmentReference colorAttachmentRef = {
+      attachment: 0,
+      layout: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkSubpassDescription subpass = {
+      pipelineBindPoint: VK_PIPELINE_BIND_POINT_GRAPHICS,
+      colorAttachmentCount: 1,
+      pColorAttachments: &colorAttachmentRef,
+    };
+
+    VkRenderPassCreateInfo renderPassInfo = {
+      attachmentCount: 1,
+      pAttachments: &colorAttachment,
+      subpassCount: 1,
+      pSubpasses: &subpass,
+    };
+    const VkSubpassDependency dependency = {
+      srcSubpass: VK_SUBPASS_EXTERNAL,
+      dstSubpass: 0,
+      srcStageMask: VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      srcAccessMask: 0,
+      dstStageMask: VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      dstAccessMask: VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    enforceVk(vkCreateRenderPass(device.handle, &renderPassInfo, null, &renderPass));
+  }
+
+  ~this() {
+    if (renderPass != VK_NULL_HANDLE) vkDestroyRenderPass(device.handle, renderPass, null);
+  }
+
+  VkRenderPass handle() @property const {
+    return cast(VkRenderPass) renderPass;
+  }
+}
+
 package (teraflop) class Pipeline {
-  import teraflop.graphics : Shader;
+  import teraflop.graphics : Material, Shader;
 
   private Device device;
-  private Size viewport;
-  private Shader[] shaders;
-  private VkRenderPass renderPass = VK_NULL_HANDLE;
+  private const Size viewport;
+  private const Material material;
+  private const RenderPass renderPass;
   private VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-  this(Device device, Size viewport, Shader[] shaders) {
-    this.shaders = shaders;
-    initialize(device);
+  this(Device device, const Size viewport, const Material material, const RenderPass renderPass) {
+    this.device = device;
+    this.viewport = viewport;
+    this.material = material;
+    this.renderPass = renderPass;
+
+    initialize();
   }
 
   ~this() {
     if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device.handle, pipelineLayout, null);
-    if (renderPass != VK_NULL_HANDLE) vkDestroyRenderPass(device.handle, renderPass, null);
     if (graphicsPipeline != VK_NULL_HANDLE) vkDestroyPipeline(device.handle, graphicsPipeline, null);
-
-    foreach (shader; shaders)
-      destroy(shader);
-    shaders = [];
+    destroy(material);
   }
 
-  private void initialize(Device device) {
+  VkPipeline handle() @property const {
+    return cast(VkPipeline) graphicsPipeline;
+  }
+
+  private void initialize() {
     import std.algorithm.iteration : map;
     import std.array : array;
-
-    this.device = device;
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {
       vertexBindingDescriptionCount: 0,
@@ -433,8 +640,8 @@ package (teraflop) class Pipeline {
       rasterizerDiscardEnable: VK_FALSE,
       polygonMode: VK_POLYGON_MODE_FILL,
       lineWidth: 1.0f,
-      cullMode: VK_CULL_MODE_BACK_BIT,
-      frontFace: VK_FRONT_FACE_CLOCKWISE,
+      cullMode: VK_CULL_MODE_BACK_BIT, // TODO: Funnel in `cullMode` from Material
+      frontFace: VK_FRONT_FACE_CLOCKWISE, // TODO: Funnel in `frontFace` from Material
       depthBiasEnable: VK_FALSE,
       depthBiasConstantFactor: 0.0f,
       depthBiasClamp: 0.0f,
@@ -474,39 +681,10 @@ package (teraflop) class Pipeline {
     };
     enforceVk(vkCreatePipelineLayout(device.handle, &pipelineLayoutInfo, null, &pipelineLayout));
 
-    // Render passes
-    VkAttachmentDescription colorAttachment = {
-      format: VK_FORMAT_B8G8R8A8_SRGB,
-      samples: VK_SAMPLE_COUNT_1_BIT,
-      loadOp: VK_ATTACHMENT_LOAD_OP_CLEAR,
-      storeOp: VK_ATTACHMENT_STORE_OP_STORE,
-      stencilLoadOp: VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-      stencilStoreOp: VK_ATTACHMENT_STORE_OP_DONT_CARE,
-      initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
-      finalLayout: VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-    };
-    VkAttachmentReference colorAttachmentRef = {
-      attachment: 0,
-      layout: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-    VkSubpassDescription subpass = {
-      pipelineBindPoint: VK_PIPELINE_BIND_POINT_GRAPHICS,
-      colorAttachmentCount: 1,
-      pColorAttachments: &colorAttachmentRef,
-    };
-
-    VkRenderPassCreateInfo renderPassInfo = {
-      attachmentCount: 1,
-      pAttachments: &colorAttachment,
-      subpassCount: 1,
-      pSubpasses: &subpass,
-    };
-    enforceVk(vkCreateRenderPass(device.handle, &renderPassInfo, null, &renderPass));
-
     // Create the pipeline
-    const shaderStages = shaders.map!(shader => shader.stageCreateInfo).array;
+    const shaderStages = material.shaders.map!(shader => shader.stageCreateInfo).array;
     VkGraphicsPipelineCreateInfo pipelineInfo = {
-      stageCount: cast(uint) shaders.length,
+      stageCount: cast(uint) shaderStages.length,
       pStages: shaderStages.ptr,
       pVertexInputState: &vertexInputInfo,
       pInputAssemblyState: &inputAssembly,
@@ -517,7 +695,7 @@ package (teraflop) class Pipeline {
       pColorBlendState: &colorBlending,
       pDynamicState: null,
       layout: pipelineLayout,
-      renderPass: renderPass,
+      renderPass: renderPass.handle,
       subpass: 0,
       basePipelineHandle: VK_NULL_HANDLE,
       basePipelineIndex: -1,

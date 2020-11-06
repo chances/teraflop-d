@@ -11,8 +11,9 @@ abstract class Game {
   import core.time : msecs;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
+  import teraflop.graphics : Material;
   import teraflop.time : Time;
-  import teraflop.vulkan : SwapChain;
+  import teraflop.vulkan : Pipeline, SwapChain;
 
   private string name_;
   private bool active_;
@@ -23,6 +24,7 @@ abstract class Game {
   private Device device;
   private Window[] windows_;
   private SwapChain[const Window] swapChains;
+  private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -145,6 +147,7 @@ abstract class Game {
 
   private void initialize() {
     import std.exception : enforce;
+    import teraflop.graphics : Material;
     import teraflop.systems : ResourceInitializer;
 
     // Setup main window
@@ -174,6 +177,7 @@ abstract class Game {
     foreach (window; windows_) {
       window.update();
       updateSwapChain(window);
+      updatePipelines();
     }
 
     // Raise callbacks on the event loop
@@ -201,8 +205,33 @@ abstract class Game {
     }
   }
 
+  private void updatePipelines() {
+    import teraflop.graphics : Color;
+
+    foreach (entity; world.entities) {
+      if (!entity.contains!Material) continue;
+      const material = entity.get!Material()[0];
+      if (!material.initialized || (material in pipelines) !is null) continue;
+
+      const window = world.resources.get!Window;
+      auto swapChain = swapChains[window];
+      pipelines[material] = new Pipeline(device, window.framebufferSize, material, swapChain.presentationPass);
+      auto clearColor = Color.black.toVulkan;
+
+      auto buffer = device.createCommandBuffer(swapChain);
+      buffer.beginRenderPass(&clearColor);
+      buffer.bindPipeline(pipelines[material]);
+      buffer.draw(3, 1, 0, 0);
+      buffer.endRenderPass();
+    }
+  }
+
   /// Called when the Game should render itself.
   private void render() {
+    const window = world.resources.get!Window;
+    auto swapChain = swapChains[window];
+    if (swapChain.ready) swapChain.drawFrame();
+
     foreach (entity; world.entities) {
       // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
     }

@@ -159,7 +159,7 @@ class Material : NamedComponent, IResource {
   /// Specifies the vertex order for faces to be considered front-facing.
   FrontFace frontFace = FrontFace.clockwise;
 
-  private Shader[] shaders;
+  package (teraflop) Shader[] shaders;
 
   /// Initialize a new Material.
   this(Shader[] shaders) {
