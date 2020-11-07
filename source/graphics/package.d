@@ -162,6 +162,7 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   ///
   /// Params:
   /// vertices = Mesh vertex data to optionally pre-populate
+  /// indices = Mesh vertex indices to optionally pre-populate
   this(T[] vertices = [], uint[] indices = []) {
     this(fullyQualifiedName!(Mesh!T), vertices, indices);
   }
@@ -170,6 +171,7 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   /// Params:
   /// name = The name of this mesh.
   /// vertices = Mesh vertex data to optionally pre-populate
+  /// indices = Mesh vertex indices to optionally pre-populate
   this(string name, T[] vertices = [], uint[] indices = []) {
     super(name);
     this.vertices_ = vertices;
@@ -239,6 +241,82 @@ private VkShaderStageFlagBits vkShaderStage(ShaderStage stage) pure {
     case ShaderStage.geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
     case ShaderStage.fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
     default: assert(0);
+  }
+}
+
+/// A world-space model view projection matrix. Suitable for use as a uniform buffer object.
+struct ModelViewProjection {
+  /// The world-space model view projection matrix.
+  mat4f mvp;
+}
+
+package (teraflop) abstract class UniformBufferBase {
+  private auto dirty_ = true;
+
+  /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
+  bool dirty() @property const {
+    return dirty_;
+  }
+  package (teraflop) void dirty(bool value) @property {
+    dirty_ = value;
+  }
+
+  abstract size_t size() @property const;
+  abstract const(ubyte[]) data() @property const;
+}
+
+/// A uniform buffer object.
+class UniformBuffer(T) : UniformBufferBase if (isStruct!T) {
+  private T value_;
+
+  /// Initialize a new uniform buffer.
+  /// Params:
+  /// value = Uniform data to optionally pre-populate
+  this(T value = T.init) {
+    this.value_ = value;
+  }
+
+  T value() @property const {
+    return value_;
+  }
+
+  override size_t size() @property const {
+    return T.sizeof;
+  }
+  override const(ubyte[]) data() @property const {
+    // https://dlang.org/spec/arrays.html#void_arrays
+    const(void[]) uniformData = [value_];
+    assert(uniformData.length == size);
+    return cast(ubyte[]) uniformData;
+  }
+}
+
+/// A 3D world camera encapsulating model view projection matrices.
+class Camera : NamedComponent {
+  /// Whether this camera is the World's primary camera.
+  ///
+  /// Ancillary cameras may be used in render targets.
+  bool primary = false;
+  /// Whether the Y axis of the `projection` matrix shall be inverted.
+  bool invertY = true;
+
+  /// World-space model transformation matrix.
+  mat4f model = mat4f.identity;
+  /// View matrix.
+  mat4f view = mat4f.identity;
+  /// Projection matrix, e.g. orthographic or perspective
+  mat4f projection = mat4f.identity;
+
+  /// Initialize a new camera.
+  this() {
+    super(this.classinfo.name);
+  }
+
+  /// A combined model-view-projection matrix.
+  package (teraflop) mat4f mvp() @property const {
+    auto proj = projection.v.dup;
+    if (invertY) proj[5] *= -1;
+    return mat4f(proj) * view * model;
   }
 }
 
