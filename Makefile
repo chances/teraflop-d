@@ -67,6 +67,8 @@ docs: docs/sitemap.xml
 
 clean:
 	rm -f bin/teraflop-test-library
+	rm -f bin/triangle
+	rm -f bin/cube
 	rm -f $(EXAMPLES)
 	rm -f docs.json
 	rm -f docs/sitemap.xml docs/file_hashes.json
