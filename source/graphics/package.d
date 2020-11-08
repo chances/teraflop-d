@@ -295,7 +295,7 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   }
 }
 
-/// A 3D world camera encapsulating model view projection matrices that may be bound to a vertex shader UBO.
+/// A 3D camera encapsulating model, view, and projection matrices that may be bound to a vertex shader.
 ///
 /// A World's primary camera is the `Camera` world Resource.
 /// Ancillary cameras may be added to render target Entities.
@@ -332,7 +332,7 @@ class Camera : NamedComponent {
     view_ = value;
     uniform.update(mvp);
   }
-  /// Projection matrix, e.g. orthographic or perspective
+  /// Projection matrix, e.g. orthographic or perspective.
   mat4f projection() @property const {
     return projection_;
   }
@@ -428,7 +428,9 @@ enum CullMode : VkCullModeFlagBits {
 
 /// Specifies the vertex order for faces to be considered front-facing.
 enum FrontFace : VkFrontFace {
+  /// Clockwise ordered faces will be considered front-facing.
   clockwise = VK_FRONT_FACE_CLOCKWISE,
+  /// Counter-clockwise ordered faces will be considered front-facing.
   counterClockwise = VK_FRONT_FACE_COUNTER_CLOCKWISE
 }
 

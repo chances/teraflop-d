@@ -914,7 +914,7 @@ package (teraflop) enum BindingType : VkDescriptorType {
   storageTexture = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
 }
 
-/// A GPU descriptor binding, e.g. uniform buffer or texture sampler
+/// A GPU descriptor binding, e.g. uniform buffer or texture sampler.
 /// See_Also: `teraflop.graphics.UniformBuffer`
 abstract class BindingDescriptor {
   import teraflop.graphics : ShaderStage;
