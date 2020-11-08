@@ -34,11 +34,19 @@ private final class Cube : Game {
     ];
 
     world.spawn(new Material(shaders, FrontFace.counterClockwise), new Mesh!VertexPosColor([
-      VertexPosColor(vec2f(-0.5f, -0.5f), Color.red.vec3f),
-      VertexPosColor(vec2f(0.5f, -0.5f), Color.green.vec3f),
-      VertexPosColor(vec2f(0.5f, 0.5f), Color.blue.vec3f),
-      VertexPosColor(vec2f(-0.5f, 0.5f), Color(1, 0, 1).vec3f),
-    ], [0, 1, 2, 2, 3, 0]));
+      VertexPosColor(vec3f(-0.5f, -0.5f, 0.0f), Color.red.vec3f),
+      VertexPosColor(vec3f(0.5f, -0.5f, 0.0f), Color.green.vec3f),
+      VertexPosColor(vec3f(0.5f, 0.5f, 0.0f), Color.blue.vec3f),
+      VertexPosColor(vec3f(-0.5f, 0.5f, 0.0f), Color(1, 0, 1).vec3f),
+
+      VertexPosColor(vec3f(-0.5f, -0.5f, 0.5f), Color.red.vec3f),
+      VertexPosColor(vec3f(0.5f, -0.5f, 0.5f), Color.green.vec3f),
+      VertexPosColor(vec3f(0.5f, 0.5f, 0.5f), Color.blue.vec3f),
+      VertexPosColor(vec3f(-0.5f, 0.5f, 0.5f), Color(1, 0, 1).vec3f),
+    ], [
+      0, 1, 2, 2, 3, 0,
+      4, 5, 6, 6, 7, 4
+    ]));
 
     this.add(System.from!aspectRatio);
   }

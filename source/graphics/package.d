@@ -64,10 +64,10 @@ template isVertexData(T) if (isStruct!T) {
   // static immutable attributes = [__traits(allMembers, T)];
 }
 
-/// Vertex attribute data comprising a 2D position and opaque color.
+/// Vertex attribute data comprising a 3D position and opaque color.
 struct VertexPosColor {
-  /// 2D position.
-  vec2f position;
+  /// 3D position.
+  vec3f position;
   /// Opaque color.
   vec3f color;
 
@@ -86,7 +86,7 @@ struct VertexPosColor {
     VkVertexInputAttributeDescription[2] attributeDescriptions;
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[0].offset = VertexPosColor.position.offsetof;
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
