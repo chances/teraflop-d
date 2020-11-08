@@ -14,17 +14,21 @@ private uint lastWindowId = 0;
 
 /// A native window.
 class Window {
+  import teraflop.graphics : Color;
   import teraflop.math : Size;
   import teraflop.vulkan : Device, Surface;
-
-  /// Window identifier.
-  const int id;
 
   private GLFWwindow* window;
   private Surface surface_;
   private WindowData data;
   private bool valid_ = false;
   private string title_;
+
+  /// Window identifier.
+  const int id;
+
+  /// Color this window's framebuffer should be cleared to when rendered.
+  auto clearColor = Color.black;
 
   /// Initialize a new Window.
   ///

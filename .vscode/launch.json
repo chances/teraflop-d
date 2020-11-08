@@ -15,6 +15,14 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug Cube",
+      "program": "${workspaceFolder}/bin/cube",
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug Unit Tests",
       "program": "${workspaceFolder}/bin/teraflop-test-library",
       "args": [],

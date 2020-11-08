@@ -193,7 +193,8 @@ package (teraflop) final class Device {
     // Create the command buffer pool
     VkCommandPoolCreateInfo poolInfo = {
       queueFamilyIndex: graphicsQueueFamilyIndex,
-      flags: 0, // TODO: Set the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
+      flags: VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // Graphics command buffers may be reset
+      // TODO: In a separate _transient_ command pool, set the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
     };
     enforceVk(vkCreateCommandPool(device, &poolInfo, null, &commandPool_));
 
@@ -202,12 +203,22 @@ package (teraflop) final class Device {
   }
 
   SwapChain createSwapChain(const Surface surface, const Size framebufferSize, const SwapChain oldSwapChain = null) {
+    import teraflop.graphics : Color;
+
     VkBool32 supported = VK_FALSE;
     enforceVk(vkGetPhysicalDeviceSurfaceSupportKHR(
       physicalDevice_, graphicsQueueFamilyIndex, surface.surfaceKhr, &supported
     ));
     enforce(supported == VK_TRUE, "Surface is not supported for presentation");
-    return new SwapChain(this, surface, framebufferSize, oldSwapChain);
+    auto swapChain = new SwapChain(this, surface, framebufferSize, oldSwapChain);
+
+    // Setup default command buffer
+    auto commands = createCommandBuffer(swapChain);
+    auto clearColor = Color.black.toVulkan;
+    commands.beginRenderPass(&clearColor);
+    commands.endRenderPass();
+
+    return swapChain;
   }
 
   Buffer createBuffer(ulong size, BufferUsage usage = BufferUsage.vertexBuffer) const {
@@ -216,7 +227,7 @@ package (teraflop) final class Device {
 
   CommandBuffer createCommandBuffer(SwapChain swapChain) {
     return swapChain.presentationCommands = new CommandBuffer(
-      this, swapChain.framebuffers, swapChain.presentationPass, swapChain.extent
+      this, swapChain.framebuffers, swapChain.extent, swapChain.presentationPass
     );
   }
 }
@@ -240,7 +251,9 @@ package (teraflop) class Surface {
 }
 
 // https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VK_KHR_swapchain.html
-package (teraflop) class SwapChain {
+package (teraflop) final class SwapChain {
+  import std.algorithm.iteration : filter, joiner, map;
+  import std.array : array;
   import teraflop.graphics : Material;
 
   const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -258,6 +271,11 @@ package (teraflop) class SwapChain {
   package (teraflop) RenderPass presentationPass_;
   private VkFramebuffer[] framebuffers;
   package CommandBuffer presentationCommands;
+  private VkDescriptorPool descriptorPool;
+  private VkDescriptorSetLayout[] descriptorSetLayouts;
+  private VkDescriptorSet[] descriptorSets;
+  private BindingGroup[] descriptorGroups;
+  private Buffer[] uniformBuffers;
   private Pipeline[const Material] pipelines;
   private VkSemaphore[MAX_FRAMES_IN_FLIGHT] imageAvailableSemaphores;
   private VkSemaphore[MAX_FRAMES_IN_FLIGHT] renderFinishedSemaphores;
@@ -337,6 +355,18 @@ package (teraflop) class SwapChain {
       enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffers[i]));
     }
 
+    // Create the swap chain's descriptor pool, for UBOs and whatnot
+    VkDescriptorPoolSize poolSize = {
+      descriptorCount: swapChainImages.length.to!uint,
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {
+      poolSizeCount: 1,
+      pPoolSizes: &poolSize,
+      maxSets: swapChainImages.length.to!uint,
+      flags: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+    };
+    enforceVk(vkCreateDescriptorPool(device.handle, &poolInfo, null, &descriptorPool));
+
     // Create the swap chain's synchronization primitives
     VkSemaphoreCreateInfo semaphoreInfo;
     VkFenceCreateInfo fenceInfo = {flags: VK_FENCE_CREATE_SIGNALED_BIT};
@@ -366,6 +396,11 @@ package (teraflop) class SwapChain {
     destroy(presentationPass_);
     foreach (imageView; imageViews)
       vkDestroyImageView(device.handle, imageView, null);
+    vkDestroyDescriptorPool(device.handle, descriptorPool, null);
+    foreach (descriptorSetLayout; descriptorSetLayouts)
+      vkDestroyDescriptorSetLayout(device.handle, descriptorSetLayout, null);
+    foreach (buffer; uniformBuffers)
+      destroy(buffer);
     for (auto i = 0; i < MAX_FRAMES_IN_FLIGHT; i += 1) {
       vkDestroySemaphore(device.handle, renderFinishedSemaphores[i], null);
       vkDestroySemaphore(device.handle, imageAvailableSemaphores[i], null);
@@ -382,12 +417,34 @@ package (teraflop) class SwapChain {
     return presentationPass_;
   }
 
+  inout(CommandBuffer) commandBuffer() @property inout {
+    return presentationCommands;
+  }
+
   bool hasPipeline(const Material material) {
     return (material in pipelines) !is null;
   }
-  const(Pipeline) trackPipeline(const Material material, const VertexDataDescriptor vertexData) {
+  const(Pipeline) pipelineOf(const Material material) {
+    assert(hasPipeline(material));
+    return pipelines[material];
+  }
+  const(Pipeline) trackPipeline(const Material material, const PipelineLayout layout) {
+    descriptorGroups ~= layout.bindingGroups;
+
+    // Recreate descriptor sets and uniform buffers to fit new pipeline's descriptor layout
+    vkDeviceWaitIdle(device.handle);
+    if (descriptorSets.length)
+      vkFreeDescriptorSets(device.handle, descriptorPool, descriptorSets.length.to!uint, descriptorSets.ptr);
+    foreach (descriptorSetLayout; descriptorSetLayouts)
+      vkDestroyDescriptorSetLayout(device.handle, descriptorSetLayout, null);
+    foreach (buffer; uniformBuffers)
+      destroy(buffer);
+    descriptorSetLayouts = new VkDescriptorSetLayout[0];
+    createDescriptorSets();
+    presentationCommands.descriptorSets = descriptorSets;
+
     return pipelines[material] = new Pipeline(
-      device, extent, presentationPass_, material, vertexData
+      device, extent, presentationPass_, material, layout, descriptorSetLayouts
     );
   }
 
@@ -395,7 +452,65 @@ package (teraflop) class SwapChain {
     return dirty_;
   }
 
+  private void createDescriptorSets() {
+    import std.algorithm.iteration : sum;
+    import std.range : enumerate, repeat;
+
+    if (descriptorGroups.length == 0) return;
+
+    descriptorSetLayouts = descriptorGroups.map!(group => {
+      const descriptorLayoutBindings = group.bindings.map!(descriptor => {
+        VkDescriptorSetLayoutBinding descriptorLayout = {
+          binding: descriptor.bindingLocation,
+          descriptorType: descriptor.bindingType,
+          descriptorCount: 1,
+          stageFlags: descriptor.shaderStage,
+          pImmutableSamplers: null,
+        };
+        return descriptorLayout;
+      }()).array;
+
+      VkDescriptorSetLayoutCreateInfo layoutInfo = {
+        bindingCount: descriptorLayoutBindings.length.to!uint,
+        pBindings: descriptorLayoutBindings.ptr,
+      };
+      VkDescriptorSetLayout setLayout;
+      enforceVk(vkCreateDescriptorSetLayout(device.handle, &layoutInfo, null, &setLayout));
+      return setLayout;
+    }()).array;
+
+    // Create a uniform buffer for each swap chain image
+    uniformBuffers = new Buffer[swapChainImages.length];
+    const size_t size = descriptorGroups
+      .map!(group => group.bindings.filter!(b => b.bindingType == BindingType.uniform).map!(u => u.size))
+      .joiner.sum;
+    for (size_t i = 0; i < swapChainImages.length; i += 1) {
+      uniformBuffers[i] = new Buffer(device, size, BufferUsage.uniformBuffer);
+    }
+
+    const layouts = descriptorSetLayouts.repeat(swapChainImages.length).joiner.array;
+    descriptorSets = new VkDescriptorSet[swapChainImages.length];
+    VkDescriptorSetAllocateInfo allocInfo = {
+      descriptorPool: descriptorPool,
+      descriptorSetCount: layouts.length.to!uint,
+      pSetLayouts: layouts.ptr,
+    };
+    enforceVk(vkAllocateDescriptorSets(device.handle, &allocInfo, descriptorSets.ptr));
+
+    const(VkWriteDescriptorSet)[] descriptorWrites;
+    for (size_t i = 0; i < swapChainImages.length; i += 1) {
+      foreach (v, group; descriptorGroups.enumerate()) {
+        descriptorWrites ~= group.bindings.map!(binding => binding.descriptorWrite(
+          descriptorSets[i + v], uniformBuffers[i]
+        )).array;
+      }
+    }
+    vkUpdateDescriptorSets(device.handle, descriptorWrites.length.to!uint, descriptorWrites.ptr, 0, null);
+  }
+
   void drawFrame() {
+    import std.algorithm.mutation : copy;
+
     assert(ready);
     assert(presentationCommands.handles.length == swapChainImages.length);
 
@@ -417,6 +532,19 @@ package (teraflop) class SwapChain {
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
     const commandBuffer = presentationCommands.handles[imageIndex];
+
+    if (uniformBuffers.length) {
+      // TODO: Only blit dirty uniforms?
+      byte[] uniformData;
+      auto uniforms = descriptorGroups
+        .map!(group => group.bindings.filter!(b => b.bindingType == BindingType.uniform))
+        .joiner;
+      foreach (uniform; uniforms)
+        uniformData ~= uniform.data;
+      const unfilled = uniformData.copy(uniformBuffers[imageIndex].map());
+      assert(unfilled.length == 0);
+      uniformBuffers[imageIndex].unmap();
+    }
 
     VkSubmitInfo submitInfo;
     const VkSemaphore[] waitSemaphores = [imageAvailableSemaphores[currentFrame]];
@@ -615,17 +743,18 @@ package (teraflop) class Buffer {
 
 package (teraflop) class CommandBuffer {
   private const Device device;
-  private const VkExtent2D extent;
   private const RenderPass presentationPass;
   private const VkFramebuffer[] framebuffers;
+  private const VkExtent2D extent;
+  private VkDescriptorSet[] descriptorSets_;
   private VkCommandBuffer[] commandBuffers;
 
   this(
-    const Device device, const VkFramebuffer[] framebuffers, const RenderPass presentationPass, const VkExtent2D extent
+    const Device device, const VkFramebuffer[] framebuffers, const VkExtent2D extent, const RenderPass presentationPass
   ) {
     this.device = device;
-    this.framebuffers = framebuffers;
     this.presentationPass = presentationPass;
+    this.framebuffers = framebuffers;
     this.extent = extent;
 
     commandBuffers = new VkCommandBuffer[framebuffers.length];
@@ -643,6 +772,10 @@ package (teraflop) class CommandBuffer {
 
   VkCommandBuffer[] handles() @property const {
     return cast(VkCommandBuffer[]) commandBuffers;
+  }
+
+  package void descriptorSets(VkDescriptorSet[] value) @property {
+    descriptorSets_ = value;
   }
 
   void beginRenderPass(VkClearValue* clearColor = null) {
@@ -676,6 +809,12 @@ package (teraflop) class CommandBuffer {
   void bindPipeline(const Pipeline pipeline) {
     foreach (buffer; commandBuffers)
       vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
+    if (descriptorSets_.length)
+      for (auto i = 0; i < commandBuffers.length; i += 1)
+        vkCmdBindDescriptorSets(
+          commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipelineLayout,
+          0, 1, &descriptorSets_[i], 0, null
+        );
   }
 
   void bindVertexBuffers(const(Buffer[]) buffers ...) {
@@ -767,9 +906,83 @@ package (teraflop) class RenderPass {
   }
 }
 
+package (teraflop) enum BindingType : VkDescriptorType {
+  uniform = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+  storageBuffer = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+  sampler = VK_DESCRIPTOR_TYPE_SAMPLER,
+  sampledTexture = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+  storageTexture = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+}
+
+/// A GPU descriptor binding, e.g. uniform buffer or texture sampler
+/// See_Also: `teraflop.graphics.UniformBuffer`
+abstract class BindingDescriptor {
+  import teraflop.graphics : ShaderStage;
+
+  protected uint bindingLocation_;
+  protected ShaderStage shaderStage_;
+  protected BindingType bindingType_;
+  private auto dirty_ = true;
+
+  /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
+  bool dirty() @property const {
+    return dirty_;
+  }
+  package (teraflop) void dirty(bool value) @property {
+    dirty_ = value;
+  }
+
+  /// Uniform binding location, e.g. `layout(binding = 0)` in GLSL.
+  uint bindingLocation() @property const {
+    return bindingLocation_;
+  }
+
+  /// Which shader stages the UBO is going to be referenced.
+  ShaderStage shaderStage() @property const {
+    return shaderStage_;
+  }
+
+  BindingType bindingType() @property const {
+    return bindingType_;
+  }
+
+  package const(VkWriteDescriptorSet) descriptorWrite(VkDescriptorSet set, Buffer uniformBuffer) const {
+    VkWriteDescriptorSet descriptorWrite = {
+      dstSet: set,
+      dstBinding: bindingLocation_,
+      dstArrayElement: 0,
+      descriptorType: bindingType_,
+      descriptorCount: 1,
+      pBufferInfo: null,
+      pImageInfo: null,
+      pTexelBufferView: null,
+    };
+    switch (bindingType_) {
+      case BindingType.uniform:
+        descriptorWrite.pBufferInfo = new VkDescriptorBufferInfo(uniformBuffer.handle, 0, uniformBuffer.size);
+        break;
+      default: assert(0, "Descriptor type not supported");
+    }
+    return descriptorWrite;
+  }
+
+  abstract size_t size() @property const;
+  abstract const(ubyte[]) data() @property const;
+}
+
+package (teraflop) struct BindingGroup {
+  uint index;
+  const BindingDescriptor[] bindings;
+}
+
 package (teraflop) struct VertexDataDescriptor {
   VkVertexInputBindingDescription bindingDescription;
   VkVertexInputAttributeDescription[] attributeDescriptions;
+}
+
+package (teraflop) struct PipelineLayout {
+  BindingGroup[] bindingGroups;
+  VertexDataDescriptor vertexData;
 }
 
 package (teraflop) class Pipeline {
@@ -779,40 +992,25 @@ package (teraflop) class Pipeline {
   private const VkExtent2D viewport;
   private const RenderPass renderPass;
   private const Material material;
-  private const VertexDataDescriptor vertexData;
-  private VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+  private const PipelineLayout layout;
+  private VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
   this(Device device, const VkExtent2D viewport, const RenderPass renderPass,
-    const Material material, const VertexDataDescriptor vertexData
+    const Material material, const PipelineLayout layout,
+    const VkDescriptorSetLayout[] descriptorSetLayouts
   ) {
     this.device = device;
     this.viewport = viewport;
     this.renderPass = renderPass;
     this.material = material;
-    this.vertexData = vertexData;
-
-    initialize();
-  }
-
-  ~this() {
-    if (graphicsPipeline != VK_NULL_HANDLE) vkDestroyPipeline(device.handle, graphicsPipeline, null);
-    if (pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(device.handle, pipelineLayout, null);
-  }
-
-  VkPipeline handle() @property const {
-    return cast(VkPipeline) graphicsPipeline;
-  }
-
-  private void initialize() {
-    import std.algorithm.iteration : map;
-    import std.array : array;
+    this.layout = layout;
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {
       vertexBindingDescriptionCount: 1,
-      pVertexBindingDescriptions: &vertexData.bindingDescription,
-      vertexAttributeDescriptionCount: vertexData.attributeDescriptions.length.to!uint,
-      pVertexAttributeDescriptions: vertexData.attributeDescriptions.ptr,
+      pVertexBindingDescriptions: &layout.vertexData.bindingDescription,
+      vertexAttributeDescriptionCount: layout.vertexData.attributeDescriptions.length.to!uint,
+      pVertexAttributeDescriptions: layout.vertexData.attributeDescriptions.ptr,
     };
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
       topology: VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -828,7 +1026,7 @@ package (teraflop) class Pipeline {
     };
     VkRect2D scissor = {
       offset: VkOffset2D(0, 0),
-      extent: VkExtent2D(this.viewport.width, this.viewport.height),
+      extent: this.viewport,
     };
     VkPipelineViewportStateCreateInfo viewportState = {
       viewportCount: 1,
@@ -841,8 +1039,8 @@ package (teraflop) class Pipeline {
       rasterizerDiscardEnable: VK_FALSE,
       polygonMode: VK_POLYGON_MODE_FILL,
       lineWidth: 1.0f,
-      cullMode: VK_CULL_MODE_BACK_BIT, // TODO: Funnel in `cullMode` from Material
-      frontFace: VK_FRONT_FACE_CLOCKWISE, // TODO: Funnel in `frontFace` from Material
+      cullMode: material.cullMode,
+      frontFace: material.frontFace,
       depthBiasEnable: VK_FALSE,
       depthBiasConstantFactor: 0.0f,
       depthBiasClamp: 0.0f,
@@ -875,12 +1073,12 @@ package (teraflop) class Pipeline {
     };
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {
-      setLayoutCount: 0,
-      pSetLayouts: null,
+      setLayoutCount: descriptorSetLayouts.length.to!uint,
+      pSetLayouts: descriptorSetLayouts.ptr,
       pushConstantRangeCount: 0,
       pPushConstantRanges: null,
     };
-    enforceVk(vkCreatePipelineLayout(device.handle, &pipelineLayoutInfo, null, &pipelineLayout));
+    enforceVk(vkCreatePipelineLayout(device.handle, &pipelineLayoutInfo, null, &pipelineLayout_));
 
     // Create the pipeline
     const shaderStages = material.shaders.map!(shader => shader.stageCreateInfo).array;
@@ -895,12 +1093,25 @@ package (teraflop) class Pipeline {
       pDepthStencilState: null,
       pColorBlendState: &colorBlending,
       pDynamicState: null,
-      layout: pipelineLayout,
+      layout: pipelineLayout_,
       renderPass: renderPass.handle,
       subpass: 0,
       basePipelineHandle: VK_NULL_HANDLE,
       basePipelineIndex: -1,
     };
     enforceVk(vkCreateGraphicsPipelines(device.handle, VK_NULL_HANDLE, 1, &pipelineInfo, null, &graphicsPipeline));
+  }
+
+  ~this() {
+    if (pipelineLayout_ != VK_NULL_HANDLE) vkDestroyPipelineLayout(device.handle, pipelineLayout_, null);
+    if (graphicsPipeline != VK_NULL_HANDLE) vkDestroyPipeline(device.handle, graphicsPipeline, null);
+  }
+
+  VkPipeline handle() @property const {
+    return cast(VkPipeline) graphicsPipeline;
+  }
+
+  VkPipelineLayout pipelineLayout() @property const {
+    return cast(VkPipelineLayout) pipelineLayout_;
   }
 }

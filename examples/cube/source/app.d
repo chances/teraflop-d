@@ -12,20 +12,27 @@ void main()
 
 private final class Cube : Game {
   import teraflop.ecs : World;
-  import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, VertexPosColor;
+  import teraflop.graphics : Camera, Color, FrontFace, Material, Mesh, Shader, ShaderStage, VertexPosColor;
 
   this() {
     super("Cube");
   }
 
   override void initializeWorld(scope World world) {
+    const framebufferSize = world.resources.get!Window.framebufferSize;
+    auto camera = new Camera();
+    camera.view = mat4f.lookAt(vec3f(2f), vec3f(0), up);
+    camera.projection = mat4f.perspective(
+      45.radians, framebufferSize.width / cast(float) framebufferSize.height, 0.05f, 10.0f
+    );
+    world.resources.add(camera);
+
     auto shaders = [
       new Shader(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
       new Shader(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
 
-    // TODO: Add a `Camera` component (resource?) with uniform buffers
-    world.spawn(new Material(shaders), new Mesh!VertexPosColor([
+    world.spawn(new Material(shaders, FrontFace.counterClockwise), new Mesh!VertexPosColor([
       VertexPosColor(vec2f(0.0f, -0.5f), Color.red.vec3f),
       VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
       VertexPosColor(vec2f(-0.5f, 0.5f), Color.blue.vec3f),

@@ -12,7 +12,7 @@ abstract class Game {
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
-  import teraflop.vulkan : Pipeline, SwapChain;
+  import teraflop.vulkan : CommandBuffer, Pipeline, SwapChain;
 
   private string name_;
   private bool active_;
@@ -23,6 +23,7 @@ abstract class Game {
   private Device device;
   private Window[] windows_;
   private SwapChain[const Window] swapChains;
+  private CommandBuffer[const Window] commandBuffers;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -205,19 +206,33 @@ abstract class Game {
   }
 
   private void updateSwapChain(const Window window) {
+    // If the window is new, create its swap chain and graphics command buffer
     if ((window in swapChains) is null) {
       swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize);
-    } else {
-      auto swapChain = swapChains[window];
-      if (window.dirty || swapChain.dirty)
-        swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChain);
+      return;
     }
+
+    // Otherwise, recreate the window's swap chain
+    auto swapChain = swapChains[window];
+    if (window.dirty || swapChain.dirty)
+      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChain);
   }
 
   private void updatePipelines() {
+    import std.algorithm.iteration : filter, map;
     import std.conv : to;
-    import teraflop.graphics : Color, Material, MeshBase;
-    import teraflop.vulkan : VertexDataDescriptor;
+    import std.range : enumerate;
+    import teraflop.graphics : Camera, Color, Material, MeshBase;
+    import teraflop.vulkan : BindingDescriptor, BindingGroup, PipelineLayout, VertexDataDescriptor;
+
+    const window = world.resources.get!Window;
+    auto swapChain = swapChains[window];
+
+    struct Renderable {
+      const Pipeline pipeline;
+      const MeshBase mesh;
+    }
+    Renderable[] renderables;
 
     foreach (entity; world.entities) {
       if (!entity.contains!Material || !entity.contains!MeshBase) continue;
@@ -226,23 +241,36 @@ abstract class Game {
       const mesh = entity.get!MeshBase()[0];
       if (!mesh.initialized) continue;
 
-      const window = world.resources.get!Window;
-      auto swapChain = swapChains[window];
       if (swapChain.hasPipeline(material)) continue;
 
-      const pipeline = swapChain.trackPipeline(material, VertexDataDescriptor(
-        mesh.bindingDescription, mesh.attributeDescriptions
-      ));
-      auto buffer = device.createCommandBuffer(swapChain);
-      auto clearColor = Color.black.toVulkan;
-      buffer.beginRenderPass(&clearColor);
-      buffer.bindPipeline(pipeline);
-      // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
-      buffer.bindVertexBuffers(mesh.vertexBuffer);
-      buffer.bindIndexBuffer(mesh.indexBuffer);
-      buffer.drawIndexed(mesh.indices.length.to!uint, 1, 0, 0, 0);
-      buffer.endRenderPass();
+      const(BindingDescriptor)[] descriptors;
+      // Bind the World's primary camera mvp uniform, if any
+      if (world.resources.contains!Camera) {
+        const BindingDescriptor uniform = world.resources.get!Camera.uniform;
+        descriptors ~= uniform;
+      }
+      const layout = PipelineLayout(
+        descriptors.length ? [BindingGroup(0, descriptors)] : [],
+        VertexDataDescriptor(mesh.bindingDescription, mesh.attributeDescriptions)
+      );
+      const pipeline = swapChain.trackPipeline(material, layout);
+      renderables ~= Renderable(pipeline, mesh);
     }
+
+    if (renderables.length == 0) return;
+
+    // Renderables in the world changed, re-record graphics commands
+    auto commands = swapChain.commandBuffer;
+    auto clearColor = window.clearColor.toVulkan;
+    commands.beginRenderPass(&clearColor);
+    foreach (renderable; renderables) {
+      commands.bindPipeline(renderable.pipeline);
+      // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+      commands.bindVertexBuffers(renderable.mesh.vertexBuffer);
+      commands.bindIndexBuffer(renderable.mesh.indexBuffer);
+      commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
+    }
+    commands.endRenderPass();
   }
 
   /// Called when the Game should render itself.

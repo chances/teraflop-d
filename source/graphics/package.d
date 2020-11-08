@@ -159,19 +159,17 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   private uint[] indices_;
 
   /// Initialize a new mesh.
-  ///
   /// Params:
-  /// vertices = Mesh vertex data to optionally pre-populate
-  /// indices = Mesh vertex indices to optionally pre-populate
+  /// vertices = Mesh vertex data to optionally pre-populate.
+  /// indices = Mesh vertex indices to optionally pre-populate.
   this(T[] vertices = [], uint[] indices = []) {
     this(fullyQualifiedName!(Mesh!T), vertices, indices);
   }
   /// Initialize a new named mesh.
-  ///
   /// Params:
   /// name = The name of this mesh.
-  /// vertices = Mesh vertex data to optionally pre-populate
-  /// indices = Mesh vertex indices to optionally pre-populate
+  /// vertices = Mesh vertex data to optionally pre-populate.
+  /// indices = Mesh vertex indices to optionally pre-populate.
   this(string name, T[] vertices = [], uint[] indices = []) {
     super(name);
     this.vertices_ = vertices;
@@ -219,18 +217,24 @@ class Mesh(T) : MeshBase if (isStruct!T) {
 }
 
 /// A programmable stage in the graphics `Pipeline`.
-enum ShaderStage {
+enum ShaderStage : VkShaderStageFlagBits {
   /// For every vertex, generally applies transformations to turn vertex positions from model space to screen space.
-  vertex,
+  vertex = VK_SHADER_STAGE_VERTEX_BIT,
   /// Subdivide geometry to increase the mesh quality.
-  tesselation,
+  tesselation = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
   /// For every primitive (triangle, line, point) either discard it or output more primitives than came in. Similar to
   /// the tessellation shader, but much more flexible.
-  geometry,
+  geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
   /// For every fragment that survives and determines which framebuffer(s) the fragments are written to and with which
   /// color and depth values. It can do this using the interpolated data from the vertex shader, which can include
   /// things like texture coordinates and normals for lighting.
-  fragment
+  fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
+  /// Applies to all graphical shader stages, i.e. vertex, tesselation, geometry, and fragment stages.
+  allGraphics = VK_SHADER_STAGE_ALL_GRAPHICS,
+  /// For the compute stage
+  compute = VK_SHADER_STAGE_COMPUTE_BIT,
+  /// Applies to all shader stages, i.e. any graphical stage or compute stage
+  all = VK_SHADER_STAGE_ALL
 }
 
 private VkShaderStageFlagBits vkShaderStage(ShaderStage stage) pure {
@@ -240,39 +244,33 @@ private VkShaderStageFlagBits vkShaderStage(ShaderStage stage) pure {
       return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
     case ShaderStage.geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
     case ShaderStage.fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
+    case ShaderStage.allGraphics: return VK_SHADER_STAGE_ALL_GRAPHICS;
     default: assert(0);
   }
 }
 
 /// A world-space model view projection matrix. Suitable for use as a uniform buffer object.
+/// See_Also: <a href="https://dlang.org/spec/attribute.html#align" title="D Language reference">`align` Attribute</a>
 struct ModelViewProjection {
   /// The world-space model view projection matrix.
   mat4f mvp;
 }
 
-package (teraflop) abstract class UniformBufferBase {
-  private auto dirty_ = true;
-
-  /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
-  bool dirty() @property const {
-    return dirty_;
-  }
-  package (teraflop) void dirty(bool value) @property {
-    dirty_ = value;
-  }
-
-  abstract size_t size() @property const;
-  abstract const(ubyte[]) data() @property const;
-}
+import teraflop.vulkan : BindingDescriptor, BindingType;
 
 /// A uniform buffer object.
-class UniformBuffer(T) : UniformBufferBase if (isStruct!T) {
+class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   private T value_;
 
   /// Initialize a new uniform buffer.
   /// Params:
-  /// value = Uniform data to optionally pre-populate
-  this(T value = T.init) {
+  /// bindingLocation = Uniform binding location, e.g. `layout(binding = 0)` in GLSL.
+  /// shaderStage = Which shader stages the UBO is going to be referenced.
+  /// value = Uniform data to optionally pre-populate.
+  this(uint bindingLocation = 0, ShaderStage shaderStage = ShaderStage.allGraphics, T value = T.init) {
+    this.bindingLocation_ = bindingLocation;
+    this.shaderStage_ = shaderStage;
+    this.bindingType_ = BindingType.uniform;
     this.value_ = value;
   }
 
@@ -289,31 +287,62 @@ class UniformBuffer(T) : UniformBufferBase if (isStruct!T) {
     assert(uniformData.length == size);
     return cast(ubyte[]) uniformData;
   }
+
+  /// Update the uniform value.
+  void update(T value) {
+    this.value_ = value;
+    this.dirty = true;
+  }
 }
 
-/// A 3D world camera encapsulating model view projection matrices.
+/// A 3D world camera encapsulating model view projection matrices that may be bound to a vertex shader UBO.
+///
+/// A World's primary camera is the `Camera` world Resource.
+/// Ancillary cameras may be added to render target Entities.
 class Camera : NamedComponent {
-  /// Whether this camera is the World's primary camera.
-  ///
-  /// Ancillary cameras may be used in render targets.
-  bool primary = false;
+  package (teraflop) UniformBuffer!mat4f uniform;
+  private mat4f model_ = mat4f.identity;
+  private mat4f view_ = mat4f.identity;
+  private mat4f projection_ = mat4f.identity;
+
   /// Whether the Y axis of the `projection` matrix shall be inverted.
   bool invertY = true;
 
-  /// World-space model transformation matrix.
-  mat4f model = mat4f.identity;
-  /// View matrix.
-  mat4f view = mat4f.identity;
-  /// Projection matrix, e.g. orthographic or perspective
-  mat4f projection = mat4f.identity;
-
   /// Initialize a new camera.
-  this() {
+  /// Params:
+  /// bindingLocation = Vertex shader uniform binding location, e.g. `layout(binding = 0)` in GLSL.
+  this(uint bindingLocation = 0) {
     super(this.classinfo.name);
+    uniform = new UniformBuffer!mat4f(bindingLocation, ShaderStage.vertex, mvp);
+  }
+
+  /// World-space model transformation matrix.
+  mat4f model() @property const {
+    return model_;
+  }
+  void model(mat4f value) @property {
+    model_ = value;
+    uniform.update(mvp);
+  }
+  /// View matrix.
+  mat4f view() @property const {
+    return view_;
+  }
+  void view(mat4f value) @property {
+    view_ = value;
+    uniform.update(mvp);
+  }
+  /// Projection matrix, e.g. orthographic or perspective
+  mat4f projection() @property const {
+    return projection_;
+  }
+  void projection(mat4f value) @property {
+    projection_ = value;
+    uniform.update(mvp);
   }
 
   /// A combined model-view-projection matrix.
-  package (teraflop) mat4f mvp() @property const {
+  mat4f mvp() @property const {
     auto proj = projection.v.dup;
     if (invertY) proj[5] *= -1;
     return mat4f(proj) * view * model;
@@ -386,41 +415,44 @@ class Shader : IResource {
 }
 
 /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
-enum CullMode {
+enum CullMode : VkCullModeFlagBits {
   /// Disable face culling.
-  none,
+  none = VK_CULL_MODE_NONE,
   /// Cull front faces.
-  frontFace,
+  frontFace = VK_CULL_MODE_FRONT_BIT,
   /// Cull back faces.
-  backFace,
+  backFace = VK_CULL_MODE_BACK_BIT,
   /// Cull both front and back faces.
-  both
+  both = VK_CULL_MODE_FRONT_AND_BACK
 }
 
 /// Specifies the vertex order for faces to be considered front-facing.
-enum FrontFace {
-  clockwise,
-  counterClockwise
+enum FrontFace : VkFrontFace {
+  clockwise = VK_FRONT_FACE_CLOCKWISE,
+  counterClockwise = VK_FRONT_FACE_COUNTER_CLOCKWISE
 }
 
 /// A shaded material for geometry encapsulating its `Shader`s and graphics pipeline state.
 class Material : NamedComponent, IResource {
-  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
-  CullMode cullMode = CullMode.backFace;
   /// Specifies the vertex order for faces to be considered front-facing.
   FrontFace frontFace = FrontFace.clockwise;
+  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
+  CullMode cullMode = CullMode.backFace;
 
   package (teraflop) Shader[] shaders;
 
   /// Initialize a new Material.
-  this(Shader[] shaders) {
-    super(fullyQualifiedName!Material);
-    this.shaders = shaders;
+  this(Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace) {
+    this(fullyQualifiedName!Material, shaders, frontFace, cullMode);
   }
   /// Initialize a new named Material.
-  this(string name, Shader[] shaders) {
+  this(
+    string name, Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+  ) {
     super(name);
     this.shaders = shaders;
+    this.frontFace = frontFace;
+    this.cullMode = cullMode;
   }
   ~this() {
     foreach (shader; shaders)
