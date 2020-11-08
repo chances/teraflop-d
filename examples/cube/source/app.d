@@ -2,6 +2,7 @@ import std.stdio;
 
 import teraflop.game : Game;
 import teraflop.math;
+import teraflop.platform : Window;
 
 void main()
 {
@@ -11,7 +12,7 @@ void main()
 }
 
 private final class Cube : Game {
-  import teraflop.ecs : World;
+  import teraflop.ecs : System, World;
   import teraflop.graphics : Camera, Color, FrontFace, Material, Mesh, Shader, ShaderStage, VertexPosColor;
 
   this() {
@@ -37,5 +38,14 @@ private final class Cube : Game {
       VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
       VertexPosColor(vec2f(-0.5f, 0.5f), Color.blue.vec3f),
     ], [0, 1, 2]));
+
+    this.add(System.from!aspectRatio);
+  }
+
+  static void aspectRatio(scope const Window window, scope Camera camera) {
+    const framebufferSize = window.framebufferSize;
+    camera.projection = mat4f.perspective(
+      45.radians, framebufferSize.width / cast(float) framebufferSize.height, 0.05f, 10.0f
+    );
   }
 }
