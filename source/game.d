@@ -157,7 +157,7 @@ abstract class Game {
 
   private void initialize() {
     import std.exception : enforce;
-    import teraflop.systems : ResourceInitializer;
+    import teraflop.systems : TextureUploader, ResourceInitializer;
 
     // Setup main window
     auto mainWindow = windows_[0];
@@ -172,6 +172,7 @@ abstract class Game {
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
+    systems ~= new TextureUploader(world, device);
 
     world.resources.add(mainWindow);
     initializeWorld(world);

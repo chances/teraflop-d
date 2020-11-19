@@ -527,7 +527,7 @@ abstract class System {
   }
 
   /// Operate this System on Resources and Components in the `World`.
-  abstract void run() const;
+  abstract void run() inout;
 
   /// Query the `World` for Entities containing Components of the given types.
   const(Entity[]) query(ComponentT...)() const {

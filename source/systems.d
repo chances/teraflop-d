@@ -22,13 +22,44 @@ final class ResourceInitializer : System {
 
   override void run() const {
     import std.algorithm.iteration : filter, map, joiner;
-    import std.algorithm.searching : any, canFind;
     import std.array : array;
-    import std.conv : to;
 
     auto resources = query().map!(entity => entity.getMut!IResource).joiner
       .filter!(c => !c.initialized).array;
     foreach (resource; resources)
       resource.initialize(device);
+  }
+}
+
+/// Update dirty `teraflop.graphics.Texture` GPU resources.
+final class TextureUploader : System {
+  private Device device;
+
+  /// Initialize a new TextureUploader.
+  this(const World world, Device device) {
+    super(world);
+
+    this.device = device;
+  }
+
+  override void run() inout {
+    import std.algorithm.iteration : filter, map, joiner;
+    import std.array : array;
+    import teraflop.graphics : Material;
+    import teraflop.vulkan : ImageLayoutTransition;
+
+    auto textures = query().map!(entity => entity.getMut!Material).joiner
+      .filter!(c => c.textured && c.initialized && c.texture.dirty)
+      .map!(c => c.texture).array;
+    if (textures.length == 0) return;
+
+    auto commands = device.createSingleTimeCommandBuffer();
+    foreach (texture; textures) {
+      commands.transitionImageLayout(texture.image, ImageLayoutTransition.undefinedToTransferOptimal);
+      commands.copyBufferToImage(texture.buffer, texture.image);
+      commands.transitionImageLayout(texture.image, ImageLayoutTransition.transferOptimalToShaderReadOnlyOptimal);
+      texture.dirty = false;
+    }
+    commands.flush();
   }
 }

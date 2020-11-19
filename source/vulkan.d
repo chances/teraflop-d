@@ -234,7 +234,7 @@ package (teraflop) final class Device {
     );
   }
 
-  CommandBuffer createSingleTimeCommandBuffer() {
+  CommandBuffer createSingleTimeCommandBuffer() inout {
     return new CommandBuffer(this);
   }
 }
@@ -735,7 +735,13 @@ package (teraflop) class Buffer {
   }
 }
 
+package (teraflop) enum ImageLayoutTransition {
+  undefinedToTransferOptimal,
+  transferOptimalToShaderReadOnlyOptimal
+}
+
 package (teraflop) class Image {
+  const Size size;
   const uint mipLevels;
   const uint arrayLayers;
   const VkExtent3D extent;
@@ -929,14 +935,29 @@ package (teraflop) class CommandBuffer {
     vkQueueWaitIdle(device.presentQueue);
   }
 
-  void copyBuffer(Buffer source, Buffer destination, size_t size) {
+  void copyBuffer(const Buffer source, const Buffer destination, size_t size) {
     for (auto i = 0; i < commandBuffers.length; i += 1) {
       VkBufferCopy copyRegion = { size: size };
       vkCmdCopyBuffer(commandBuffers[i], source.handle, destination.handle, 1, &copyRegion);
     }
   }
 
-  void transitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
+  void transitionImageLayout(const Image image, ImageLayoutTransition transition) {
+    VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageLayout newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    switch (transition) {
+      case ImageLayoutTransition.undefinedToTransferOptimal:
+        newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        break;
+      case ImageLayoutTransition.transferOptimalToShaderReadOnlyOptimal:
+        oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        break;
+      default:
+        enforce(0, "Unsupported layout transition!");
+        break;
+    }
+
     VkImageMemoryBarrier barrier = {
       oldLayout: oldLayout,
       newLayout: newLayout,
@@ -953,18 +974,13 @@ package (teraflop) class CommandBuffer {
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
 
-    const undefinedToTransferOptimal = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-      newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    const transferOptimalToReadOnlyOptimal = oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-      newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    enforce(undefinedToTransferOptimal || transferOptimalToReadOnlyOptimal, "Unsupported layout transition!");
-    if (undefinedToTransferOptimal) {
+    if (transition == ImageLayoutTransition.undefinedToTransferOptimal) {
       barrier.srcAccessMask = 0;
       barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
       sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
       destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if (transferOptimalToReadOnlyOptimal) {
+    } else if (transition == ImageLayoutTransition.transferOptimalToShaderReadOnlyOptimal) {
       barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
       barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
@@ -983,7 +999,7 @@ package (teraflop) class CommandBuffer {
       );
   }
 
-  void copyBufferToImage(Buffer buffer, Image image) {
+  void copyBufferToImage(const Buffer buffer, const Image image) {
     VkBufferImageCopy region = {
       bufferOffset: 0,
       bufferRowLength: 0,
