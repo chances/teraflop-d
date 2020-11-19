@@ -349,6 +349,89 @@ class Camera : NamedComponent {
   }
 }
 
+/// A 2D image stored in GPU memory.
+class Texture : BindingDescriptor, IResource {
+  import teraflop.vulkan : Image, Sampler;
+
+  /// Size of this Texture, in pixels.
+  const Size size;
+
+  private ubyte[] data_;
+  private Buffer stagingBuffer;
+  private Image image_;
+  private Sampler sampler_;
+
+  /// Initialize a new Texture.
+  this(const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
+    bindingLocation_ = bindingLocation;
+    bindingType_ = BindingType.sampledTexture;
+    shaderStage_ = shaderStage;
+
+    this.size = size;
+  }
+  /// Initialize a new Texture with initial data.
+  this(const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
+    bindingLocation_ = bindingLocation;
+    bindingType_ = BindingType.sampledTexture;
+    shaderStage_ = shaderStage;
+
+    this.size = size;
+    this.data_ = data;
+    dirty = true;
+  }
+
+  /// Whether this Shader has been successfully initialized.
+  bool initialized() @property const {
+    return stagingBuffer !is null && stagingBuffer.ready &&
+      stagingBuffer.size && stagingBuffer.size == data_.length &&
+      image_ !is null && sampler_ !is null;
+  }
+
+  /// Texture data.
+  override const(ubyte[]) data() @property const {
+    return data_;
+  }
+
+  package (teraflop) const(Buffer) buffer() @property const {
+    return stagingBuffer;
+  }
+  package (teraflop) const(Sampler) sampler() @property const {
+    return sampler_;
+  }
+  package (teraflop) const(Image) image() @property const {
+    return image_;
+  }
+
+  /// Initialize this Texture.
+  void initialize(const Device device) {
+    import teraflop.vulkan : BufferUsage;
+
+    stagingBuffer = new Buffer(device, size.width * size.height * 4, BufferUsage.transferSrc);
+    image_ = new Image(device, size);
+    sampler_ = new Sampler(device);
+
+    copyToStage();
+  }
+
+  /// Update this texture's data.
+  void update(ubyte[] data) {
+    this.data_ = data;
+    dirty = true;
+    if (stagingBuffer !is null && stagingBuffer.ready && data_.length == stagingBuffer.size)
+      copyToStage();
+  }
+
+  private void copyToStage() {
+    import std.algorithm.mutation : copy;
+
+    assert(stagingBuffer !is null && stagingBuffer.ready);
+    auto buf = stagingBuffer.map();
+    const remaining = data.copy(buf);
+    assert(remaining.length == 0);
+    stagingBuffer.unmap();
+  }
+}
+
 /// A SPIR-V program for one programmable stage in the graphics `Pipeline`.
 class Shader : IResource {
   /// The stage in the graphics pipeline in which this Shader performs.
@@ -434,7 +517,7 @@ enum FrontFace : VkFrontFace {
   counterClockwise = VK_FRONT_FACE_COUNTER_CLOCKWISE
 }
 
-/// A shaded material for geometry encapsulating its `Shader`s and graphics pipeline state.
+/// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
 class Material : NamedComponent, IResource {
   /// Specifies the vertex order for faces to be considered front-facing.
   FrontFace frontFace = FrontFace.clockwise;
@@ -442,17 +525,32 @@ class Material : NamedComponent, IResource {
   CullMode cullMode = CullMode.backFace;
 
   package (teraflop) Shader[] shaders;
+  package (teraflop) Texture texture_;
 
   /// Initialize a new Material.
   this(Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace) {
     this(fullyQualifiedName!Material, shaders, frontFace, cullMode);
   }
+  /// Initialize a new textured Material.
+  this(
+    Shader[] shaders, Texture texture, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+  ) {
+    this(fullyQualifiedName!Material, shaders, texture, frontFace, cullMode);
+  }
   /// Initialize a new named Material.
   this(
     string name, Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
   ) {
+    this(name, shaders, null, frontFace, cullMode);
+  }
+  /// Initialize a new named and textured Material.
+  this(
+    string name, Shader[] shaders, Texture texture,
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+  ) {
     super(name);
     this.shaders = shaders;
+    this.texture_ = texture;
     this.frontFace = frontFace;
     this.cullMode = cullMode;
   }
@@ -466,7 +564,14 @@ class Material : NamedComponent, IResource {
     import std.algorithm.searching : all;
 
     if (!shaders.length) return true;
-    return shaders.all!(shader => shader.initialized);
+    return shaders.all!(shader => shader.initialized) && (texture is null || texture.initialized);
+  }
+
+  Texture texture() @property const {
+    return cast(Texture) texture_;
+  }
+  bool textured() @property const {
+    return texture_ !is null;
   }
 
   // Pipelines are keyed on Material instances
@@ -482,8 +587,10 @@ class Material : NamedComponent, IResource {
     return other && toHash() == other.toHash();
   }
 
-  /// Initialize this Shader.
+  /// Initialize this Material.
   void initialize(const Device device) {
     foreach (shader; shaders) shader.initialize(device);
+    if (texture_ !is null)
+      texture.initialize(device);
   }
 }

@@ -179,7 +179,9 @@ package (teraflop) final class Device {
       queueCount: 1,
       pQueuePriorities: queuePriorities.ptr,
     };
-    VkPhysicalDeviceFeatures deviceFeatures = {};
+    VkPhysicalDeviceFeatures deviceFeatures = {
+      samplerAnisotropy: VK_TRUE,
+    };
     const extensions = deviceExtensions.map!(name => toStringz(name)).array;
     VkDeviceCreateInfo deviceCreateInfo = {
       queueCreateInfoCount: 1,
@@ -743,7 +745,8 @@ package (teraflop) class Image {
   private VkDeviceMemory imageMemory;
   private VkImageView imageView;
 
-  this(const Device device, Size size) {
+  this(const Device device, const Size size) {
+    this.size = size;
     this.device = device;
 
     VkImageCreateInfo imageInfo = {
@@ -777,10 +780,70 @@ package (teraflop) class Image {
     enforceVk(vkAllocateMemory(device.handle, &allocInfo, null, &imageMemory));
 
     vkBindImageMemory(device.handle, image, imageMemory, 0);
+
+    // Create default image view
+    VkImageViewCreateInfo viewInfo = {
+      image: image,
+      viewType: VK_IMAGE_VIEW_TYPE_2D,
+      format: imageInfo.format,
+    };
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = mipLevels;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = arrayLayers;
+    enforceVk(vkCreateImageView(device.handle, &viewInfo, null, &imageView));
+  }
+
+  ~this() {
+    vkDestroyImageView(device.handle, imageView, null);
+
+    vkDestroyImage(device.handle, image, null);
+    vkFreeMemory(device.handle, imageMemory, null);
   }
 
   VkImage handle() @property const {
     return cast(VkImage) image;
+  }
+
+  VkImageView defaultView() @property const {
+    return cast(VkImageView) imageView;
+  }
+}
+
+package (teraflop) class Sampler {
+  private const Device device;
+  private VkSampler sampler;
+
+  this(const Device device) {
+    this.device = device;
+
+    VkSamplerCreateInfo samplerInfo = {
+      magFilter: VK_FILTER_LINEAR,
+      minFilter: VK_FILTER_LINEAR,
+      addressModeU: VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      addressModeV: VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      addressModeW: VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      anisotropyEnable: VK_TRUE,
+      maxAnisotropy: 16.0f,
+      borderColor: VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      unnormalizedCoordinates: VK_FALSE,
+      compareEnable: VK_FALSE,
+      compareOp: VK_COMPARE_OP_ALWAYS,
+      mipmapMode: VK_SAMPLER_MIPMAP_MODE_LINEAR,
+      mipLodBias: 0.0f,
+      minLod: 0.0f,
+      maxLod: 0.0f,
+    };
+    enforceVk(vkCreateSampler(device.handle, &samplerInfo, null, &sampler));
+  }
+
+  ~this() {
+    vkDestroySampler(device.handle, sampler, null);
+  }
+
+  VkSampler handle() @property const {
+    return cast(VkSampler) sampler;
   }
 }
 
@@ -1074,7 +1137,7 @@ package (teraflop) enum BindingType : VkDescriptorType {
   uniform = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
   storageBuffer = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
   sampler = VK_DESCRIPTOR_TYPE_SAMPLER,
-  sampledTexture = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+  sampledTexture = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
   storageTexture = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
 }
 
@@ -1096,12 +1159,12 @@ abstract class BindingDescriptor {
     dirty_ = value;
   }
 
-  /// Uniform binding location, e.g. `layout(binding = 0)` in GLSL.
+  /// Descriptor binding location, e.g. `layout(binding = 0)` in GLSL.
   uint bindingLocation() @property const {
     return bindingLocation_;
   }
 
-  /// Which shader stages the UBO is going to be referenced.
+  /// Which shader stages this descriptor is going to be referenced.
   ShaderStage shaderStage() @property const {
     return shaderStage_;
   }
@@ -1125,13 +1188,32 @@ abstract class BindingDescriptor {
       case BindingType.uniform:
         descriptorWrite.pBufferInfo = new VkDescriptorBufferInfo(uniformBuffer.handle, 0, uniformBuffer.size);
         break;
+      case BindingType.sampler:
+      case BindingType.sampledTexture:
+        assert(sampler !is null);
+        descriptorWrite.pImageInfo = new VkDescriptorImageInfo(
+          sampler.handle,
+          image !is null ? image.defaultView : VK_NULL_HANDLE,
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+        break;
       default: assert(0, "Descriptor type not supported");
     }
     return descriptorWrite;
   }
 
-  abstract size_t size() @property const;
-  abstract const(ubyte[]) data() @property const;
+  size_t size() @property const {
+    return 0;
+  }
+  const(ubyte[]) data() @property const {
+    return [];
+  }
+  package (teraflop) const(Sampler) sampler() @property const {
+    return null;
+  }
+  package (teraflop) const(Image) image() @property const {
+    return null;
+  }
 }
 
 package (teraflop) struct BindingGroup {
