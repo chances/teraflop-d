@@ -25,9 +25,9 @@ private final class Triangle : Game {
     ];
 
     world.spawn(new Material(shaders), new Mesh!VertexPosColor([
-      VertexPosColor(vec2f(0.0f, -0.5f), Color.red.vec3f),
-      VertexPosColor(vec2f(0.5f, 0.5f), Color.green.vec3f),
-      VertexPosColor(vec2f(-0.5f, 0.5f), Color.blue.vec3f),
+      VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
+      VertexPosColor(vec3f(0.5f, 0.5f, 0), Color.green.vec3f),
+      VertexPosColor(vec3f(-0.5f, 0.5f, 0), Color.blue.vec3f),
     ], [0, 1, 2]));
   }
 }
