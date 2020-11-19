@@ -141,6 +141,7 @@ package (teraflop) final class Device {
     return cast(VkCommandPool) commandPool_;
   }
 
+  // TODO: Rename this to `graphicsQueue`?
   VkQueue presentQueue() @property const {
     return cast(VkQueue) presentQueue_;
   }
@@ -229,6 +230,10 @@ package (teraflop) final class Device {
     return swapChain.presentationCommands = new CommandBuffer(
       this, swapChain.framebuffers, swapChain.extent, swapChain.presentationPass
     );
+  }
+
+  CommandBuffer createSingleTimeCommandBuffer() {
+    return new CommandBuffer(this);
   }
 }
 
@@ -687,6 +692,7 @@ package (teraflop) class Buffer {
     VkMemoryAllocateInfo allocInfo = {
       allocationSize: memRequirements.size,
       memoryTypeIndex: findMemoryType(
+        device,
         memRequirements.memoryTypeBits,
         hostVisible
           ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -725,29 +731,98 @@ package (teraflop) class Buffer {
   void unmap() {
     vkUnmapMemory(device.handle, bufferMemory);
   }
+}
 
-  private uint findMemoryType(uint typeFilter, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(device.physicalDevice, &memProperties);
+package (teraflop) class Image {
+  const uint mipLevels;
+  const uint arrayLayers;
+  const VkExtent3D extent;
 
-    for (uint i = 0; i < memProperties.memoryTypeCount; i += 1) {
-      if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-        return i;
-      }
-    }
+  private const Device device;
+  private VkImage image;
+  private VkDeviceMemory imageMemory;
+  private VkImageView imageView;
 
-    enforce(false, "Failed to find suitable GPU memory type!");
-    assert(0);
+  this(const Device device, Size size) {
+    this.device = device;
+
+    VkImageCreateInfo imageInfo = {
+      imageType: VK_IMAGE_TYPE_2D,
+      format: VK_FORMAT_B8G8R8A8_SRGB,
+      mipLevels: 1,
+      arrayLayers: 1,
+      tiling: VK_IMAGE_TILING_OPTIMAL,
+      initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
+      usage: VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      sharingMode: VK_SHARING_MODE_EXCLUSIVE,
+      samples: VK_SAMPLE_COUNT_1_BIT,
+    };
+    imageInfo.extent.width = cast(uint) size.width;
+    imageInfo.extent.height = cast(uint) size.height;
+    imageInfo.extent.depth = 1;
+
+    this.mipLevels = imageInfo.mipLevels;
+    this.arrayLayers = imageInfo.arrayLayers;
+    this.extent = imageInfo.extent;
+
+    enforceVk(vkCreateImage(device.handle, &imageInfo, null, &image));
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(device.handle, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo = {
+      allocationSize: memRequirements.size,
+      memoryTypeIndex: findMemoryType(device, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+    };
+    enforceVk(vkAllocateMemory(device.handle, &allocInfo, null, &imageMemory));
+
+    vkBindImageMemory(device.handle, image, imageMemory, 0);
   }
+
+  VkImage handle() @property const {
+    return cast(VkImage) image;
+  }
+}
+
+private uint findMemoryType(const Device device, uint typeFilter, VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(device.physicalDevice, &memProperties);
+
+  for (uint i = 0; i < memProperties.memoryTypeCount; i += 1) {
+    if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+      return i;
+    }
+  }
+
+  enforce(false, "Failed to find suitable GPU memory type!");
+  assert(0);
 }
 
 package (teraflop) class CommandBuffer {
   private const Device device;
-  private const RenderPass presentationPass;
-  private const VkFramebuffer[] framebuffers;
-  private const VkExtent2D extent;
+  private const RenderPass presentationPass = null;
+  private const VkFramebuffer[] framebuffers = [];
+  private const VkExtent2D extent = VkExtent2D();
   private VkDescriptorSet[] descriptorSets_;
   private VkCommandBuffer[] commandBuffers;
+
+  /// Create a one-time use command buffer
+  this(const Device device) {
+    this.device = device;
+
+    commandBuffers = new VkCommandBuffer[1];
+    VkCommandBufferAllocateInfo allocInfo = {
+      commandPool: device.commandPool,
+      level: VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      commandBufferCount: commandBuffers.length.to!uint,
+    };
+    enforceVk(vkAllocateCommandBuffers(device.handle, &allocInfo, commandBuffers.ptr));
+
+    VkCommandBufferBeginInfo beginInfo = {
+      flags: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    };
+    enforceVk(vkBeginCommandBuffer(commandBuffers[0], &beginInfo));
+  }
 
   this(
     const Device device, const VkFramebuffer[] framebuffers, const VkExtent2D extent, const RenderPass presentationPass
@@ -778,7 +853,96 @@ package (teraflop) class CommandBuffer {
     descriptorSets_ = value;
   }
 
+  void flush() {
+    for (auto i = 0; i < commandBuffers.length; i += 1)
+      vkEndCommandBuffer(commandBuffers[i]);
+
+    VkSubmitInfo submitInfo = {
+      commandBufferCount: commandBuffers.length.to!uint,
+      pCommandBuffers: commandBuffers.ptr,
+    };
+
+    vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(device.presentQueue);
+  }
+
+  void copyBuffer(Buffer source, Buffer destination, size_t size) {
+    for (auto i = 0; i < commandBuffers.length; i += 1) {
+      VkBufferCopy copyRegion = { size: size };
+      vkCmdCopyBuffer(commandBuffers[i], source.handle, destination.handle, 1, &copyRegion);
+    }
+  }
+
+  void transitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
+    VkImageMemoryBarrier barrier = {
+      oldLayout: oldLayout,
+      newLayout: newLayout,
+      srcQueueFamilyIndex: VK_QUEUE_FAMILY_IGNORED,
+      dstQueueFamilyIndex: VK_QUEUE_FAMILY_IGNORED,
+      image: image.handle,
+    };
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = image.mipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = image.arrayLayers;
+
+    VkPipelineStageFlags sourceStage;
+    VkPipelineStageFlags destinationStage;
+
+    const undefinedToTransferOptimal = oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+      newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    const transferOptimalToReadOnlyOptimal = oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+      newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    enforce(undefinedToTransferOptimal || transferOptimalToReadOnlyOptimal, "Unsupported layout transition!");
+    if (undefinedToTransferOptimal) {
+      barrier.srcAccessMask = 0;
+      barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+      destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (transferOptimalToReadOnlyOptimal) {
+      barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+      barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+      sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+      destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    for (auto i = 0; i < commandBuffers.length; i += 1)
+      vkCmdPipelineBarrier(
+        commandBuffers[i],
+        sourceStage, destinationStage,
+        0,
+        0, null,
+        0, null,
+        1, &barrier
+      );
+  }
+
+  void copyBufferToImage(Buffer buffer, Image image) {
+    VkBufferImageCopy region = {
+      bufferOffset: 0,
+      bufferRowLength: 0,
+      bufferImageHeight: 0,
+    };
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = image.arrayLayers;
+
+    region.imageOffset = VkOffset3D(0, 0, 0);
+    region.imageExtent = image.extent;
+
+    for (auto i = 0; i < commandBuffers.length; i += 1)
+      vkCmdCopyBufferToImage(
+        commandBuffers[i], buffer.handle, image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region
+      );
+  }
+
   void beginRenderPass(VkClearValue* clearColor = null) {
+    assert(presentationPass !is null);
+    assert(framebuffers.length);
     assert(commandBuffers.length == framebuffers.length);
 
     for (auto i = 0; i < commandBuffers.length; i += 1) {
@@ -1054,6 +1218,17 @@ package (teraflop) class Pipeline {
       alphaToCoverageEnable: VK_FALSE,
       alphaToOneEnable: VK_FALSE,
     };
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {
+      depthTestEnable: VK_TRUE,
+      depthWriteEnable: VK_TRUE,
+      depthCompareOp: VK_COMPARE_OP_LESS,
+      depthBoundsTestEnable: VK_FALSE,
+      minDepthBounds: 0.0f,
+      maxDepthBounds: 1.0f,
+      stencilTestEnable: VK_FALSE,
+      // front: {},
+      // back: {},
+    };
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {
       colorWriteMask: VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
         VK_COLOR_COMPONENT_A_BIT,
@@ -1090,7 +1265,7 @@ package (teraflop) class Pipeline {
       pViewportState: &viewportState,
       pRasterizationState: &rasterizer,
       pMultisampleState: &multisampling,
-      pDepthStencilState: null,
+      pDepthStencilState: &depthStencil,
       pColorBlendState: &colorBlending,
       pDynamicState: null,
       layout: pipelineLayout_,
@@ -1114,4 +1289,8 @@ package (teraflop) class Pipeline {
   VkPipelineLayout pipelineLayout() @property const {
     return cast(VkPipelineLayout) pipelineLayout_;
   }
+}
+
+unittest {
+  // TODO: A headless unit test to render a triangle
 }
