@@ -76,18 +76,21 @@ package (teraflop) bool checkValidationLayerSupport() {
   return validationLayers.all!(layer => availableLayerNames.any!(availableLayer => icmp(availableLayer, layer) == 0));
 }
 
-private string[] deviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME];
+private const string[] defaultDeviceExtensions = [VK_KHR_SWAPCHAIN_EXTENSION_NAME];
 
 package (teraflop) final class Device {
   private VkInstance instance_;
   private VkDevice device = VK_NULL_HANDLE;
+  private const string[] deviceExtensions;
   private VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;
   private uint graphicsQueueFamilyIndex = uint.max;
   private VkCommandPool commandPool_;
   private VkCommandBuffer[] commandBuffers;
   private VkQueue presentQueue_;
 
-  this(string appName) {
+  this(string appName, const string[] deviceExtensions = defaultDeviceExtensions) {
+    this.deviceExtensions = deviceExtensions;
+
     // Create instance
     VkApplicationInfo appInfo = {
       pApplicationName: toStringz(appName),
@@ -187,13 +190,13 @@ package (teraflop) final class Device {
     VkPhysicalDeviceFeatures deviceFeatures = {
       samplerAnisotropy: VK_TRUE,
     };
-    const extensions = deviceExtensions.map!(name => toStringz(name)).array;
+    const enabledExtensions = deviceExtensions.map!(name => toStringz(name)).array;
     VkDeviceCreateInfo deviceCreateInfo = {
       queueCreateInfoCount: 1,
       pQueueCreateInfos: &queueCreateInfo,
       pEnabledFeatures: &deviceFeatures,
       enabledExtensionCount: deviceExtensions.length.to!uint,
-      ppEnabledExtensionNames: extensions.ptr,
+      ppEnabledExtensionNames: enabledExtensions.ptr,
     };
     enforceVk(vkCreateDevice(physicalDevices[0], &deviceCreateInfo, null, &device));
     loadDeviceLevelFunctions(device);
