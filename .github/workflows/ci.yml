@@ -24,14 +24,6 @@ jobs:
         key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
         restore-keys: |
           ${{ runner.os }}-dub-
-    # - name: Cache DUB Artifacts (Windows)
-    #   if: runner.os == 'Windows'
-    #   uses: actions/cache@v2
-    #   with:
-    #     path: ~\AppData\Local\dub
-    #     key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-dub-
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
@@ -42,9 +34,3 @@ jobs:
     - name: Upload Coverage to Codecov
       if: success()
       run: bash <(curl -s https://codecov.io/bash)
-    # - name: Upload Test Log Artifact on Failure
-    #   uses: actions/upload-artifact@v1
-    #   if: failure()
-    #   with:
-    #     name: Linux_Meson_Testlog
-    #     path: build/meson-logs/testlog.txt
