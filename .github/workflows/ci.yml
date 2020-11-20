@@ -35,7 +35,7 @@ jobs:
         path: lib/glfw-3.3.2
         key: ${{ runner.os }}-glfw
     - name: Build GLFW
-      if: runner.os == 'Linux' && steps.cache-primes.outputs.cache-hit != 'true'
+      if: runner.os == 'Linux' && steps.cache-glfw.outputs.cache-hit != 'true'
       run: make glfw
     - name: Lint
       run: dub lint
