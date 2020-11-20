@@ -237,18 +237,6 @@ enum ShaderStage : VkShaderStageFlagBits {
   all = VK_SHADER_STAGE_ALL
 }
 
-private VkShaderStageFlagBits vkShaderStage(ShaderStage stage) pure {
-  switch (stage) {
-    case ShaderStage.vertex: return VK_SHADER_STAGE_VERTEX_BIT;
-    case ShaderStage.tesselation:
-      return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    case ShaderStage.geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case ShaderStage.fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case ShaderStage.allGraphics: return VK_SHADER_STAGE_ALL_GRAPHICS;
-    default: assert(0);
-  }
-}
-
 /// A world-space model view projection matrix. Suitable for use as a uniform buffer object.
 /// See_Also: <a href="https://dlang.org/spec/attribute.html#align" title="D Language reference">`align` Attribute</a>
 struct ModelViewProjection {
@@ -491,7 +479,7 @@ class Shader : IResource {
     };
     enforceVk(vkCreateShaderModule(device.handle, &createInfo, null, &shaderModule));
 
-    this.stageCreateInfo.stage = vkShaderStage(stage);
+    this.stageCreateInfo.stage = stage;
     this.stageCreateInfo.module_ = shaderModule;
     this.stageCreateInfo.pName = "main";
   }
