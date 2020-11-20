@@ -38,7 +38,7 @@ package (teraflop) bool initVulkan() {
 
 // https://vulkan.lunarg.com/doc/view/1.1.114.0/windows/khronos_validation_layer.html
 // VK_LAYER_KHRONOS_validation
-private string[] validationLayers =  [
+private string[] validationLayers = [
   "VK_LAYER_GOOGLE_threading",
   "VK_LAYER_LUNARG_parameter_validation",
   "VK_LAYER_LUNARG_object_tracker",
@@ -66,6 +66,11 @@ package (teraflop) bool checkValidationLayerSupport() {
   auto availableLayerNames = new string[layerCount];
   foreach (i, layer; availableLayers.enumerate()) {
     availableLayerNames[i] = fromStringz(layer.layerName.ptr).to!string;
+  }
+
+  if (availableLayerNames.any!(availableLayer => icmp(availableLayer, "VK_LAYER_KHRONOS_validation") == 0)) {
+    validationLayers = new string[1];
+    validationLayers[0] = "VK_LAYER_KHRONOS_validation";
   }
 
   return validationLayers.all!(layer => availableLayerNames.any!(availableLayer => icmp(availableLayer, layer) == 0));
