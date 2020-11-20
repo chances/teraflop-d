@@ -765,6 +765,7 @@ package (teraflop) class Image {
   const uint mipLevels;
   const uint arrayLayers;
   const VkExtent3D extent;
+  const VkExtent2D extent2d;
 
   private const Device device;
   private VkImage image;
@@ -795,6 +796,7 @@ package (teraflop) class Image {
     this.mipLevels = imageInfo.mipLevels;
     this.arrayLayers = imageInfo.arrayLayers;
     this.extent = imageInfo.extent;
+    this.extent2d = VkExtent2D(imageInfo.extent.width, imageInfo.extent.height);
 
     enforceVk(vkCreateImage(device.handle, &imageInfo, null, &image));
 
