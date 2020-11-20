@@ -640,12 +640,13 @@ unittest {
       triangle.bindingDescription,
       triangle.attributeDescriptions
     ));
-    const pipeline = new Pipeline(device, renderTarget.extent2d, presentationPass, material, layout, []);
+    Pipeline[Material] pipelines;
+    pipelines[material] = new Pipeline(device, renderTarget.extent2d, presentationPass, material, layout, []);
 
     auto commands = new CommandBuffer(device, [framebuffer], renderTarget.extent2d, presentationPass);
     const clearColor = Color.black.toVulkan;
     commands.beginRenderPass(&clearColor);
-    commands.bindPipeline(pipeline);
+    commands.bindPipeline(pipelines[material]);
     commands.bindVertexBuffers(triangle.vertexBuffer);
     commands.bindIndexBuffer(triangle.indexBuffer);
     commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
@@ -661,8 +662,8 @@ unittest {
     vkDeviceWaitIdle(device.handle);
     vkDestroyFramebuffer(device.handle, framebuffer, null);
     destroy(triangle);
+    destroy(pipelines[material]);
     destroy(material);
-    destroy(pipeline);
     destroy(commands);
     destroy(presentationPass);
     destroy(renderTarget);
