@@ -14,6 +14,9 @@
   ],
   "configurations": [
     {
+      "name": "unittest"
+    },
+    {
       "name": "unittest-gpu",
       "versions": ["GPU"]
     }

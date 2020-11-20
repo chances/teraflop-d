@@ -17,7 +17,7 @@ lib/glfw-3.3.2/
 
 # Executables
 *.exe
-bin/teraflop-test-library
+bin/teraflop-test-unittest
 bin/teraflop-test-unittest-gpu
 bin/triangle
 bin/cube
