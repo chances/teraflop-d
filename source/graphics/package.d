@@ -617,6 +617,9 @@ unittest {
     ], [0, 1, 2]);
     triangle.initialize(device);
     assert(triangle.initialized);
+    assert(triangle.dirty);
+    assert(triangle.vertexCount == 3);
+    assert(triangle.indices == [0, 1, 2]);
 
     auto vert = new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv");
     auto frag = new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv");
