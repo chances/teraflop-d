@@ -35,20 +35,6 @@ jobs:
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
-    - name: Cache SwiftShader
-      id: cache-swift-shader
-      uses: actions/cache@v2
-      with:
-        path: $GITHUB_WORKSPACE/swiftshader
-        key: ${{ runner.os }}-swift-shader
-    - name: Install SwiftShader
-      if: steps.cache-swift-shader.outputs.cache-hit != 'true'
-      run: |
-        git clone https://github.com/google/swiftshader.git $GITHUB_WORKSPACE/swiftshader
-        cd $GITHUB_WORKSPACE/swiftshader/build
-        cmake ..
-        cmake --build . --parallel
-        ls -al .
     - name: Lint
       run: dub lint
     - name: Test
