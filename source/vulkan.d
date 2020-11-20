@@ -749,6 +749,12 @@ package (teraflop) class Buffer {
   }
 }
 
+package (teraflop) enum ImageUsage : VkImageUsageFlagBits {
+  transferDst = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+  sampled = VK_IMAGE_USAGE_SAMPLED_BIT,
+  colorAttachment = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+}
+
 package (teraflop) enum ImageLayoutTransition {
   undefinedToTransferOptimal,
   transferOptimalToShaderReadOnlyOptimal
@@ -765,7 +771,9 @@ package (teraflop) class Image {
   private VkDeviceMemory imageMemory;
   private VkImageView imageView;
 
-  this(const Device device, const Size size) {
+  static const defaultUsage = ImageUsage.transferDst | ImageUsage.sampled;
+
+  this(const Device device, const Size size, const ImageUsage usage = defaultUsage) {
     this.size = size;
     this.device = device;
 
@@ -776,7 +784,7 @@ package (teraflop) class Image {
       arrayLayers: 1,
       tiling: VK_IMAGE_TILING_OPTIMAL,
       initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
-      usage: VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      usage: usage,
       sharingMode: VK_SHARING_MODE_EXCLUSIVE,
       samples: VK_SAMPLE_COUNT_1_BIT,
     };
