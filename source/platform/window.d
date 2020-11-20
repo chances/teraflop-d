@@ -62,6 +62,7 @@ class Window {
 
   ~this() {
     if (valid) glfwDestroyWindow(window);
+    destroy(surface_);
   }
 
   // Swap chains are keyed on their windows

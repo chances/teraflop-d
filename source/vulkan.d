@@ -245,16 +245,22 @@ package (teraflop) final class Device {
 }
 
 package (teraflop) class Surface {
+  private VkInstance instance;
   private VkSurfaceKHR surface_;
 
-  this(VkSurfaceKHR surface) {
+  this(VkInstance instance, VkSurfaceKHR surface) {
+    this.instance = instance;
     this.surface_ = surface;
+  }
+
+  ~this() {
+    vkDestroySurfaceKHR(instance, surface_, null);
   }
 
   static Surface fromGlfw(VkInstance instance, GLFWwindow* window) {
     VkSurfaceKHR surface;
     enforceVk(glfwCreateWindowSurface(instance, window, null, &surface));
-    return new Surface(surface);
+    return new Surface(instance, surface);
   }
 
   VkSurfaceKHR surfaceKhr() @property const {
