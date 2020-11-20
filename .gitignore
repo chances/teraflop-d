@@ -1,6 +1,7 @@
 .envrc
 
 lib/glfw-3.3.2/
+scripts/upload-coverage.sh
 
 # Compiled Object files
 *.o

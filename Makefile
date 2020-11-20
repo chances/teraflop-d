@@ -43,8 +43,12 @@ test:
 	dub test --parallel --config=unittest-gpu
 .PHONY: test
 
-cover: $(SOURCES)
+scripts/upload-coverage.sh:
+	echo "See 'Upload Coverage to Codecov' task in .github/workflows/ci.yml"
+cover: $(SOURCES) scripts/upload-coverage.sh
 	dub test --parallel --coverage --config=unittest-gpu
+	./scripts/delete-junk-lst-files.sh
+	./scripts/upload-coverage.sh
 
 docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox
