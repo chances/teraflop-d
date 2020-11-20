@@ -12,6 +12,12 @@
   "subPackages": [
     "examples/triangle"
   ],
+  "configurations": [
+    {
+      "name": "unittest-gpu",
+      "versions": ["GPU"]
+    }
+  ],
   "systemDependencies": "glfw >= 3.2, vulkan >= 1.1.0",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",

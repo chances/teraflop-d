@@ -1414,45 +1414,47 @@ package (teraflop) class Pipeline {
 }
 
 unittest {
-  import teraflop.graphics : Color;
+  version (GPU) {
+    import teraflop.graphics : Color;
 
-  assert(initVulkan());
-  auto device = new Device("test-triangle", []);
-  device.acquire();
-  enforce(device.ready, "GPU Device initialization failed");
+    assert(initVulkan());
+    auto device = new Device("test-triangle", []);
+    device.acquire();
+    enforce(device.ready, "GPU Device initialization failed");
 
-  // Render a blank scene to a single image
-  const renderTarget = new Image(device, Size(400, 300), ImageUsage.colorAttachment);
-  const renderTargetView = renderTarget.defaultView;
-  RenderPass presentationPass = new RenderPass(device);
-  VkFramebuffer framebuffer;
-  VkFramebufferCreateInfo framebufferInfo = {
-    renderPass: presentationPass.handle,
-    attachmentCount: 1,
-    pAttachments: &renderTargetView,
-    width: renderTarget.extent.width,
-    height: renderTarget.extent.height,
-    layers: 1,
-  };
-  enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffer));
+    // Render a blank scene to a single image
+    const renderTarget = new Image(device, Size(400, 300), ImageUsage.colorAttachment);
+    const renderTargetView = renderTarget.defaultView;
+    RenderPass presentationPass = new RenderPass(device);
+    VkFramebuffer framebuffer;
+    VkFramebufferCreateInfo framebufferInfo = {
+      renderPass: presentationPass.handle,
+      attachmentCount: 1,
+      pAttachments: &renderTargetView,
+      width: renderTarget.extent.width,
+      height: renderTarget.extent.height,
+      layers: 1,
+    };
+    enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffer));
 
-  auto commands = new CommandBuffer(device, [framebuffer], renderTarget.extent2d, presentationPass);
-  const clearColor = Color.black.toVulkan;
-  commands.beginRenderPass(&clearColor);
-  commands.endRenderPass();
+    auto commands = new CommandBuffer(device, [framebuffer], renderTarget.extent2d, presentationPass);
+    const clearColor = Color.black.toVulkan;
+    commands.beginRenderPass(&clearColor);
+    commands.endRenderPass();
 
-  VkSubmitInfo submitInfo;
-  submitInfo.waitSemaphoreCount = 0;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &commands.handles[0];
-  submitInfo.signalSemaphoreCount = 0;
-  enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
+    VkSubmitInfo submitInfo;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commands.handles[0];
+    submitInfo.signalSemaphoreCount = 0;
+    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
 
-  vkDeviceWaitIdle(device.handle);
-  vkDestroyFramebuffer(device.handle, framebuffer, null);
-  destroy(commands);
-  destroy(presentationPass);
-  destroy(renderTarget);
+    vkDeviceWaitIdle(device.handle);
+    vkDestroyFramebuffer(device.handle, framebuffer, null);
+    destroy(commands);
+    destroy(presentationPass);
+    destroy(renderTarget);
+  }
 }
 
 // TODO: Add pipeline unit test

@@ -40,11 +40,11 @@ cube: bin/cube
 .PHONY: cube
 
 test:
-	dub test --parallel
+	dub test --parallel --config=unittest-gpu
 .PHONY: test
 
 cover: $(SOURCES)
-	dub test --parallel --coverage
+	dub test --parallel --coverage --config=unittest-gpu
 
 docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox

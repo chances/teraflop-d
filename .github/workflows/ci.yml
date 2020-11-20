@@ -38,7 +38,7 @@ jobs:
     - name: Lint
       run: dub lint
     - name: Test
-      run: make cover
+      run: dub test --parallel --coverage
     - name: Upload Coverage to Codecov
       if: success()
       run: bash <(curl -s https://codecov.io/bash)
