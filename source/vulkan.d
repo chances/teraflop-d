@@ -1274,7 +1274,7 @@ package (teraflop) struct PipelineLayout {
 package (teraflop) class Pipeline {
   import teraflop.graphics : Material, Shader;
 
-  private Device device;
+  private const Device device;
   private const VkExtent2D viewport;
   private const RenderPass renderPass;
   private const Material material;
@@ -1282,7 +1282,7 @@ package (teraflop) class Pipeline {
   private VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
   private VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
-  this(Device device, const VkExtent2D viewport, const RenderPass renderPass,
+  this(const Device device, const VkExtent2D viewport, const RenderPass renderPass,
     const Material material, const PipelineLayout layout,
     const VkDescriptorSetLayout[] descriptorSetLayouts
   ) {
@@ -1415,7 +1415,7 @@ package (teraflop) class Pipeline {
 
 unittest {
   version (GPU) {
-    import teraflop.graphics : Color;
+    import teraflop.graphics : Color, Material, Shader, VertexPosColor;
 
     assert(initVulkan());
     auto device = new Device("test-triangle", []);
@@ -1456,5 +1456,3 @@ unittest {
     destroy(renderTarget);
   }
 }
-
-// TODO: Add pipeline unit test

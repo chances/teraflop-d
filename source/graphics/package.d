@@ -594,3 +594,77 @@ class Material : NamedComponent, IResource {
       texture.initialize(device);
   }
 }
+
+unittest {
+  version (GPU) {
+    import std.conv : to;
+    import std.exception : enforce;
+    import teraflop.vulkan : CommandBuffer, Device, Image, ImageUsage, initVulkan, Pipeline, PipelineLayout, RenderPass,
+      VertexDataDescriptor;
+
+    assert(initVulkan());
+    auto device = new Device("test-triangle", []);
+    device.acquire();
+    enforce(device.ready, "GPU Device initialization failed");
+
+    // Render a blank scene to a single image
+    const renderTarget = new Image(device, Size(400, 300), ImageUsage.colorAttachment);
+    const renderTargetView = renderTarget.defaultView;
+    RenderPass presentationPass = new RenderPass(device);
+    VkFramebuffer framebuffer;
+    VkFramebufferCreateInfo framebufferInfo = {
+      renderPass: presentationPass.handle,
+      attachmentCount: 1,
+      pAttachments: &renderTargetView,
+      width: renderTarget.extent.width,
+      height: renderTarget.extent.height,
+      layers: 1,
+    };
+    enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffer));
+
+    auto triangle = new Mesh!VertexPosColor([
+      VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
+      VertexPosColor(vec3f(0.5f, 0.5f, 0), Color.green.vec3f),
+      VertexPosColor(vec3f(-0.5f, 0.5f, 0), Color.blue.vec3f),
+    ], [0, 1, 2]);
+    triangle.initialize(device);
+    assert(triangle.initialized);
+
+    auto vert = new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv");
+    auto frag = new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv");
+    auto material = new Material([vert, frag]);
+    material.initialize(device);
+    assert(vert.initialized && frag.initialized);
+    assert(material.initialized);
+    const layout = PipelineLayout([], VertexDataDescriptor(
+      triangle.bindingDescription,
+      triangle.attributeDescriptions
+    ));
+    const pipeline = new Pipeline(device, renderTarget.extent2d, presentationPass, material, layout, []);
+
+    auto commands = new CommandBuffer(device, [framebuffer], renderTarget.extent2d, presentationPass);
+    const clearColor = Color.black.toVulkan;
+    commands.beginRenderPass(&clearColor);
+    commands.bindPipeline(pipeline);
+    commands.bindVertexBuffers(triangle.vertexBuffer);
+    commands.bindIndexBuffer(triangle.indexBuffer);
+    commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
+    commands.endRenderPass();
+
+    VkSubmitInfo submitInfo;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commands.handles[0];
+    submitInfo.signalSemaphoreCount = 0;
+    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
+
+    vkDeviceWaitIdle(device.handle);
+    vkDestroyFramebuffer(device.handle, framebuffer, null);
+    destroy(triangle);
+    destroy(material);
+    destroy(pipeline);
+    destroy(commands);
+    destroy(presentationPass);
+    destroy(renderTarget);
+  }
+}
