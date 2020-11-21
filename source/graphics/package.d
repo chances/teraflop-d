@@ -142,6 +142,7 @@ struct VertexPosColorTex {
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   package (teraflop) Buffer vertexBuffer;
   package (teraflop) Buffer indexBuffer;
+  private uint[] indices_;
   private auto dirty_ = true;
 
   this(string name) {
@@ -163,7 +164,14 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   abstract ulong vertexCount() @property const;
   abstract size_t size() @property const;
   abstract const(ubyte[]) data() @property const;
-  abstract const(uint[]) indices() @property const;
+
+  /// This mesh's vertex index data.
+  const(uint[]) indices() @property const {
+    return indices_;
+  }
+  protected void indices(uint[] value) @property {
+    indices_ = value;
+  }
 
   /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
   abstract VkVertexInputBindingDescription bindingDescription() @property const;
@@ -199,7 +207,6 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
 class Mesh(T) : MeshBase if (isStruct!T) {
   // TODO: Make type contraint more robust, e.g. NO pointers/reference types in vertex data
   private T[] vertices_;
-  private uint[] indices_;
 
   /// Initialize a new mesh.
   /// Params:
@@ -216,7 +223,7 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   this(string name, T[] vertices = [], uint[] indices = []) {
     super(name);
     this.vertices_ = vertices;
-    this.indices_ = indices;
+    this.indices = indices;
   }
 
   /// This mesh's vertex data.
@@ -225,10 +232,6 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   }
   override ulong vertexCount() @property const {
     return vertices_.length;
-  }
-  /// This mesh's vertex index data.
-  override const(uint[]) indices() @property const {
-    return indices_;
   }
 
   /// Size of this mesh, in bytes.
@@ -255,7 +258,7 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   /// Update this mesh's vertex data.
   void update(T[] vertices) {
     this.vertices_ = vertices;
-    dirty_ = true;
+    this.dirty = true;
   }
 }
 
