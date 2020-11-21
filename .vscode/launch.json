@@ -24,7 +24,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug Unit Tests",
-      "program": "${workspaceFolder}/bin/teraflop-test-library",
+      "program": "${workspaceFolder}/bin/teraflop-test-unittest",
       "args": [],
       "cwd": "${workspaceFolder}"
     }

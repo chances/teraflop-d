@@ -14,9 +14,21 @@ float degrees(float radians) {
   return radians / ONE_DEGREE_IN_RADIANS;
 }
 
+unittest {
+  import std.math : PI;
+  const piDegrees = 179.9999999994152f;
+  assert(PI.degrees == piDegrees);
+}
+
 /// Convert and angle from degrees to radians.
 float radians(float degrees) {
   return ONE_DEGREE_IN_RADIANS * degrees;
+}
+
+unittest {
+  import std.math : PI;
+  const piDegrees = 179.9999999994152f;
+  assert(piDegrees.radians == 3.14159274f);
 }
 
 /// Up unit vector, i.e. Y-up.
