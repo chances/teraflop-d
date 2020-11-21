@@ -263,7 +263,7 @@ abstract class Game {
     // Renderables in the world changed, re-record graphics commands
     auto commands = swapChain.commandBuffer;
     auto clearColor = window.clearColor.toVulkan;
-    commands.beginRenderPass(&clearColor);
+    commands.beginRenderPass(&clearColor, true);
     foreach (renderable; renderables) {
       commands.bindPipeline(renderable.pipeline);
       // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer

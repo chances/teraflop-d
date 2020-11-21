@@ -289,19 +289,20 @@ package (teraflop) final class SwapChain {
   private VkSwapchainKHR handle;
   private VkImage[] swapChainImages;
   private VkImageView[] imageViews;
+  private Image depthStencilImage;
   package (teraflop) RenderPass presentationPass_;
   private VkFramebuffer[] framebuffers;
   package CommandBuffer presentationCommands;
+  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] imageAvailableSemaphores;
+  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] renderFinishedSemaphores;
+  private VkFence[MAX_FRAMES_IN_FLIGHT] inFlightFences;
+  private VkFence[] imagesInFlight;
   private VkDescriptorPool descriptorPool;
   private VkDescriptorSetLayout[] descriptorSetLayouts;
   private VkDescriptorSet[] descriptorSets;
   private BindingGroup[] descriptorGroups;
   private Buffer[] uniformBuffers;
   private Pipeline[const Material] pipelines;
-  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] imageAvailableSemaphores;
-  private VkSemaphore[MAX_FRAMES_IN_FLIGHT] renderFinishedSemaphores;
-  private VkFence[MAX_FRAMES_IN_FLIGHT] inFlightFences;
-  private VkFence[] imagesInFlight;
   private auto dirty_ = false;
   private auto currentFrame = 0;
 
@@ -311,7 +312,7 @@ package (teraflop) final class SwapChain {
     SupportDetails details = getSupportDetails(device, surface);
     presentMode = choosePresentMode(details.presentModes);
     extent = chooseExtent(details.capabilities, framebufferSize);
-    presentationPass_ = new RenderPass(device);
+    presentationPass_ = new RenderPass(device, true);
 
     uint imageCount = details.capabilities.minImageCount + 1;
     if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
@@ -361,13 +362,21 @@ package (teraflop) final class SwapChain {
       enforceVk(vkCreateImageView(device.handle, &view, null, &imageViews[i]));
     }
 
+    // Create depth buffer
+    depthStencilImage = new Image(device, framebufferSize, ImageUsage.depthStencil);
+    auto transition = device.createSingleTimeCommandBuffer();
+    transition.transitionImageLayout(depthStencilImage, ImageLayoutTransition.undefinedToDepthStencilOptimal);
+    transition.flush();
+    destroy(transition);
+
     // Create frame buffers for the swap chain's images
     framebuffers = new VkFramebuffer[imageViews.length];
     for (auto i = 0; i < imageViews.length; i += 1) {
+      const attachments = [imageViews[i], depthStencilImage.defaultView];
       VkFramebufferCreateInfo framebufferInfo = {
         renderPass: presentationPass_.handle,
-        attachmentCount: 1,
-        pAttachments: &imageViews[i],
+        attachmentCount: attachments.length.to!uint,
+        pAttachments: attachments.ptr,
         width: extent.width,
         height: extent.height,
         layers: 1,
@@ -411,6 +420,7 @@ package (teraflop) final class SwapChain {
     vkDeviceWaitIdle(device.handle);
     foreach (framebuffer; framebuffers)
       vkDestroyFramebuffer(device.handle, framebuffer, null);
+    destroy(depthStencilImage);
     destroy(presentationCommands);
     foreach (pipeline; pipelines.values)
       destroy(pipeline);
@@ -749,18 +759,29 @@ package (teraflop) class Buffer {
   }
 }
 
+package (teraflop) enum ImageFormat : VkFormat {
+  bgra8Srgb = VK_FORMAT_B8G8R8A8_SRGB,
+  d32Sfloat = VK_FORMAT_D32_SFLOAT,
+  d32SfloatS8Uint = VK_FORMAT_D32_SFLOAT_S8_UINT,
+  d24UnormS8Uint = VK_FORMAT_D24_UNORM_S8_UINT,
+  depthStencil = ImageFormat.d32Sfloat | ImageFormat.d32SfloatS8Uint | ImageFormat.d24UnormS8Uint
+}
+
 package (teraflop) enum ImageUsage : VkImageUsageFlagBits {
   transferDst = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
   sampled = VK_IMAGE_USAGE_SAMPLED_BIT,
-  colorAttachment = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+  colorAttachment = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+  depthStencil = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 }
 
 package (teraflop) enum ImageLayoutTransition {
   undefinedToTransferOptimal,
+  undefinedToDepthStencilOptimal,
   transferOptimalToShaderReadOnlyOptimal
 }
 
 package (teraflop) class Image {
+  const ImageFormat format;
   const Size size;
   const uint mipLevels;
   const uint arrayLayers;
@@ -772,15 +793,17 @@ package (teraflop) class Image {
   private VkDeviceMemory imageMemory;
   private VkImageView imageView;
 
+  static const defaultFormat = ImageFormat.bgra8Srgb;
   static const defaultUsage = ImageUsage.transferDst | ImageUsage.sampled;
 
   this(const Device device, const Size size, const ImageUsage usage = defaultUsage) {
+    this.format = usage == ImageUsage.depthStencil ? findDepthFormat(device) : format;
     this.size = size;
     this.device = device;
 
     VkImageCreateInfo imageInfo = {
       imageType: VK_IMAGE_TYPE_2D,
-      format: VK_FORMAT_B8G8R8A8_SRGB,
+      format: format,
       mipLevels: 1,
       arrayLayers: 1,
       tiling: VK_IMAGE_TILING_OPTIMAL,
@@ -817,7 +840,9 @@ package (teraflop) class Image {
       viewType: VK_IMAGE_VIEW_TYPE_2D,
       format: imageInfo.format,
     };
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.aspectMask = hasDepthComponent(format)
+      ? VK_IMAGE_ASPECT_DEPTH_BIT
+      : VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -836,9 +861,43 @@ package (teraflop) class Image {
     return cast(VkImage) image;
   }
 
+  static bool hasDepthComponent(ImageFormat format) {
+    return format == ImageFormat.d32Sfloat || hasStencilComponent(format);
+  }
+  static bool hasStencilComponent(ImageFormat format) {
+    return format == ImageFormat.d32SfloatS8Uint || format == ImageFormat.d24UnormS8Uint;
+  }
+
   VkImageView defaultView() @property const {
     return cast(VkImageView) imageView;
   }
+}
+
+private ImageFormat findDepthFormat(const Device device) {
+  return findSupportedFormat(
+    device.physicalDevice,
+    [ImageFormat.d32Sfloat, ImageFormat.d32SfloatS8Uint, ImageFormat.d24UnormS8Uint],
+    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+  );
+}
+
+private ImageFormat findSupportedFormat(
+  VkPhysicalDevice physicalDevice, const ImageFormat[] candidates,
+  VkFormatFeatureFlags features, VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL
+) {
+  foreach (format; candidates) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+    if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+      return format;
+    } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+      return format;
+    }
+  }
+
+  enforce(false, "Failed to find supported image format!");
+  assert(0);
 }
 
 package (teraflop) class Sampler {
@@ -973,6 +1032,9 @@ package (teraflop) class CommandBuffer {
       case ImageLayoutTransition.undefinedToTransferOptimal:
         newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         break;
+      case ImageLayoutTransition.undefinedToDepthStencilOptimal:
+        newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        break;
       case ImageLayoutTransition.transferOptimalToShaderReadOnlyOptimal:
         oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -989,7 +1051,11 @@ package (teraflop) class CommandBuffer {
       dstQueueFamilyIndex: VK_QUEUE_FAMILY_IGNORED,
       image: image.handle,
     };
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = Image.hasDepthComponent(image.format)
+      ? VK_IMAGE_ASPECT_DEPTH_BIT
+      : VK_IMAGE_ASPECT_COLOR_BIT;
+    if (Image.hasStencilComponent(image.format))
+      barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = image.mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -1004,6 +1070,13 @@ package (teraflop) class CommandBuffer {
 
       sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
       destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (transition == ImageLayoutTransition.undefinedToDepthStencilOptimal) {
+      barrier.srcAccessMask = 0;
+      barrier.dstAccessMask =
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+      destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else if (transition == ImageLayoutTransition.transferOptimalToShaderReadOnlyOptimal) {
       barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
       barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1043,7 +1116,7 @@ package (teraflop) class CommandBuffer {
       );
   }
 
-  void beginRenderPass(const VkClearValue* clearColor = null) {
+  void beginRenderPass(const VkClearValue* clearColor = null, bool clearDepthStencil = false) {
     assert(presentationPass !is null);
     assert(framebuffers.length);
     assert(commandBuffers.length == framebuffers.length);
@@ -1058,10 +1131,15 @@ package (teraflop) class CommandBuffer {
       };
       renderPassInfo.renderArea.offset = VkOffset2D(0, 0);
       renderPassInfo.renderArea.extent = cast(VkExtent2D) extent;
-      if (clearColor !is null) {
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = clearColor;
+      VkClearValue[] clearValues;
+      if (clearColor !is null) clearValues ~= *clearColor;
+      if (clearDepthStencil) {
+        VkClearValue clearValue;
+        clearValue.depthStencil = VkClearDepthStencilValue(1.0, 0);
+        clearValues ~= clearValue;
       }
+      renderPassInfo.clearValueCount = clearValues.length.to!uint;
+      renderPassInfo.pClearValues = clearValues.ptr;
       vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
   }
@@ -1121,7 +1199,7 @@ package (teraflop) class RenderPass {
   private const Device device;
   private VkRenderPass renderPass = VK_NULL_HANDLE;
 
-  this(const Device device) {
+  this(const Device device, bool withDepthStencil = false) {
     this.device = device;
 
     VkAttachmentDescription colorAttachment = {
@@ -1150,7 +1228,7 @@ package (teraflop) class RenderPass {
       subpassCount: 1,
       pSubpasses: &subpass,
     };
-    const VkSubpassDependency dependency = {
+    VkSubpassDependency dependency = {
       srcSubpass: VK_SUBPASS_EXTERNAL,
       dstSubpass: 0,
       srcStageMask: VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -1160,6 +1238,32 @@ package (teraflop) class RenderPass {
     };
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
+
+    if (withDepthStencil) {
+      const VkAttachmentDescription depthAttachment = {
+        format: findDepthFormat(device),
+        samples: VK_SAMPLE_COUNT_1_BIT,
+        loadOp: VK_ATTACHMENT_LOAD_OP_CLEAR,
+        storeOp: VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencilLoadOp: VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        stencilStoreOp: VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        initialLayout: VK_IMAGE_LAYOUT_UNDEFINED,
+        finalLayout: VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      };
+      const VkAttachmentReference depthAttachmentRef = {
+        attachment: 1,
+        layout: VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+      };
+      subpass.pDepthStencilAttachment = &depthAttachmentRef;
+      const attachments = [colorAttachment, depthAttachment];
+      renderPassInfo.attachmentCount += 1;
+      renderPassInfo.pAttachments = attachments.ptr;
+      dependency.srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+      dependency.dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+      dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    }
 
     enforceVk(vkCreateRenderPass(device.handle, &renderPassInfo, null, &renderPass));
   }
