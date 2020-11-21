@@ -1445,7 +1445,7 @@ package (teraflop) class Pipeline {
       alphaToOneEnable: VK_FALSE,
     };
     VkPipelineDepthStencilStateCreateInfo depthStencil = {
-      depthTestEnable: VK_TRUE,
+      depthTestEnable: material.depthTest ? VK_TRUE : VK_FALSE,
       depthWriteEnable: VK_TRUE,
       depthCompareOp: VK_COMPARE_OP_LESS,
       depthBoundsTestEnable: VK_FALSE,

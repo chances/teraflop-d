@@ -553,6 +553,8 @@ enum FrontFace : VkFrontFace {
 
 /// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
 class Material : NamedComponent, IResource {
+  /// Whether to perform the depth test. If `true`, assumes the render target has a depth buffer attachment.
+  bool depthTest = true;
   /// Specifies the vertex order for faces to be considered front-facing.
   FrontFace frontFace = FrontFace.clockwise;
   /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
@@ -670,6 +672,7 @@ unittest {
     auto vert = new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv");
     auto frag = new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv");
     auto material = new Material([vert, frag]);
+    material.depthTest = false;
     material.initialize(device);
     assert(vert.initialized && frag.initialized);
     assert(material.initialized);
