@@ -22,7 +22,7 @@ private final class Cube : Game {
   override void initializeWorld(scope World world) {
     const framebufferSize = world.resources.get!Window.framebufferSize;
     auto camera = new Camera();
-    camera.view = mat4f.lookAt(vec3f(2f), vec3f(0), up);
+    camera.view = mat4f.lookAt(vec3f(2f), vec3f(0), vec3f(0, 0, 1));
     camera.projection = mat4f.perspective(
       45.radians, framebufferSize.width / cast(float) framebufferSize.height, 0.05f, 10.0f
     );

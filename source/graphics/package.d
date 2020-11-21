@@ -377,9 +377,12 @@ class Camera : NamedComponent {
 
   /// A combined model-view-projection matrix.
   mat4f mvp() @property const {
-    auto proj = projection.v.dup;
-    if (invertY) proj[5] *= -1;
-    return mat4f(proj) * view * model;
+    // Vulkan clip space has inverted Y and half Z
+    const clip = mat4f(1.0f, 0.0f, 0.0f, 0.0f,
+                         0.0f, invertY ? -1.0f : 1.0f, 0.0f, 0.0f,
+                         0.0f, 0.0f, 0.5f, 0.0f,
+                         0.0f, 0.0f, 0.5f, 1.0f);
+    return projection * view * model * clip;
   }
 }
 
