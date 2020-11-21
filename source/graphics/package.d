@@ -84,14 +84,57 @@ struct VertexPosColor {
   /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
   static VkVertexInputAttributeDescription[2] attributeDescriptions() {
     VkVertexInputAttributeDescription[2] attributeDescriptions;
+    // Position
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = VertexPosColor.position.offsetof;
+    attributeDescriptions[0].offset = position.offsetof;
+    // Color
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = VertexPosColor.color.offsetof;
+    attributeDescriptions[1].offset = color.offsetof;
+    return attributeDescriptions;
+  }
+}
+
+/// Vertex attribute data comprising a 3D position, diffuse color, and texture coordinates.
+struct VertexPosColorTex {
+  /// 3D position.
+  vec3f position;
+  /// Diffuse color.
+  vec3f color;
+  /// Texture UV coordinates.
+  vec2f uv;
+
+  /// Describes how vertex attributes should be bound to the vertex shader.
+  static VkVertexInputBindingDescription bindingDescription() {
+    VkVertexInputBindingDescription bindingDescription = {
+      binding: 0,
+      stride: VertexPosColorTex.sizeof,
+      inputRate: VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+    return bindingDescription;
+  }
+
+  /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
+  static VkVertexInputAttributeDescription[3] attributeDescriptions() {
+    VkVertexInputAttributeDescription[3] attributeDescriptions;
+    // Position
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].offset = position.offsetof;
+    // Color
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = color.offsetof;
+    // Texture UV Coordinates
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = uv.offsetof;
     return attributeDescriptions;
   }
 }
