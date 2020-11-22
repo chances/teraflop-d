@@ -1545,6 +1545,7 @@ unittest {
     const clearColor = Color.black.toVulkan;
     commands.beginRenderPass(&clearColor);
     commands.endRenderPass();
+    // TODO: Diff with a PPM file, e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
 
     VkSubmitInfo submitInfo;
     submitInfo.waitSemaphoreCount = 0;

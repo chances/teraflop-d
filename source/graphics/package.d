@@ -694,6 +694,7 @@ unittest {
     commands.bindIndexBuffer(triangle.indexBuffer);
     commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
     commands.endRenderPass();
+    // TODO: Diff with a PPM file, e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
 
     VkSubmitInfo submitInfo;
     submitInfo.waitSemaphoreCount = 0;
