@@ -35,3 +35,10 @@ jobs:
     #   if: success()
     #   run: bash <(curl -s https://codecov.io/bash)
     #   working-directory: source/scripting/api
+    - name: Publish to NPM
+      if: success()
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        token: ${{ secrets.NPM_TOKEN }}
+        package: source/scripting/api/package.json
+        dry-run: true
