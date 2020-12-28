@@ -1,6 +1,6 @@
 # Teraflop Scripting API
 
-[![Teraflop Scripting API CI](https://github.com/chances/teraflop-d/workflows/Teraflop%Scripting%20API%20CI/badge.svg)](https://github.com/chances/streaming-metadata/actions)
+[![Teraflop Scripting API CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20Scripting%20API%20CI/badge.svg)](https://github.com/chances/streaming-metadata/actions)
 [![npm version](https://badge.fury.io/js/teraflop/api.svg)](https://www.npmjs.com/package/teraflop/api)
 <!-- [![dependencies Status](https://david-dm.org/chances/streaming-metadata/status.svg)](https://david-dm.org/chances/streaming-metadata) -->
 <!-- [![devDependencies Status](https://david-dm.org/chances/streaming-metadata/dev-status.svg)](https://david-dm.org/chances/streaming-metadata?type=dev) -->

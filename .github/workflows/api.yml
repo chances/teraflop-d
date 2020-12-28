@@ -1,0 +1,34 @@
+name: Teraflop Scripting API CI
+
+on: push
+#   schedule:
+#   - cron: '0 0 * * SUN'
+
+jobs:
+  test:
+    name: Tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '13'
+    - name: Cache NPM Artifacts
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    # - name: Lint
+    #   run: npm run lint
+    - name: Test
+      run: npm test
+      working-directory: source/scripting/api
+    # - name: Upload Coverage to Codecov
+    #   if: success()
+    #   run: bash <(curl -s https://codecov.io/bash)
+    #   working-directory: source/scripting/api
