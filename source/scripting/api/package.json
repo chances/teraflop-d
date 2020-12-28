@@ -1,9 +1,9 @@
 {
   "name": "@teraflop/api",
-  "version": "0.1.0-pre-alpha-1",
+  "version": "0.1.0-pre-alpha-2",
   "description": "Teraflop game engine WebAssembly scripting API",
   "main": "index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "test": "npm run asbuild && node tests/index.js",
     "prepack": "npx tsc && npm run asbuild",

@@ -1,1 +1,1 @@
-export { plugin } from './plugin'
+export { plugin, register } from '../assembly/lib/plugin'
