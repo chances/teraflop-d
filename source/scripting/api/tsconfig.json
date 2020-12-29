@@ -1,5 +1,5 @@
 {
-  "extends": "assemblyscript/std/assembly.json",
+  "extends": "assemblyscript/std/portable.json",
   "compilerOptions": {
     "target": "ES6",
     "module": "ES6",
