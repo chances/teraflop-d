@@ -14,22 +14,26 @@
  (data (i32.const 12) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00(\00\00\00a\00l\00l\00o\00c\00a\00t\00i\00o\00n\00 \00t\00o\00o\00 \00l\00a\00r\00g\00e\00\00\00\00\00")
  (data (i32.const 76) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\1e\00\00\00~\00l\00i\00b\00/\00r\00t\00/\00p\00u\00r\00e\00.\00t\00s\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
  (data (i32.const 140) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\1e\00\00\00~\00l\00i\00b\00/\00r\00t\00/\00t\00l\00s\00f\00.\00t\00s\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00")
- (data (i32.const 204) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00B\00\00\00V\00e\00r\00s\00i\00o\00n\00 \00m\00e\00t\00a\00d\00a\00t\00a\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s\00\00\00\00\00\00\00\00\00\00\00")
- (data (i32.const 300) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00,\00\00\00a\00s\00s\00e\00m\00b\00l\00y\00/\00l\00i\00b\00/\00p\00l\00u\00g\00i\00n\00.\00t\00s\00")
- (data (i32.const 368) "\03\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00")
+ (data (i32.const 204) "l\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00P\00\00\00M\00a\00j\00o\00r\00 \00v\00e\00r\00s\00i\00o\00n\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 316) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00,\00\00\00a\00s\00s\00e\00m\00b\00l\00y\00/\00l\00i\00b\00/\00p\00l\00u\00g\00i\00n\00.\00t\00s\00")
+ (data (i32.const 380) "l\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00P\00\00\00M\00i\00n\00o\00r\00 \00v\00e\00r\00s\00i\00o\00n\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 492) "l\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00P\00\00\00P\00a\00t\00c\00h\00 \00v\00e\00r\00s\00i\00o\00n\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s\00\00\00\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 604) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00B\00\00\00V\00e\00r\00s\00i\00o\00n\00 \00m\00e\00t\00a\00d\00a\00t\00a\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s\00\00\00\00\00\00\00\00\00\00\00")
+ (data (i32.const 704) "\03\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00")
  (table $0 1 funcref)
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $~lib/ASC_LOW_MEMORY_LIMIT i32 (i32.const 0))
  (global $~lib/ASC_SHRINK_LEVEL i32 (i32.const 0))
  (global $assembly/lib/plugin/plugin.VersionMeta.Release i32 (i32.const 0))
- (global $assembly/lib/plugin/plugin.VersionMeta.Alpha i32 (i32.const 1))
- (global $assembly/lib/plugin/plugin.VersionMeta.Beta i32 (i32.const 2))
- (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease i32 (i32.const 3))
- (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate i32 (i32.const 4))
+ (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate i32 (i32.const 1))
+ (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease i32 (i32.const 2))
+ (global $assembly/lib/plugin/plugin.VersionMeta.Beta i32 (i32.const 3))
+ (global $assembly/lib/plugin/plugin.VersionMeta.Alpha i32 (i32.const 4))
+ (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha i32 (i32.const 5))
  (global $~lib/builtins/u8.MAX_VALUE i32 (i32.const 255))
  (global $assembly/lib/plugin/plugin.VersionMeta.MAX i32 (i32.const 255))
- (global $~lib/rt/__rtti_base i32 (i32.const 368))
- (global $~lib/memory/__heap_base i32 (i32.const 396))
+ (global $~lib/rt/__rtti_base i32 (i32.const 704))
+ (global $~lib/memory/__heap_base i32 (i32.const 732))
  (global $~argumentsLength (mut i32) (i32.const 0))
  (export "memory" (memory $0))
  (export "__new" (func $~lib/rt/pure/__new))
@@ -39,10 +43,11 @@
  (export "__rtti_base" (global $~lib/rt/__rtti_base))
  (export "add" (func $assembly/index/add))
  (export "plugin.VersionMeta.Release" (global $assembly/lib/plugin/plugin.VersionMeta.Release))
- (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/plugin.VersionMeta.Alpha))
- (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/plugin.VersionMeta.Beta))
- (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease))
  (export "plugin.VersionMeta.ReleaseCandidate" (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate))
+ (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease))
+ (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/plugin.VersionMeta.Beta))
+ (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/plugin.VersionMeta.Alpha))
+ (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha))
  (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/plugin.VersionMeta.MAX))
  (export "plugin.makeVersion" (func $assembly/lib/plugin/plugin.makeVersion@varargs))
  (export "register" (func $assembly/lib/plugin/register))
@@ -3012,39 +3017,79 @@
   i32.add
  )
  (func $assembly/lib/plugin/plugin.makeVersion (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+  local.get $0
+  i32.const 255
+  i32.and
+  global.get $~lib/builtins/u8.MAX_VALUE
+  i32.le_u
+  i32.eqz
+  if
+   i32.const 224
+   i32.const 336
+   i32.const 34
+   i32.const 5
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $1
+  i32.const 255
+  i32.and
+  global.get $~lib/builtins/u8.MAX_VALUE
+  i32.le_u
+  i32.eqz
+  if
+   i32.const 400
+   i32.const 336
+   i32.const 35
+   i32.const 5
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $2
+  i32.const 255
+  i32.and
+  global.get $~lib/builtins/u8.MAX_VALUE
+  i32.le_u
+  i32.eqz
+  if
+   i32.const 512
+   i32.const 336
+   i32.const 36
+   i32.const 5
+   call $~lib/builtins/abort
+   unreachable
+  end
   local.get $3
   global.get $assembly/lib/plugin/plugin.VersionMeta.MAX
   i32.le_s
   i32.eqz
   if
-   i32.const 224
-   i32.const 320
-   i32.const 18
+   i32.const 624
+   i32.const 336
+   i32.const 37
    i32.const 5
    call $~lib/builtins/abort
    unreachable
   end
   local.get $0
-  i32.const 4
-  i32.const 7
-  i32.and
-  i32.shl
-  local.get $1
-  i32.const 3
-  i32.const 7
-  i32.and
-  i32.shl
-  i32.add
-  local.get $2
-  i32.const 2
-  i32.const 7
-  i32.and
-  i32.shl
-  i32.add
   i32.const 255
   i32.and
+  i32.const 24
+  i32.shl
+  local.get $1
+  i32.const 255
+  i32.and
+  i32.const 16
+  i32.shl
+  i32.or
+  local.get $2
+  i32.const 255
+  i32.and
+  i32.const 8
+  i32.shl
+  i32.or
   local.get $3
-  i32.add
+  i32.or
  )
  (func $~lib/rt/pure/finalize (param $0 i32)
   i32.const 0
