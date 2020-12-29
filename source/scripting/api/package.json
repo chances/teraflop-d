@@ -5,7 +5,7 @@
   "main": "index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "npm run asbuild && node tests/index.js",
+    "test": "npm run asbuild && npm run lib && node tests/index.js",
     "prepack": "npx tsc && npm run asbuild",
     "lib": "npx tsc",
     "asbuild:untouched": "asc assembly/index.ts --target debug",
