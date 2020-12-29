@@ -24,14 +24,14 @@
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $~lib/ASC_LOW_MEMORY_LIMIT i32 (i32.const 0))
  (global $~lib/ASC_SHRINK_LEVEL i32 (i32.const 0))
- (global $assembly/lib/plugin/plugin.VersionMeta.Release i32 (i32.const 0))
- (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate i32 (i32.const 1))
- (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease i32 (i32.const 2))
- (global $assembly/lib/plugin/plugin.VersionMeta.Beta i32 (i32.const 3))
- (global $assembly/lib/plugin/plugin.VersionMeta.Alpha i32 (i32.const 4))
- (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha i32 (i32.const 5))
+ (global $assembly/lib/plugin/VersionMeta.Release i32 (i32.const 0))
+ (global $assembly/lib/plugin/VersionMeta.ReleaseCandidate i32 (i32.const 1))
+ (global $assembly/lib/plugin/VersionMeta.PreRelease i32 (i32.const 2))
+ (global $assembly/lib/plugin/VersionMeta.Beta i32 (i32.const 3))
+ (global $assembly/lib/plugin/VersionMeta.Alpha i32 (i32.const 4))
+ (global $assembly/lib/plugin/VersionMeta.PreAlpha i32 (i32.const 5))
  (global $~lib/builtins/u8.MAX_VALUE i32 (i32.const 255))
- (global $assembly/lib/plugin/plugin.VersionMeta.MAX i32 (i32.const 255))
+ (global $assembly/lib/plugin/VersionMeta.MAX i32 (i32.const 255))
  (global $~lib/rt/__rtti_base i32 (i32.const 704))
  (global $~lib/memory/__heap_base i32 (i32.const 732))
  (global $~argumentsLength (mut i32) (i32.const 0))
@@ -42,15 +42,15 @@
  (export "__release" (func $~lib/rt/pure/__release))
  (export "__rtti_base" (global $~lib/rt/__rtti_base))
  (export "add" (func $assembly/index/add))
- (export "plugin.VersionMeta.Release" (global $assembly/lib/plugin/plugin.VersionMeta.Release))
- (export "plugin.VersionMeta.ReleaseCandidate" (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate))
- (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease))
- (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/plugin.VersionMeta.Beta))
- (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/plugin.VersionMeta.Alpha))
- (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha))
- (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/plugin.VersionMeta.MAX))
- (export "plugin.makeVersion" (func $assembly/lib/plugin/plugin.makeVersion@varargs))
- (export "register" (func $assembly/lib/plugin/register))
+ (export "plugin.register" (func $assembly/lib/plugin/register))
+ (export "plugin.VersionMeta.Release" (global $assembly/lib/plugin/VersionMeta.Release))
+ (export "plugin.VersionMeta.ReleaseCandidate" (global $assembly/lib/plugin/VersionMeta.ReleaseCandidate))
+ (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/VersionMeta.PreRelease))
+ (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/VersionMeta.Beta))
+ (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/VersionMeta.Alpha))
+ (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/VersionMeta.PreAlpha))
+ (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/VersionMeta.MAX))
+ (export "plugin.makeVersion" (func $assembly/lib/plugin/makeVersion@varargs))
  (export "__setArgumentsLength" (func $~setArgumentsLength))
  (func $~lib/rt/tlsf/removeBlock (param $0 i32) (param $1 i32)
   (local $2 i32)
@@ -3016,7 +3016,7 @@
   local.get $1
   i32.add
  )
- (func $assembly/lib/plugin/plugin.makeVersion (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $assembly/lib/plugin/makeVersion (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   local.get $0
   i32.const 255
   i32.and
@@ -3026,8 +3026,8 @@
   if
    i32.const 224
    i32.const 336
-   i32.const 34
-   i32.const 5
+   i32.const 33
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -3040,8 +3040,8 @@
   if
    i32.const 400
    i32.const 336
-   i32.const 35
-   i32.const 5
+   i32.const 34
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -3054,20 +3054,20 @@
   if
    i32.const 512
    i32.const 336
-   i32.const 36
-   i32.const 5
+   i32.const 35
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
   local.get $3
-  global.get $assembly/lib/plugin/plugin.VersionMeta.MAX
+  global.get $assembly/lib/plugin/VersionMeta.MAX
   i32.le_s
   i32.eqz
   if
    i32.const 624
    i32.const 336
-   i32.const 37
-   i32.const 5
+   i32.const 36
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -3257,7 +3257,7 @@
   end
   unreachable
  )
- (func $assembly/lib/plugin/plugin.makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $assembly/lib/plugin/makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   block $1of1
    block $0of1
     block $outOfRange
@@ -3268,14 +3268,14 @@
     end
     unreachable
    end
-   global.get $assembly/lib/plugin/plugin.VersionMeta.Release
+   global.get $assembly/lib/plugin/VersionMeta.Release
    local.set $3
   end
   local.get $0
   local.get $1
   local.get $2
   local.get $3
-  call $assembly/lib/plugin/plugin.makeVersion
+  call $assembly/lib/plugin/makeVersion
  )
  (func $~setArgumentsLength (param $0 i32)
   local.get $0

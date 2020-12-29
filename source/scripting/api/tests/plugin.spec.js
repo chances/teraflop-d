@@ -12,4 +12,4 @@ assert.strictEqual(version.minor, 1)
 assert.strictEqual(version.patch, 0)
 assert.strictEqual(version.meta, 0)
 
-api.register(api.__newString('test-plugin'), versionNum)
+api.plugin.register(api.__newString('test-plugin'), versionNum)

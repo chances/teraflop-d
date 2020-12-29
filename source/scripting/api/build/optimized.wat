@@ -21,13 +21,13 @@
  (data (i32.const 1628) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00B\00\00\00V\00e\00r\00s\00i\00o\00n\00 \00m\00e\00t\00a\00d\00a\00t\00a\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s")
  (data (i32.const 1728) "\03\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 ")
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
- (global $assembly/lib/plugin/plugin.VersionMeta.Release i32 (i32.const 0))
- (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate i32 (i32.const 1))
- (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease i32 (i32.const 2))
- (global $assembly/lib/plugin/plugin.VersionMeta.Beta i32 (i32.const 3))
- (global $assembly/lib/plugin/plugin.VersionMeta.Alpha i32 (i32.const 4))
- (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha i32 (i32.const 5))
- (global $assembly/lib/plugin/plugin.VersionMeta.MAX i32 (i32.const 255))
+ (global $assembly/lib/plugin/VersionMeta.Release i32 (i32.const 0))
+ (global $assembly/lib/plugin/VersionMeta.ReleaseCandidate i32 (i32.const 1))
+ (global $assembly/lib/plugin/VersionMeta.PreRelease i32 (i32.const 2))
+ (global $assembly/lib/plugin/VersionMeta.Beta i32 (i32.const 3))
+ (global $assembly/lib/plugin/VersionMeta.Alpha i32 (i32.const 4))
+ (global $assembly/lib/plugin/VersionMeta.PreAlpha i32 (i32.const 5))
+ (global $assembly/lib/plugin/VersionMeta.MAX i32 (i32.const 255))
  (global $~lib/rt/__rtti_base i32 (i32.const 1728))
  (global $~argumentsLength (mut i32) (i32.const 0))
  (export "memory" (memory $0))
@@ -37,15 +37,15 @@
  (export "__release" (func $~lib/rt/pure/__release))
  (export "__rtti_base" (global $~lib/rt/__rtti_base))
  (export "add" (func $assembly/index/add))
- (export "plugin.VersionMeta.Release" (global $assembly/lib/plugin/plugin.VersionMeta.Release))
- (export "plugin.VersionMeta.ReleaseCandidate" (global $assembly/lib/plugin/plugin.VersionMeta.ReleaseCandidate))
- (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/plugin.VersionMeta.PreRelease))
- (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/plugin.VersionMeta.Beta))
- (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/plugin.VersionMeta.Alpha))
- (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/plugin.VersionMeta.PreAlpha))
- (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/plugin.VersionMeta.MAX))
- (export "plugin.makeVersion" (func $assembly/lib/plugin/plugin.makeVersion@varargs))
- (export "register" (func $assembly/lib/plugin/register))
+ (export "plugin.register" (func $assembly/lib/plugin/register))
+ (export "plugin.VersionMeta.Release" (global $assembly/lib/plugin/VersionMeta.Release))
+ (export "plugin.VersionMeta.ReleaseCandidate" (global $assembly/lib/plugin/VersionMeta.ReleaseCandidate))
+ (export "plugin.VersionMeta.PreRelease" (global $assembly/lib/plugin/VersionMeta.PreRelease))
+ (export "plugin.VersionMeta.Beta" (global $assembly/lib/plugin/VersionMeta.Beta))
+ (export "plugin.VersionMeta.Alpha" (global $assembly/lib/plugin/VersionMeta.Alpha))
+ (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/VersionMeta.PreAlpha))
+ (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/VersionMeta.MAX))
+ (export "plugin.makeVersion" (func $assembly/lib/plugin/makeVersion@varargs))
  (export "__setArgumentsLength" (func $~setArgumentsLength))
  (func $~lib/rt/tlsf/removeBlock (param $0 i32) (param $1 i32)
   (local $2 i32)
@@ -1578,7 +1578,7 @@
    i32.store offset=4
   end
  )
- (func $assembly/lib/plugin/plugin.makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
+ (func $assembly/lib/plugin/makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   block $1of1
    block $0of1
     block $outOfRange
@@ -1600,8 +1600,8 @@
   if
    i32.const 1248
    i32.const 1360
-   i32.const 34
-   i32.const 5
+   i32.const 33
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -1613,8 +1613,8 @@
   if
    i32.const 1424
    i32.const 1360
-   i32.const 35
-   i32.const 5
+   i32.const 34
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -1626,8 +1626,8 @@
   if
    i32.const 1536
    i32.const 1360
-   i32.const 36
-   i32.const 5
+   i32.const 35
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
@@ -1637,8 +1637,8 @@
   if
    i32.const 1648
    i32.const 1360
-   i32.const 37
-   i32.const 5
+   i32.const 36
+   i32.const 3
    call $~lib/builtins/abort
    unreachable
   end
