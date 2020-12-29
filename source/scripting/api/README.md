@@ -9,17 +9,30 @@
 
 ## Usage
 
-<!-- TODO: Usage docs
+## Creating a Plugin
 
-1. Deploy a clone or fork of this repo. Alternatively, you can [serve the repo locally](#Development).
-2. Create a Browser source in OBS and set its URL to your deployed URL.
-3. Customize the size of metadata by changing the Browser source's Custom CSS:
+The preferred method of creating a new plugin is to use the [plugin generator](https://github.com/chances/generator-teraflop#readme).
 
-    ```css
-    #title { font-size: 60px; }
-    #description { font-size: 30px; }
+### From Scratch
+
+1. Ensure [Node.js](https://nodejs.org) is installed.
+2. `npm init`
+    - When asked for keywords, add `teraflop-plugin`
+3. `npm install @assemblyscript/loader@^0.17.12 @teraflop/api --save`
+4. `npm install assemblyscript@^0.17.12 --save-dev`
+5. `npx asinit .`
+6. Edit `assembly/index.ts`:
+
+    ```typescript
+    import { plugin } from '@teraflop/api'
+
+    const VERSION = plugin.makeVersion(1, 0, 0)
+
+    // The entry point of your plugin.
+    export function main(): boolean {
+      return plugin.register('plugin-name', VERSION)
+    }
     ```
--->
 
 ## Development
 
