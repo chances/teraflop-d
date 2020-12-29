@@ -1633,7 +1633,15 @@
   end
   local.get $3
   i32.const 255
-  i32.gt_s
+  i32.and
+  i32.const 255
+  i32.le_u
+  i32.const 0
+  local.get $3
+  i32.const 0
+  i32.ge_s
+  select
+  i32.eqz
   if
    i32.const 1648
    i32.const 1360

@@ -3020,8 +3020,17 @@
   local.get $0
   i32.const 255
   i32.and
-  global.get $~lib/builtins/u8.MAX_VALUE
-  i32.le_u
+  i32.const 0
+  i32.ge_u
+  if (result i32)
+   local.get $0
+   i32.const 255
+   i32.and
+   global.get $~lib/builtins/u8.MAX_VALUE
+   i32.le_u
+  else
+   i32.const 0
+  end
   i32.eqz
   if
    i32.const 224
@@ -3034,8 +3043,17 @@
   local.get $1
   i32.const 255
   i32.and
-  global.get $~lib/builtins/u8.MAX_VALUE
-  i32.le_u
+  i32.const 0
+  i32.ge_u
+  if (result i32)
+   local.get $1
+   i32.const 255
+   i32.and
+   global.get $~lib/builtins/u8.MAX_VALUE
+   i32.le_u
+  else
+   i32.const 0
+  end
   i32.eqz
   if
    i32.const 400
@@ -3048,8 +3066,17 @@
   local.get $2
   i32.const 255
   i32.and
-  global.get $~lib/builtins/u8.MAX_VALUE
-  i32.le_u
+  i32.const 0
+  i32.ge_u
+  if (result i32)
+   local.get $2
+   i32.const 255
+   i32.and
+   global.get $~lib/builtins/u8.MAX_VALUE
+   i32.le_u
+  else
+   i32.const 0
+  end
   i32.eqz
   if
    i32.const 512
@@ -3060,8 +3087,17 @@
    unreachable
   end
   local.get $3
-  global.get $assembly/lib/plugin/VersionMeta.MAX
-  i32.le_s
+  i32.const 0
+  i32.ge_s
+  if (result i32)
+   local.get $3
+   i32.const 255
+   i32.and
+   global.get $~lib/builtins/u8.MAX_VALUE
+   i32.le_u
+  else
+   i32.const 0
+  end
   i32.eqz
   if
    i32.const 624
