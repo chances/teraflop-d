@@ -1,6 +1,6 @@
 {
   "name": "@teraflop/api",
-  "version": "0.1.0-pre-alpha-3",
+  "version": "0.1.0-pre-alpha-4",
   "description": "Teraflop game engine WebAssembly scripting API",
   "main": "index.js",
   "types": "./lib/index.d.ts",
