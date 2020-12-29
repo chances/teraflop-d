@@ -1,4 +1,5 @@
-/dist
+index.js
+index.d.ts
 
 # Logs
 logs

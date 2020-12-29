@@ -8,6 +8,7 @@
     "test": "npm run asbuild && npm run lib && node tests/index.js",
     "prepack": "npx tsc && npm run asbuild",
     "lib": "npx tsc",
+    "docs": "npx typedoc",
     "asbuild:untouched": "asc assembly/index.ts --target debug",
     "asbuild:optimized": "asc assembly/index.ts --target release",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
@@ -29,7 +30,9 @@
   },
   "homepage": "https://github.com/chances/teraflop-d#readme",
   "devDependencies": {
+    "@types/node": "^14.14.16",
     "assemblyscript": "^0.17.12",
+    "typedoc": "^0.20.1",
     "typescript": "^4.1.3"
   },
   "dependencies": {
