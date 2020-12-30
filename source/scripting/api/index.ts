@@ -7,6 +7,8 @@ import { ASUtil } from '@assemblyscript/loader'
 
 import * as lib from './lib'
 export * as plugin from './lib'
+import { math } from './assembly'
+export { math } from './assembly'
 
 const plugins: Record<string,lib.Plugin> = {}
 
@@ -40,5 +42,6 @@ const imports: loader.Imports = {
 }
 const wasmModule = loader.instantiateSync(fs.readFileSync(path.join(__dirname, 'build/optimized.wasm')), imports)
 module.exports = wasmModule.exports
+module.exports.math = math
 module.exports.plugin.unpackVersion = lib.unpackVersion
 module.exports.registry = registry
