@@ -22,7 +22,7 @@ abstract class Game {
   private bool limitFrameRate = true;
   private int desiredFrameRateHertz_ = 60;
 
-  private Rc!Device device;
+  private Device device;
   private Window[] windows_;
   private Swapchain[const Window] swapChains;
   private bool[const Window] swapchainNeedsRebuild;
@@ -33,7 +33,6 @@ abstract class Game {
   private FrameData[] frameDatas;
   private Rc!RenderPass renderPass;
   private CommandPool oneOffCommandPool;
-  private CommandBuffer[const Window] commandBuffers;
   private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
@@ -150,17 +149,38 @@ abstract class Game {
     eventLoop.exit();
 
     // Gracefully release GPU and other unmanaged resources
+    foreach (entity; world.entities) {
+      device.waitIdle();
+      foreach (component; entity.components) {
+        device.waitIdle();
+        destroy(component);
+      }
+    }
+    destroy(world);
+
     foreach (window; windows_) {
-      destroy(swapChains[window]);
+      device.waitIdle();
+      imageAvailable[window].unload();
+      renderingFinished[window].unload();
+      swapChains[window].dispose();
+
       destroy(window);
     }
 
-    foreach (entity; world.entities) {
-      foreach (component; entity.components)
-        destroy(component);
+    foreach (pipeline; pipelines.values) {
+      device.waitIdle();
+      pipeline.dispose();
     }
-    destroy(world);
-    destroy(device);
+    device.waitIdle();
+    renderPass.unload();
+    foreach (i, frameData; frameDatas) {
+      device.waitIdle();
+      frameData.release();
+    }
+
+    device.waitIdle();
+    device.release();
+    unloadVulkan();
   }
 
   private void initialize() {
@@ -350,7 +370,7 @@ abstract class Game {
 
       auto pipeline = device.createPipelines([info])[0];
       pipelines[material] = pipeline;
-      renderables ~= Renderable(pipeline.rc, mesh);
+      renderables ~= Renderable(pipeline, mesh);
     }
 
     if (renderables.length == 0) return;

@@ -16,10 +16,7 @@ debug {
   private enum bool enableValidationLayers = false;
 }
 
-private Rc!Instance _instance;
-package (teraflop.platform) Rc!Instance instance() {
-  return _instance;
-}
+package (teraflop.platform) Instance instance;
 package (teraflop) bool initVulkan(string appName) {
   import std.algorithm : remove;
   import std.stdio : writeln;
@@ -38,13 +35,17 @@ package (teraflop) bool initVulkan(string appName) {
   createInfo.optionalExtensions ~= enableValidationLayers ? debugReportInstanceExtensions : [];
 
   try {
-    _instance = createVulkanInstance(createInfo);
+    instance = createVulkanInstance(createInfo);
+    instance.retain();
   } catch (Exception ex) {
     writeln(ex.msg);
     return false;
   }
 
   return true;
+}
+package (teraflop) void unloadVulkan() {
+  instance.release();
 }
 
 private PhysicalDevice selectedPhysicalDevice;
@@ -55,7 +56,7 @@ package (teraflop) uint selectGraphicsQueue() {
 
   auto findRequiredCap = (QueueFamily family, QueueCap requiredCap) => (family.cap & requiredCap) == requiredCap;
 
-  foreach (physicalDevice; _instance.devices) {
+  foreach (physicalDevice; instance.devices) {
     if (physicalDevice.queueFamilies.canFind!(findRequiredCap)(QueueCap.graphics) == false) continue;
     selectedPhysicalDevice = physicalDevice;
     return physicalDevice.queueFamilies.countUntil!(findRequiredCap)(QueueCap.graphics).to!uint;

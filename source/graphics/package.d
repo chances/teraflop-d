@@ -20,7 +20,7 @@ import teraflop.traits : isStruct;
 public {
   static import gfx.graal.pipeline;
 
-  alias Pipeline = Rc!(gfx.graal.pipeline.Pipeline);
+  alias Pipeline = gfx.graal.pipeline.Pipeline;
   import gfx.graal.pipeline : ShaderStage;
 }
 
@@ -162,7 +162,9 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     super(name);
   }
   ~this() {
+    _vertexBuffer.dispose();
     destroy(_vertexBuffer);
+    _indexBuffer.dispose();
     destroy(_indexBuffer);
   }
 
