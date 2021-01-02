@@ -461,6 +461,9 @@ abstract class Game {
       super(device, queueFamilyIndex, swcColor);
       cmdBuf = cmdPool.allocatePrimary(1)[0];
 
+      cmdBuf.begin(CommandBufferUsage.simultaneousUse);
+      cmdBuf.end();
+
       frameBuffer = device.createFramebuffer(this.outer.renderPass.obj, [
         swcColor.createView(
           ImageType.d2,
