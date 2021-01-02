@@ -238,6 +238,8 @@ abstract class Game {
         [Submission([StageWait(imageAvailable[mainWindow], PipelineStage.transfer)], [], [cmdBuf])],
         null
       );
+      graphicsQueue[mainWindow].waitIdle();
+      oneOffCommandPool.free([cmdBuf]);
     }());
 
     world.resources.add(mainWindow);

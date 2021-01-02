@@ -52,13 +52,13 @@ final class TextureUploader : System {
     import std.array : array;
     import teraflop.graphics : Material;
 
-    auto commands = commandPool.allocatePrimary(1)[0];
-    commands.begin(CommandBufferUsage.oneTimeSubmit);
-
     auto textures = query().map!(entity => entity.getMut!Material).joiner
       .filter!(c => c.textured && c.initialized && c.texture.dirty)
       .map!(c => c.texture).array;
     if (textures.length == 0) return;
+
+    auto commands = commandPool.allocatePrimary(1)[0];
+    commands.begin(CommandBufferUsage.oneTimeSubmit);
 
     foreach (texture; textures) {
       commands.pipelineBarrier(trans(PipelineStage.topOfPipe, PipelineStage.transfer), [], [
