@@ -31,20 +31,20 @@ final class ResourceInitializer : System {
   }
 }
 
-///
-alias CommandBufFlush = void delegate(PrimaryCommandBuffer buf);
-
 /// Update dirty `teraflop.graphics.Texture` GPU resources.
 final class TextureUploader : System {
-  private CommandPool commandPool;
-  private CommandBufFlush flush;
+  import teraflop.platform.vulkan : OneTimeCmdBufPool;
+
+  private OneTimeCmdBufPool cmdBuf;
 
   /// Initialize a new TextureUploader.
-  this(const World world, CommandPool commandPool, CommandBufFlush flushCmdBuf) {
+  this(const World world, OneTimeCmdBufPool cmdBuf) {
     super(world);
 
-    this.commandPool = commandPool;
-    this.flush = flushCmdBuf;
+    this.cmdBuf = cmdBuf;
+  }
+  ~this() {
+    destroy(cmdBuf);
   }
 
   override void run() {
@@ -57,9 +57,7 @@ final class TextureUploader : System {
       .map!(c => c.texture).array;
     if (textures.length == 0) return;
 
-    auto commands = commandPool.allocatePrimary(1)[0];
-    commands.begin(CommandBufferUsage.oneTimeSubmit);
-
+    auto commands = cmdBuf.get;
     foreach (texture; textures) {
       commands.pipelineBarrier(trans(PipelineStage.topOfPipe, PipelineStage.transfer), [], [
         ImageMemoryBarrier(
@@ -88,8 +86,6 @@ final class TextureUploader : System {
 
       texture.dirty = false;
     }
-
-    commands.end();
-    flush(commands);
+    cmdBuf.submit(commands);
   }
 }

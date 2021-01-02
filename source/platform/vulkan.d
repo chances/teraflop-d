@@ -1,3 +1,6 @@
+/// Authors: Chance Snow
+/// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
+/// License: MIT License
 module teraflop.platform.vulkan;
 
 import gfx.graal;
@@ -99,5 +102,38 @@ abstract class FrameData : AtomicRefCounted {
   override void dispose() {
     fence.unload();
     cmdPool.unload();
+  }
+}
+
+/// A factory for one time submission command buffers.
+/// Generally used for transfer operations, or image layout change.
+final class OneTimeCmdBufPool {
+  private Queue graphicsQueue;
+  private CommandPool pool;
+
+  ///
+  this(Device device, Queue graphicsQueue) {
+    this.graphicsQueue = graphicsQueue;
+    pool = device.createCommandPool(graphicsQueue.index);
+  }
+  ~this() {
+    // TODO: Figure out why this is broken: pool.dispose();
+  }
+
+  /// Get a newly created command buffer.
+  @property CommandBuffer get() {
+    auto cmdBuf = pool.allocatePrimary(1)[0];
+    cmdBuf.begin(CommandBufferUsage.oneTimeSubmit);
+    return cmdBuf;
+  }
+
+  ///
+  void submit(CommandBuffer cmdBuf) {
+    cmdBuf.end();
+    graphicsQueue.submit([
+        Submission([], [], [cast(PrimaryCommandBuffer) cmdBuf])
+    ], null);
+    graphicsQueue.waitIdle();
+    pool.free((&cmdBuf)[0 .. 1]);
   }
 }

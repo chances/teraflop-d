@@ -32,7 +32,6 @@ abstract class Game {
   private Rc!Semaphore[const Window] renderingFinished;
   private FrameData[] frameDatas;
   private Rc!RenderPass renderPass;
-  private CommandPool oneOffCommandPool;
   private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
@@ -156,6 +155,7 @@ abstract class Game {
         destroy(component);
       }
     }
+    foreach (system; systems) destroy(system);
     destroy(world);
 
     foreach (window; windows_) {
@@ -200,7 +200,6 @@ abstract class Game {
       device = selectGraphicsDevice(graphicsQueueIndex, mainWindow.surface);
       // TODO: Create a separate presentation queue?
       graphicsQueue[mainWindow] = presentQueue[mainWindow] = device.getQueue(graphicsQueueIndex, 0);
-      oneOffCommandPool = device.createCommandPool(graphicsQueueIndex);
     } catch (Exception ex) {
       enforce(0, "GPU Device initialization failed: " ~ ex.msg);
     }
@@ -233,14 +232,7 @@ abstract class Game {
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
-    systems ~= new TextureUploader(world, oneOffCommandPool, (PrimaryCommandBuffer cmdBuf) => {
-      graphicsQueue[mainWindow].submit(
-        [Submission([StageWait(imageAvailable[mainWindow], PipelineStage.transfer)], [], [cmdBuf])],
-        null
-      );
-      graphicsQueue[mainWindow].waitIdle();
-      oneOffCommandPool.free([cmdBuf]);
-    }());
+    systems ~= new TextureUploader(world, new OneTimeCmdBufPool(device, graphicsQueue[mainWindow]));
 
     world.resources.add(mainWindow);
     initializeWorld(world);
