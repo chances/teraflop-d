@@ -171,11 +171,13 @@ abstract class Game {
 
     // Setup main window
     auto mainWindow = new Window(name);
+    enforce(mainWindow.valid, "Could not open main game window!");
     windows_ ~= mainWindow;
 
     try {
       const graphicsQueueIndex = selectGraphicsQueue();
-      device = selectGraphicsDevice(mainWindow.surface);
+      enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
+      device = selectGraphicsDevice(graphicsQueueIndex, mainWindow.surface);
       // TODO: Create a separate presentation queue?
       graphicsQueue[mainWindow] = presentQueue[mainWindow] = device.getQueue(graphicsQueueIndex, 0);
       oneOffCommandPool = device.createCommandPool(graphicsQueueIndex);
@@ -184,16 +186,10 @@ abstract class Game {
     }
 
     // Setup swap chain
+    swapchainNeedsRebuild[mainWindow] = false;
     updateSwapChain(mainWindow);
     imageAvailable[mainWindow] = device.createSemaphore();
     renderingFinished[mainWindow] = device.createSemaphore();
-
-    // Setup frame buffers
-    auto images = swapChains[mainWindow].images;
-    frameDatas = new FrameData[images.length];
-
-    foreach(i, img; images)
-      frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[mainWindow].index, img));
 
     // Setup render pass
     const attachments = [AttachmentDescription(swapChains[mainWindow].format, 1,
@@ -207,6 +203,13 @@ abstract class Game {
       none!AttachmentRef, []
     )];
     renderPass = device.createRenderPass(attachments, subpasses, []);
+
+    // Setup frame buffers
+    auto images = swapChains[mainWindow].images;
+    frameDatas = new FrameData[images.length];
+
+    foreach(i, img; images)
+      frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[mainWindow].index, img));
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
@@ -259,7 +262,7 @@ abstract class Game {
     // If the window is new, create its swap chain and graphics command buffer
     if ((window in swapChains) is null) {
       swapChains[window] = device.createSwapchain(
-        cast(Surface) window, PresentMode.fifo, 3, Format.bgra8_sRgb,
+        window.surface, PresentMode.fifo, 3, Format.bgra8_sRgb,
         [window.framebufferSize.width, window.framebufferSize.height],
         ImageUsage.colorAttachment, CompositeAlpha.opaque
       );
@@ -270,7 +273,7 @@ abstract class Game {
     auto swapChain = swapChains[window];
     if (window.dirty || needsRebuild)
       swapChains[window] = device.createSwapchain(
-        cast(Surface) window, PresentMode.fifo, 3, Format.bgra8_sRgb,
+        window.surface, PresentMode.fifo, 3, Format.bgra8_sRgb,
         [window.framebufferSize.width, window.framebufferSize.height],
         ImageUsage.colorAttachment, CompositeAlpha.opaque, swapChain
       );
@@ -346,6 +349,7 @@ abstract class Game {
       };
 
       auto pipeline = device.createPipelines([info])[0];
+      pipelines[material] = pipeline;
       renderables ~= Renderable(pipeline.rc, mesh);
     }
 

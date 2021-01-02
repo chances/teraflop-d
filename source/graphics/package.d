@@ -142,14 +142,14 @@ struct VertexPosColorTex {
 }
 
 /// Return the index of a memory type supporting all of props, or uint.max if none was found.
-private uint findMemoryType(PhysicalDevice physicalDevice, MemoryRequirements mr, MemProps props) {
-    const devMemProps = physicalDevice.memoryProperties;
-    foreach (i, mt; devMemProps.types) {
-        if ((mr.memTypeMask & (1 << i)) != 0 && (mt.props & props) == props) {
-            return cast(uint)i;
-        }
+private uint findMemoryType(PhysicalDevice physicalDevice, MemoryRequirements reqs, MemProps props) {
+  const devMemProps = physicalDevice.memoryProperties;
+  foreach (i, memory; devMemProps.types) {
+    if ((memory.props & props) == props) {
+      return cast(uint) i;
     }
-    return uint.max;
+  }
+  return uint.max;
 }
 
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
@@ -642,7 +642,6 @@ class Material : NamedComponent, IResource {
   CullMode cullMode = CullMode.back;
 
   package (teraflop) Shader[] _shaders;
-  private GraphicsShaderSet _shaderSet;
   package (teraflop) Texture texture_;
 
   /// Initialize a new Material.
@@ -669,28 +668,6 @@ class Material : NamedComponent, IResource {
     super(name);
 
     this._shaders = shaders;
-    foreach (Shader shader; shaders) {
-      switch (shader.stage) {
-        case ShaderStage.vertex:
-          _shaderSet.vertex = shader.shaderModule;
-          break;
-        case ShaderStage.tessellationControl:
-          _shaderSet.tessControl = shader.shaderModule;
-          break;
-        case ShaderStage.tessellationEvaluation:
-          _shaderSet.tessEval = shader.shaderModule;
-          break;
-        case ShaderStage.geometry:
-          _shaderSet.geometry = shader.shaderModule;
-          break;
-        case ShaderStage.fragment:
-          _shaderSet.fragment = shader.shaderModule;
-          break;
-        default:
-          assert(0, "Unreachable");
-      }
-    }
-
     this.texture_ = texture;
     this.frontFace = frontFace;
     this.cullMode = cullMode;
@@ -709,7 +686,28 @@ class Material : NamedComponent, IResource {
   }
 
   GraphicsShaderSet shaders() @property const {
-    return cast(GraphicsShaderSet) _shaderSet;
+    import std.algorithm : canFind, find;
+
+    auto findShader = (const Shader s, ShaderStage st) => s.stage == st;
+
+    GraphicsShaderSet shaderSet = {
+      vertex: _shaders.canFind!(findShader)(ShaderStage.vertex)
+        ? _shaders.find!(findShader)(ShaderStage.vertex)[0].shaderModule
+        : null,
+      tessControl: _shaders.canFind!(findShader)(ShaderStage.tessellationControl)
+        ? _shaders.find!(findShader)(ShaderStage.tessellationControl)[0].shaderModule
+        : null,
+      tessEval: _shaders.canFind!(findShader)(ShaderStage.tessellationEvaluation)
+        ? _shaders.find!(findShader)(ShaderStage.tessellationEvaluation)[0].shaderModule
+        : null,
+      geometry: _shaders.canFind!(findShader)(ShaderStage.geometry)
+        ? _shaders.find!(findShader)(ShaderStage.geometry)[0].shaderModule
+        : null,
+      fragment: _shaders.canFind!(findShader)(ShaderStage.fragment)
+        ? _shaders.find!(findShader)(ShaderStage.fragment)[0].shaderModule
+        : null,
+    };
+    return shaderSet;
   }
 
   Texture texture() @property const {
