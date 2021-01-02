@@ -3,16 +3,18 @@
 /// License: 3-Clause BSD License
 module teraflop.game;
 
+import teraflop.platform.vulkan;
 import teraflop.platform.window;
-import teraflop.vulkan;
 
 /// Derive this class for your game application.
 abstract class Game {
   import core.time : msecs;
+  import gfx.core.rc : Rc;
+  import gfx.graal;
+  import teraflop.graphics : Pipeline, Material;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
-  import teraflop.vulkan : CommandBuffer, Pipeline, SwapChain;
 
   private string name_;
   private bool active_;
@@ -20,10 +22,19 @@ abstract class Game {
   private bool limitFrameRate = true;
   private int desiredFrameRateHertz_ = 60;
 
-  private Device device;
+  private Rc!Device device;
   private Window[] windows_;
-  private SwapChain[const Window] swapChains;
+  private Swapchain[const Window] swapChains;
+  private bool[const Window] swapchainNeedsRebuild;
+  private Queue[const Window] graphicsQueue;
+  private Queue[const Window] presentQueue;
+  private Rc!Semaphore[const Window] imageAvailable;
+  private Rc!Semaphore[const Window] renderingFinished;
+  private FrameData[] frameDatas;
+  private Rc!RenderPass renderPass;
+  private CommandPool oneOffCommandPool;
   private CommandBuffer[const Window] commandBuffers;
+  private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -35,6 +46,7 @@ abstract class Game {
   /// name = Name of the Game.
   this(string name) {
     name_ = name;
+    initVulkan(name);
   }
 
   /// Name of the Game.
@@ -88,16 +100,12 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
-    import teraflop.vulkan : initVulkan;
 
-    // Setup main window
-    if (!initGlfw() || !initVulkan()) {
+    if (!initGlfw() || !initVulkan(name)) {
       // TODO: Log an error
       return;
     }
     scope(exit) terminateGlfw();
-    auto mainWindow = new Window(name);
-    windows_ ~= mainWindow;
 
     initialize();
     active_ = true;
@@ -156,23 +164,58 @@ abstract class Game {
   }
 
   private void initialize() {
+    import gfx.core : none, retainObj;
+    import std.typecons : No;
     import std.exception : enforce;
     import teraflop.systems : TextureUploader, ResourceInitializer;
 
     // Setup main window
-    auto mainWindow = windows_[0];
-    device = new Device(name);
-    mainWindow.createSurface(device.instance);
-    device.acquire();
-    enforce(device.ready, "GPU Device initialization failed");
-    enforce(SwapChain.supported(device, mainWindow.surface),
-      "GPU not supported. Try upgrading your graphics drivers."
-    );
+    auto mainWindow = new Window(name);
+    windows_ ~= mainWindow;
+
+    try {
+      const graphicsQueueIndex = selectGraphicsQueue();
+      device = selectGraphicsDevice(mainWindow.surface);
+      // TODO: Create a separate presentation queue?
+      graphicsQueue[mainWindow] = presentQueue[mainWindow] = device.getQueue(graphicsQueueIndex, 0);
+      oneOffCommandPool = device.createCommandPool(graphicsQueueIndex);
+    } catch (Exception ex) {
+      enforce(0, "GPU Device initialization failed: " ~ ex.msg);
+    }
+
+    // Setup swap chain
     updateSwapChain(mainWindow);
+    imageAvailable[mainWindow] = device.createSemaphore();
+    renderingFinished[mainWindow] = device.createSemaphore();
+
+    // Setup frame buffers
+    auto images = swapChains[mainWindow].images;
+    frameDatas = new FrameData[images.length];
+
+    foreach(i, img; images)
+      frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[mainWindow].index, img));
+
+    // Setup render pass
+    const attachments = [AttachmentDescription(swapChains[mainWindow].format, 1,
+      AttachmentOps(LoadOp.clear, StoreOp.store),
+      AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
+      trans(ImageLayout.undefined, ImageLayout.presentSrc),
+      No.mayAlias
+    )];
+    const subpasses = [SubpassDescription(
+      [], [ AttachmentRef(0, ImageLayout.colorAttachmentOptimal) ],
+      none!AttachmentRef, []
+    )];
+    renderPass = device.createRenderPass(attachments, subpasses, []);
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
-    systems ~= new TextureUploader(world, device);
+    systems ~= new TextureUploader(world, oneOffCommandPool, (PrimaryCommandBuffer cmdBuf) => {
+      graphicsQueue[mainWindow].submit(
+        [Submission([StageWait(imageAvailable[mainWindow], PipelineStage.transfer)], [], [cmdBuf])],
+        null
+      );
+    }());
 
     world.resources.add(mainWindow);
     initializeWorld(world);
@@ -181,6 +224,7 @@ abstract class Game {
   /// Called when the Game should update itself.
   private void update() {
     import core.time : Duration;
+    import gfx.graal.presentation : ImageAcquisition;
     import std.string : format;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
@@ -188,7 +232,7 @@ abstract class Game {
       window.update();
       // Wait for minimized windows to restore
       if (window.minimized) continue;
-      updateSwapChain(window);
+      updateSwapChain(window, swapchainNeedsRebuild[window]);
       updatePipelines();
     }
 
@@ -206,31 +250,49 @@ abstract class Game {
       system.run();
   }
 
-  private void updateSwapChain(const Window window) {
+  private void updateSwapChain(const Window window, bool needsRebuild = false) {
+    import gfx.graal : Surface;
+    import gfx.graal.format : Format;
+    import gfx.graal.image : ImageUsage;
+    import gfx.graal.presentation : CompositeAlpha, PresentMode;
+
     // If the window is new, create its swap chain and graphics command buffer
     if ((window in swapChains) is null) {
-      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize);
+      swapChains[window] = device.createSwapchain(
+        cast(Surface) window, PresentMode.fifo, 3, Format.bgra8_sRgb,
+        [window.framebufferSize.width, window.framebufferSize.height],
+        ImageUsage.colorAttachment, CompositeAlpha.opaque
+      );
       return;
     }
 
     // Otherwise, recreate the window's swap chain
     auto swapChain = swapChains[window];
-    if (window.dirty || swapChain.dirty)
-      swapChains[window] = device.createSwapChain(window.surface, window.framebufferSize, swapChain);
+    if (window.dirty || needsRebuild)
+      swapChains[window] = device.createSwapchain(
+        cast(Surface) window, PresentMode.fifo, 3, Format.bgra8_sRgb,
+        [window.framebufferSize.width, window.framebufferSize.height],
+        ImageUsage.colorAttachment, CompositeAlpha.opaque, swapChain
+      );
   }
 
+  private bool hasPipeline(const Material material) {
+    return (material in pipelines) !is null;
+  }
   private void updatePipelines() {
+    import gfx.core : none;
+    import gfx.core.rc : rc;
     import std.algorithm.iteration : filter, map;
     import std.conv : to;
     import std.range : enumerate;
+    import std.typecons : No;
     import teraflop.graphics : Camera, Color, Material, MeshBase;
-    import teraflop.vulkan : BindingDescriptor, BindingGroup, PipelineLayout, VertexDataDescriptor;
 
     const window = world.resources.get!Window;
-    auto swapChain = swapChains[window];
+    auto surfaceSize = window.framebufferSize;
 
     struct Renderable {
-      const Pipeline pipeline;
+      Pipeline pipeline;
       const MeshBase mesh;
     }
     Renderable[] renderables;
@@ -242,50 +304,152 @@ abstract class Game {
       const mesh = entity.get!MeshBase()[0];
       if (!mesh.initialized) continue;
 
-      if (swapChain.hasPipeline(material)) continue;
+      if (hasPipeline(material)) continue;
 
-      const(BindingDescriptor)[] descriptors;
+      DescriptorSetLayout[] descriptors;
       // Bind the World's primary camera mvp uniform, if any
       if (world.resources.contains!Camera) {
-        const BindingDescriptor uniform = world.resources.get!Camera.uniform;
-        descriptors ~= uniform;
+        auto uniform = world.resources.get!Camera.uniform;
+        descriptors ~= device.createDescriptorSetLayout([
+          PipelineLayoutBinding(uniform.bindingLocation, uniform.bindingType, 1, uniform.shaderStage)
+        ]);
       }
-      const layout = PipelineLayout(
-        descriptors.length ? [BindingGroup(0, descriptors)] : [],
-        VertexDataDescriptor(mesh.bindingDescription, mesh.attributeDescriptions)
-      );
-      const pipeline = swapChain.trackPipeline(material, layout);
-      renderables ~= Renderable(pipeline, mesh);
+
+      PipelineInfo info = {
+        shaders: material.shaders,
+        inputBindings: [mesh.bindingDescription],
+        inputAttribs: mesh.attributeDescriptions,
+        assembly: InputAssembly(Primitive.triangleList, No.primitiveRestart),
+        rasterizer: Rasterizer(
+          PolygonMode.fill, material.cullMode, material.frontFace, No.depthClamp,
+          none!DepthBias, 1f
+        ),
+        viewports: [
+            ViewportConfig(
+                Viewport(0, 0, surfaceSize.width.to!float, surfaceSize.height.to!float),
+                Rect(0, 0, surfaceSize.width, surfaceSize.height)
+            )
+        ],
+        blendInfo: ColorBlendInfo(
+            none!LogicOp, [
+                ColorBlendAttachment(No.enabled,
+                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+                    ColorMask.all
+                )
+            ],
+            [ 0f, 0f, 0f, 0f ]
+        ),
+        layout: device.createPipelineLayout(descriptors.length ? descriptors : [], []),
+        renderPass: renderPass,
+        subpassIndex: 0
+      };
+
+      auto pipeline = device.createPipelines([info])[0];
+      renderables ~= Renderable(pipeline.rc, mesh);
     }
 
     if (renderables.length == 0) return;
 
     // Renderables in the world changed, re-record graphics commands
-    auto commands = swapChain.commandBuffer;
-    auto clearColor = window.clearColor.toVulkan;
-    commands.beginRenderPass(&clearColor, true);
-    foreach (renderable; renderables) {
-      commands.bindPipeline(renderable.pipeline);
-      // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
-      commands.bindVertexBuffers(renderable.mesh.vertexBuffer);
-      commands.bindIndexBuffer(renderable.mesh.indexBuffer);
-      commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
+    foreach (frameData; frameDatas) {
+      auto frame = (cast(GameFrameData) frameData);
+      auto commands = frame.cmdBuf;
+      auto clearColor = window.clearColor.toVulkan;
+
+      commands.begin(CommandBufferUsage.simultaneousUse);
+      commands.beginRenderPass(
+        renderPass, frame.frameBuffer,
+        Rect(0, 0, surfaceSize.width, surfaceSize.height),
+        [ClearValues(clearColor)]
+      );
+      foreach (renderable; renderables) {
+        commands.bindPipeline(renderable.pipeline);
+        // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
+        commands.bindVertexBuffers(0, [VertexBinding(renderable.mesh.vertexBuffer, 0)]);
+        commands.bindIndexBuffer(renderable.mesh.indexBuffer, 0, IndexType.u32);
+        commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
+      }
+      commands.endRenderPass();
+      commands.end();
     }
-    commands.endRenderPass();
   }
 
   /// Called when the Game should render itself.
   private void render() {
+    import gfx.graal.error : OutOfDateException;
+
     foreach (window; windows_) {
       // Wait for minimized windows to restore
       if (window.minimized) continue;
+
       auto swapChain = swapChains[window];
-      if (swapChain.ready) swapChain.drawFrame();
+      const acq = swapChain.acquireNextImage(imageAvailable[window].obj);
+      swapchainNeedsRebuild[window] = acq.swapchainNeedsRebuild;
+
+      if (acq.hasIndex) {
+        auto frameData = frameDatas[acq.index];
+        frameData.fence.wait();
+        frameData.fence.reset();
+
+        auto commands = (cast(GameFrameData) frameData).cmdBuf;
+        auto submissions = simpleSubmission(window, [commands]);
+
+        graphicsQueue[window].submit(submissions, frameData.fence);
+
+        try {
+          presentQueue[window].present(
+            [ renderingFinished[window].obj ],
+            [ PresentRequest(swapChains[window], acq.index) ]
+          );
+        }
+        catch (OutOfDateException ex) {
+          // The swapchain became out of date between acquire and present.
+          // Rare, but can happen
+          // TODO: Log error
+          // gfxExLog.errorf("error during presentation: %s", ex.msg);
+          // gfxExLog.errorf("acquisition was %s", acq.state);
+          swapchainNeedsRebuild[window] = true;
+          return;
+        }
+      }
     }
   }
 
   /// Stop the game loop and exit the Game.
   protected void exit() {
     active_ = false;
+  }
+
+  /// Build a submission for the simplest cases with one submission
+  final Submission[] simpleSubmission(Window window, PrimaryCommandBuffer[] cmdBufs) {
+    return [Submission(
+      [ StageWait(imageAvailable[window], PipelineStage.transfer) ],
+      [ renderingFinished[window].obj ], cmdBufs
+    )];
+  }
+
+  private class GameFrameData : FrameData {
+    PrimaryCommandBuffer cmdBuf;
+    Rc!Framebuffer frameBuffer;
+
+    this(uint queueFamilyIndex, ImageBase swcColor, CommandBuffer tempBuf = null) {
+      super(device, queueFamilyIndex, swcColor);
+      cmdBuf = cmdPool.allocatePrimary(1)[0];
+
+      frameBuffer = device.createFramebuffer(this.outer.renderPass.obj, [
+        swcColor.createView(
+          ImageType.d2,
+          ImageSubresourceRange(ImageAspect.color),
+          Swizzle.identity
+        )
+      ], size.width, size.height, 1);
+    }
+
+    override void dispose() {
+      cmdPool.free([ cast(CommandBuffer)cmdBuf ]);
+      frameBuffer.unload();
+      super.dispose();
+    }
   }
 }

@@ -5,7 +5,7 @@
 /// License: 3-Clause BSD License
 module teraflop.components;
 
-import teraflop.vulkan : Device;
+import gfx.graal : Device;
 
 /// A Component that holds one or more handles to GPU resources.
 ///
@@ -14,5 +14,5 @@ interface IResource {
   /// Whether this Resource has been successfully initialized.
   bool initialized() @property const;
   /// Initialize this Resource. `intiialized` should be `true` if successful.
-  void initialize(const Device device);
+  void initialize(scope Device device);
 }

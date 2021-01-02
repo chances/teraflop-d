@@ -6,14 +6,23 @@
 module teraflop.graphics;
 
 import concepts : implements;
-import erupted;
+import gfx.core.rc;
+import gfx.graal;
 import std.traits : fullyQualifiedName;
 
+import std.conv : to;
+import std.exception : enforce;
 import teraflop.components : IResource;
 import teraflop.ecs : NamedComponent;
 import teraflop.math;
 import teraflop.traits : isStruct;
-import teraflop.vulkan : Buffer, Device, enforceVk;
+
+public {
+  static import gfx.graal.pipeline;
+
+  alias Pipeline = Rc!(gfx.graal.pipeline.Pipeline);
+  import gfx.graal.pipeline : ShaderStage;
+}
 
 /// RGBA double precision color.
 struct Color {
@@ -49,12 +58,7 @@ struct Color {
   }
 
   package (teraflop) auto toVulkan() const {
-    import erupted : VkClearValue;
-
-    VkClearValue color = {
-      color: VkClearColorValue([cast(float) r, cast(float) g, cast(float) b, cast(float) a])
-    };
-    return color;
+    return ClearColorValues(r.to!float, g.to!float, b.to!float, a.to!float);
   }
 }
 
@@ -72,27 +76,26 @@ struct VertexPosColor {
   vec3f color;
 
   /// Describes how vertex attributes should be bound to the vertex shader.
-  static VkVertexInputBindingDescription bindingDescription() {
-    VkVertexInputBindingDescription bindingDescription = {
+  static VertexInputBinding bindingDescription() {
+    VertexInputBinding bindingDescription = {
       binding: 0,
       stride: VertexPosColor.sizeof,
-      inputRate: VK_VERTEX_INPUT_RATE_VERTEX,
     };
     return bindingDescription;
   }
 
   /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
-  static VkVertexInputAttributeDescription[2] attributeDescriptions() {
-    VkVertexInputAttributeDescription[2] attributeDescriptions;
+  static VertexInputAttrib[2] attributeDescriptions() {
+    VertexInputAttrib[2] attributeDescriptions;
     // Position
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].format = Format.rgb32_sFloat;
     attributeDescriptions[0].offset = position.offsetof;
     // Color
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].format = Format.rgb32_sFloat;
     attributeDescriptions[1].offset = color.offsetof;
     return attributeDescriptions;
   }
@@ -108,40 +111,50 @@ struct VertexPosColorTex {
   vec2f uv;
 
   /// Describes how vertex attributes should be bound to the vertex shader.
-  static VkVertexInputBindingDescription bindingDescription() {
-    VkVertexInputBindingDescription bindingDescription = {
+  static VertexInputBinding bindingDescription() {
+    VertexInputBinding bindingDescription = {
       binding: 0,
       stride: VertexPosColorTex.sizeof,
-      inputRate: VK_VERTEX_INPUT_RATE_VERTEX,
     };
     return bindingDescription;
   }
 
   /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
-  static VkVertexInputAttributeDescription[3] attributeDescriptions() {
-    VkVertexInputAttributeDescription[3] attributeDescriptions;
+  static VertexInputAttrib[3] attributeDescriptions() {
+    VertexInputAttrib[3] attributeDescriptions;
     // Position
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].format = Format.rgb32_sFloat;
     attributeDescriptions[0].offset = position.offsetof;
     // Color
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].format = Format.rgb32_sFloat;
     attributeDescriptions[1].offset = color.offsetof;
     // Texture UV Coordinates
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].format = Format.rg32_sFloat;
     attributeDescriptions[2].offset = uv.offsetof;
     return attributeDescriptions;
   }
 }
 
+/// Return the index of a memory type supporting all of props, or uint.max if none was found.
+private uint findMemoryType(PhysicalDevice physicalDevice, MemoryRequirements mr, MemProps props) {
+    const devMemProps = physicalDevice.memoryProperties;
+    foreach (i, mt; devMemProps.types) {
+        if ((mr.memTypeMask & (1 << i)) != 0 && (mt.props & props) == props) {
+            return cast(uint)i;
+        }
+    }
+    return uint.max;
+}
+
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
-  package (teraflop) Buffer vertexBuffer;
-  package (teraflop) Buffer indexBuffer;
+  private Buffer _vertexBuffer;
+  private Buffer _indexBuffer;
   private uint[] indices_;
   private auto dirty_ = true;
 
@@ -149,8 +162,8 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     super(name);
   }
   ~this() {
-    destroy(vertexBuffer);
-    destroy(indexBuffer);
+    destroy(_vertexBuffer);
+    destroy(_indexBuffer);
   }
 
   /// Whether this mesh's vertex data is new or changed and needs to be uploaded to the GPU.
@@ -159,6 +172,13 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   }
   package (teraflop) void dirty(bool value) @property {
     dirty_ = value;
+  }
+
+  package (teraflop) Buffer vertexBuffer() @property const {
+    return cast(Buffer) _vertexBuffer;
+  }
+  package (teraflop) Buffer indexBuffer() @property const {
+    return cast(Buffer) _indexBuffer;
   }
 
   abstract ulong vertexCount() @property const;
@@ -174,32 +194,36 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   }
 
   /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
-  abstract VkVertexInputBindingDescription bindingDescription() @property const;
+  abstract VertexInputBinding bindingDescription() @property const;
   /// Describes the format of this mesh's vertex attributes so that they can be applied to the vertex shader.
-  abstract VkVertexInputAttributeDescription[] attributeDescriptions() @property const;
+  abstract VertexInputAttrib[] attributeDescriptions() @property const;
 
   /// Whether this Mesh has been successfully initialized.
   bool initialized() @property const {
-    return vertexBuffer !is null && vertexBuffer.ready &&
-      indexBuffer !is null && indexBuffer.ready;
+    return vertexBuffer !is null && indexBuffer !is null;
   }
 
   /// Initialize this Mesh.
-  void initialize(const Device device) {
+  void initialize(scope Device device) {
     import std.algorithm.mutation : copy;
-    import teraflop.vulkan : BufferUsage;
+    import gfx.graal : BufferUsage;
 
-    vertexBuffer = device.createBuffer(size);
-    auto unfilled = data.copy(vertexBuffer.map());
-    assert(unfilled.length == 0);
-    vertexBuffer.unmap();
+    _vertexBuffer = device.createBuffer(BufferUsage.vertex, size);
 
-    indexBuffer = device.createBuffer(uint.sizeof * indices.length, BufferUsage.indexBuffer);
-    const(void[]) indexData = indices;
-    assert(indexData.length == indexBuffer.size);
-    unfilled = (cast(ubyte[]) indexData).copy(indexBuffer.map());
+    const memType = findMemoryType(
+      device.physicalDevice, vertexBuffer.memoryRequirements,
+      MemProps.hostVisible | MemProps.hostCoherent
+    );
+    enforce(memType != uint.max, "Could not allocate GPU memory!");
+
+    vertexBuffer.bindMemory(device.allocateMemory(memType, vertexBuffer.size), 0);
+    void[] unfilled = data.copy(vertexBuffer.boundMemory.map.view!(ubyte[])[]);
     assert(unfilled.length == 0);
-    indexBuffer.unmap();
+
+    _indexBuffer = device.createBuffer(BufferUsage.index, uint.sizeof * indices.length);
+    indexBuffer.bindMemory(device.allocateMemory(memType, indexBuffer.size), 0);
+    unfilled = indices.copy(indexBuffer.boundMemory.map.view!(uint[])[]);
+    assert(unfilled.length == 0);
   }
 }
 
@@ -247,11 +271,11 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   }
 
   /// Describes how this mesh's vertex attributes should be bound to the vertex shader.
-  override VkVertexInputBindingDescription bindingDescription() @property const {
+  override VertexInputBinding bindingDescription() @property const {
     return __traits(getMember, T, "bindingDescription");
   }
   /// Describes the format of this mesh's vertex attributes so that they can be applied to the vertex shader.
-  override VkVertexInputAttributeDescription[] attributeDescriptions() @property const {
+  override VertexInputAttrib[] attributeDescriptions() @property const {
     return __traits(getMember, T, "attributeDescriptions").dup;
   }
 
@@ -262,27 +286,6 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   }
 }
 
-/// A programmable stage in the graphics `Pipeline`.
-enum ShaderStage : VkShaderStageFlagBits {
-  /// For every vertex, generally applies transformations to turn vertex positions from model space to screen space.
-  vertex = VK_SHADER_STAGE_VERTEX_BIT,
-  /// Subdivide geometry to increase the mesh quality.
-  tesselation = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-  /// For every primitive (triangle, line, point) either discard it or output more primitives than came in. Similar to
-  /// the tessellation shader, but much more flexible.
-  geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
-  /// For every fragment that survives and determines which framebuffer(s) the fragments are written to and with which
-  /// color and depth values. It can do this using the interpolated data from the vertex shader, which can include
-  /// things like texture coordinates and normals for lighting.
-  fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
-  /// Applies to all graphical shader stages, i.e. vertex, tesselation, geometry, and fragment stages.
-  allGraphics = VK_SHADER_STAGE_ALL_GRAPHICS,
-  /// For the compute stage
-  compute = VK_SHADER_STAGE_COMPUTE_BIT,
-  /// Applies to all shader stages, i.e. any graphical stage or compute stage
-  all = VK_SHADER_STAGE_ALL
-}
-
 /// A world-space model view projection matrix. Suitable for use as a uniform buffer object.
 /// See_Also: <a href="https://dlang.org/spec/attribute.html#align" title="D Language reference">`align` Attribute</a>
 struct ModelViewProjection {
@@ -290,7 +293,83 @@ struct ModelViewProjection {
   mat4f mvp;
 }
 
-import teraflop.vulkan : BindingDescriptor, BindingType;
+/// A GPU descriptor binding, e.g. uniform buffer or texture sampler.
+/// See_Also: `teraflop.graphics.UniformBuffer`
+abstract class BindingDescriptor {
+  protected uint bindingLocation_;
+  protected ShaderStage shaderStage_;
+  protected DescriptorType bindingType_;
+  private auto dirty_ = true;
+
+  /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
+  bool dirty() @property const {
+    return dirty_;
+  }
+  package (teraflop) void dirty(bool value) @property {
+    dirty_ = value;
+  }
+
+  /// Descriptor binding location, e.g. `layout(binding = 0)` in GLSL.
+  uint bindingLocation() @property const {
+    return bindingLocation_;
+  }
+
+  /// Which shader stages this descriptor is going to be referenced.
+  ShaderStage shaderStage() @property const {
+    return shaderStage_;
+  }
+
+  DescriptorType bindingType() @property const {
+    return bindingType_;
+  }
+
+  package const(WriteDescriptorSet) descriptorWrite(DescriptorSet set, Buffer uniformBuffer) const {
+    WriteDescriptorSet descriptorSet = {
+      dstSet: set,
+      dstBinding: bindingLocation_,
+      dstArrayElem: 0,
+    };
+    switch (bindingType_) {
+      case DescriptorType.uniformBuffer:
+        descriptorSet.write = DescriptorWrite.make(
+          bindingType_, BufferDescriptor(uniformBuffer, 0, uniformBuffer.size)
+        );
+        break;
+      case DescriptorType.sampler:
+      case DescriptorType.sampledImage:
+        assert(sampler !is null);
+        descriptorSet.write = DescriptorWrite.make(
+          bindingType_,
+          ImageSamplerDescriptor(
+            image !is null ? image.createView(image.info.type, ImageSubresourceRange(), Swizzle.identity) : null,
+            ImageLayout.shaderReadOnlyOptimal,
+            sampler,
+          )
+        );
+        break;
+      default: assert(0, "Descriptor type not supported");
+    }
+    return descriptorSet;
+  }
+
+  size_t size() @property const {
+    return 0;
+  }
+  const(ubyte[]) data() @property const {
+    return [];
+  }
+  package (teraflop) Sampler sampler() @property inout {
+    return null;
+  }
+  package (teraflop) Image image() @property inout {
+    return null;
+  }
+}
+
+package (teraflop) struct BindingGroup {
+  uint index;
+  const BindingDescriptor[] bindings;
+}
 
 /// A uniform buffer object.
 class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
@@ -304,7 +383,7 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   this(uint bindingLocation = 0, ShaderStage shaderStage = ShaderStage.allGraphics, T value = T.init) {
     this.bindingLocation_ = bindingLocation;
     this.shaderStage_ = shaderStage;
-    this.bindingType_ = BindingType.uniform;
+    this.bindingType_ = DescriptorType.uniformBuffer;
     this.value_ = value;
   }
 
@@ -388,7 +467,7 @@ class Camera : NamedComponent {
 
 /// A 2D image stored in GPU memory.
 class Texture : BindingDescriptor, IResource {
-  import teraflop.vulkan : Image, Sampler;
+  import gfx.graal : Image, Sampler;
 
   /// Size of this Texture, in pixels.
   const Size size;
@@ -401,7 +480,7 @@ class Texture : BindingDescriptor, IResource {
   /// Initialize a new Texture.
   this(const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
     bindingLocation_ = bindingLocation;
-    bindingType_ = BindingType.sampledTexture;
+    bindingType_ = DescriptorType.sampledImage;
     shaderStage_ = shaderStage;
 
     this.size = size;
@@ -409,7 +488,7 @@ class Texture : BindingDescriptor, IResource {
   /// Initialize a new Texture with initial data.
   this(const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
     bindingLocation_ = bindingLocation;
-    bindingType_ = BindingType.sampledTexture;
+    bindingType_ = DescriptorType.sampledImage;
     shaderStage_ = shaderStage;
 
     this.size = size;
@@ -419,8 +498,8 @@ class Texture : BindingDescriptor, IResource {
 
   /// Whether this Shader has been successfully initialized.
   bool initialized() @property const {
-    return stagingBuffer !is null && stagingBuffer.ready &&
-      stagingBuffer.size && stagingBuffer.size == data_.length &&
+    return stagingBuffer !is null &&
+      (cast(Buffer) stagingBuffer).size == data_.length &&
       image_ !is null && sampler_ !is null;
   }
 
@@ -429,23 +508,30 @@ class Texture : BindingDescriptor, IResource {
     return data_;
   }
 
-  package (teraflop) const(Buffer) buffer() @property const {
-    return stagingBuffer;
+  package (teraflop) Buffer buffer() @property const {
+    return cast(Buffer) stagingBuffer;
   }
-  package (teraflop) const(Sampler) sampler() @property const {
-    return sampler_;
+  package (teraflop) Sampler sampler() @property inout {
+    return cast(Sampler) sampler_;
   }
-  package (teraflop) const(Image) image() @property const {
-    return image_;
+  package (teraflop) Image image() @property inout {
+    return cast(Image) image_;
   }
 
   /// Initialize this Texture.
-  void initialize(const Device device) {
-    import teraflop.vulkan : BufferUsage;
+  void initialize(scope Device device) {
+    import gfx.graal : BufferUsage;
 
-    stagingBuffer = new Buffer(device, size.width * size.height * 4, BufferUsage.transferSrc);
-    image_ = new Image(device, size);
-    sampler_ = new Sampler(device);
+    stagingBuffer = device.createBuffer(BufferUsage.transferSrc, size.width * size.height * 4);
+    const memType = findMemoryType(
+      device.physicalDevice, stagingBuffer.memoryRequirements,
+      MemProps.hostVisible | MemProps.hostCoherent // Use deviceLocal for destinations of staging buffers
+    );
+    enforce(memType != uint.max, "Could not allocate GPU memory!");
+    stagingBuffer.bindMemory(device.allocateMemory(memType, stagingBuffer.size), 0);
+
+    image_ = device.createImage(ImageInfo.d2(size.width, size.height));
+    sampler_ = device.createSampler(SamplerInfo.nearest.withWrapMode(WrapMode.border));
 
     copyToStage();
   }
@@ -454,18 +540,17 @@ class Texture : BindingDescriptor, IResource {
   void update(ubyte[] data) {
     this.data_ = data;
     dirty = true;
-    if (stagingBuffer !is null && stagingBuffer.ready && data_.length == stagingBuffer.size)
+    if (stagingBuffer !is null && data_.length == stagingBuffer.size)
       copyToStage();
   }
 
   private void copyToStage() {
     import std.algorithm.mutation : copy;
 
-    assert(stagingBuffer !is null && stagingBuffer.ready);
-    auto buf = stagingBuffer.map();
-    const remaining = data.copy(buf);
-    assert(remaining.length == 0);
-    stagingBuffer.unmap();
+    assert(stagingBuffer !is null);
+    auto buf = stagingBuffer.boundMemory.map.view!(ubyte[])[];
+    auto unfilled = data.copy(buf);
+    assert(unfilled.length == 0);
   }
 }
 
@@ -475,8 +560,7 @@ class Shader : IResource {
   const ShaderStage stage;
 
   private Device device;
-  private VkShaderModule shaderModule;
-  package (teraflop) VkPipelineShaderStageCreateInfo stageCreateInfo;
+  private ShaderModule _shaderModule;
   private ubyte[] spv;
 
   /// Initialize a new Shader.
@@ -485,7 +569,6 @@ class Shader : IResource {
   /// stage = The stage in the graphics pipeline in which this Shader performs.
   /// filePath = Path to a file containing SPIR-V source bytecode.
   this(ShaderStage stage, string filePath) {
-    import std.exception : enforce;
     import std.file : exists;
     import std.stdio : File;
     import std.string : format;
@@ -509,49 +592,44 @@ class Shader : IResource {
   }
 
   ~this() {
-    vkDestroyShaderModule(device.handle, shaderModule, null);
+    _shaderModule.dispose();
     spv = new ubyte[0];
   }
 
   /// Whether this Shader has been successfully initialized.
   bool initialized() @property const {
-    return shaderModule != VK_NULL_HANDLE;
+    return _shaderModule !is null;
+  }
+
+  ShaderModule shaderModule() @property const {
+    return cast(ShaderModule) _shaderModule;
   }
 
   /// Initialize this Shader.
-  void initialize(const Device device) {
-    this.device = cast(Device) device;
-
-    VkShaderModuleCreateInfo createInfo = {
-      codeSize: spv.length,
-      pCode: cast(uint*) spv.ptr,
-    };
-    enforceVk(vkCreateShaderModule(device.handle, &createInfo, null, &shaderModule));
-
-    this.stageCreateInfo.stage = stage;
-    this.stageCreateInfo.module_ = shaderModule;
-    this.stageCreateInfo.pName = "main";
+  void initialize(scope Device device) {
+    this.device = device;
+    this._shaderModule = device.createShaderModule(cast(uint[]) spv, "main");
   }
 }
 
 /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
-enum CullMode : VkCullModeFlagBits {
+enum CullMode : Cull {
   /// Disable face culling.
-  none = VK_CULL_MODE_NONE,
+  none = Cull.none,
   /// Cull front faces.
-  frontFace = VK_CULL_MODE_FRONT_BIT,
+  front = Cull.front,
   /// Cull back faces.
-  backFace = VK_CULL_MODE_BACK_BIT,
+  back = Cull.back,
   /// Cull both front and back faces.
-  both = VK_CULL_MODE_FRONT_AND_BACK
+  both = Cull.frontAndBack
 }
 
 /// Specifies the vertex order for faces to be considered front-facing.
-enum FrontFace : VkFrontFace {
+enum FrontFace : gfx.graal.FrontFace {
   /// Clockwise ordered faces will be considered front-facing.
-  clockwise = VK_FRONT_FACE_CLOCKWISE,
+  clockwise = gfx.graal.FrontFace.cw,
   /// Counter-clockwise ordered faces will be considered front-facing.
-  counterClockwise = VK_FRONT_FACE_COUNTER_CLOCKWISE
+  counterClockwise = gfx.graal.FrontFace.ccw
 }
 
 /// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
@@ -561,40 +639,64 @@ class Material : NamedComponent, IResource {
   /// Specifies the vertex order for faces to be considered front-facing.
   FrontFace frontFace = FrontFace.clockwise;
   /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
-  CullMode cullMode = CullMode.backFace;
+  CullMode cullMode = CullMode.back;
 
-  package (teraflop) Shader[] shaders;
+  package (teraflop) Shader[] _shaders;
+  private GraphicsShaderSet _shaderSet;
   package (teraflop) Texture texture_;
 
   /// Initialize a new Material.
-  this(Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace) {
+  this(Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back) {
     this(fullyQualifiedName!Material, shaders, frontFace, cullMode);
   }
   /// Initialize a new textured Material.
   this(
-    Shader[] shaders, Texture texture, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+    Shader[] shaders, Texture texture, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
   ) {
     this(fullyQualifiedName!Material, shaders, texture, frontFace, cullMode);
   }
   /// Initialize a new named Material.
   this(
-    string name, Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+    string name, Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
   ) {
     this(name, shaders, null, frontFace, cullMode);
   }
   /// Initialize a new named and textured Material.
   this(
     string name, Shader[] shaders, Texture texture,
-    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.backFace
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
   ) {
     super(name);
-    this.shaders = shaders;
+
+    this._shaders = shaders;
+    foreach (Shader shader; shaders) {
+      switch (shader.stage) {
+        case ShaderStage.vertex:
+          _shaderSet.vertex = shader.shaderModule;
+          break;
+        case ShaderStage.tessellationControl:
+          _shaderSet.tessControl = shader.shaderModule;
+          break;
+        case ShaderStage.tessellationEvaluation:
+          _shaderSet.tessEval = shader.shaderModule;
+          break;
+        case ShaderStage.geometry:
+          _shaderSet.geometry = shader.shaderModule;
+          break;
+        case ShaderStage.fragment:
+          _shaderSet.fragment = shader.shaderModule;
+          break;
+        default:
+          assert(0, "Unreachable");
+      }
+    }
+
     this.texture_ = texture;
     this.frontFace = frontFace;
     this.cullMode = cullMode;
   }
   ~this() {
-    foreach (shader; shaders)
+    foreach (shader; _shaders)
       destroy(shader);
   }
 
@@ -602,8 +704,12 @@ class Material : NamedComponent, IResource {
   bool initialized() @property const {
     import std.algorithm.searching : all;
 
-    if (!shaders.length) return true;
-    return shaders.all!(shader => shader.initialized) && (texture is null || texture.initialized);
+    if (!_shaders.length) return true;
+    return _shaders.all!(shader => shader.initialized) && (texture is null || texture.initialized);
+  }
+
+  GraphicsShaderSet shaders() @property const {
+    return cast(GraphicsShaderSet) _shaderSet;
   }
 
   Texture texture() @property const {
@@ -617,7 +723,7 @@ class Material : NamedComponent, IResource {
   // https://dlang.org/spec/hash-map.html#using_classes_as_key
   override size_t toHash() const pure {
     size_t accumulatedHash = cullMode.hashOf(frontFace);
-    foreach (shader; shaders)
+    foreach (shader; _shaders)
       accumulatedHash = shader.spv.hashOf(accumulatedHash);
     return accumulatedHash;
   }
@@ -627,8 +733,8 @@ class Material : NamedComponent, IResource {
   }
 
   /// Initialize this Material.
-  void initialize(const Device device) {
-    foreach (shader; shaders) shader.initialize(device);
+  void initialize(scope Device device) {
+    foreach (shader; _shaders) shader.initialize(device);
     if (texture_ !is null)
       texture.initialize(device);
   }
@@ -637,9 +743,6 @@ class Material : NamedComponent, IResource {
 unittest {
   version (GPU) {
     import std.conv : to;
-    import std.exception : enforce;
-    import teraflop.vulkan : CommandBuffer, Device, Image, ImageUsage, initVulkan, Pipeline, PipelineLayout, RenderPass,
-      VertexDataDescriptor;
 
     assert(initVulkan());
     auto device = new Device("test-triangle", []);
