@@ -381,6 +381,7 @@ abstract class Game {
       auto commands = frame.cmdBuf;
       auto clearColor = window.clearColor.toVulkan;
 
+      frameData.fence.wait();
       commands.begin(CommandBufferUsage.simultaneousUse);
       commands.beginRenderPass(
         renderPass, frame.frameBuffer,
