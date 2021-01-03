@@ -143,6 +143,8 @@ struct VertexPosColorTex {
 
 /// Return the index of a memory type supporting all of props, or uint.max if none was found.
 private uint findMemoryType(PhysicalDevice physicalDevice, MemoryRequirements reqs, MemProps props) {
+  // TODO: Integrate memory requirements (reqs)
+  assert(reqs.size);
   const devMemProps = physicalDevice.memoryProperties;
   foreach (i, memory; devMemProps.types) {
     if ((memory.props & props) == props) {
@@ -551,7 +553,7 @@ class Texture : BindingDescriptor, IResource {
 
     assert(stagingBuffer !is null);
     auto buf = stagingBuffer.boundMemory.map.view!(ubyte[])[];
-    auto unfilled = data.copy(buf);
+    const unfilled = data.copy(buf);
     assert(unfilled.length == 0);
   }
 }

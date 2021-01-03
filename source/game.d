@@ -3,6 +3,7 @@
 /// License: 3-Clause BSD License
 module teraflop.game;
 
+import gfx.graal;
 import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
@@ -10,7 +11,6 @@ import teraflop.platform.window;
 abstract class Game {
   import core.time : msecs;
   import gfx.core.rc : Rc;
-  import gfx.graal;
   import teraflop.graphics : Pipeline, Material;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;

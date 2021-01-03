@@ -83,11 +83,15 @@ abstract class FrameData : AtomicRefCounted {
   import teraflop.math : Size;
 
   Rc!Fence fence; // to keep track of when command processing is done
+  ///
   Rc!CommandPool cmdPool;
 
+  ///
   ImageBase swapChainColor;
+  /// Size of this frame's framebuffer.
   Size size;
 
+  ///
   this(Device device, uint queueFamilyIndex, ImageBase swapChainColor) {
     import std.typecons : Yes;
 
@@ -99,6 +103,7 @@ abstract class FrameData : AtomicRefCounted {
     size = Size(dimensions.width, dimensions.height);
   }
 
+  ///
   override void dispose() {
     fence.unload();
     cmdPool.unload();

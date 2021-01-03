@@ -67,6 +67,7 @@ class Window {
     data.update(window);
   }
 
+  ///
   void dispose() {
     if (valid) glfwDestroyWindow(window);
     _surface.dispose();
