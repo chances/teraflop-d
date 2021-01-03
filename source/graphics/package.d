@@ -767,8 +767,8 @@ unittest {
     const memoryType = findMemoryType(
       device.physicalDevice, renderTarget.memoryRequirements.memTypeMask
     );
-    auto mem = device.allocateMemory(memoryType, renderTarget.memoryRequirements.size).rc;
-    renderTarget.bindMemory(mem, 0);
+    auto renderTargetMemory = device.allocateMemory(memoryType, renderTarget.memoryRequirements.size).rc;
+    renderTarget.bindMemory(renderTargetMemory, 0);
 
     const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
       AttachmentOps(LoadOp.clear, StoreOp.store),
@@ -861,14 +861,21 @@ unittest {
     auto submissions = [Submission([], [], [commands])];
     graphicsQueue.submit(submissions, null);
 
+    // Render one frame
+    device.waitIdle();
+
     // Gracefully teardown GPU resources
+    destroy(material);
+    destroy(triangle);
+
     foreach (pipeline; pipelines.values) {
       device.waitIdle();
       pipeline.dispose();
     }
     device.waitIdle();
     renderPass.dispose();
-    frameBuffer.release();
+    frameBuffer.dispose();
+    renderTargetMemory.dispose();
 
     device.waitIdle();
     device.release();
