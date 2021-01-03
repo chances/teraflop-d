@@ -744,6 +744,39 @@ class Material : NamedComponent, IResource {
   }
 }
 
+version (unittest) {
+  import teraflop.platform.vulkan : FrameData;
+
+  private class TestFrameData : FrameData {
+    PrimaryCommandBuffer cmdBuf;
+    Rc!Framebuffer frameBuffer;
+
+    this(
+      Device device, uint queueFamilyIndex, ImageBase swcColor, RenderPass renderPass, CommandBuffer tempBuf = null
+    ) {
+      super(device, queueFamilyIndex, swcColor);
+      cmdBuf = cmdPool.allocatePrimary(1)[0];
+
+      cmdBuf.begin(CommandBufferUsage.simultaneousUse);
+      cmdBuf.end();
+
+      frameBuffer = device.createFramebuffer(renderPass, [
+        swcColor.createView(
+          ImageType.d2,
+          ImageSubresourceRange(ImageAspect.color),
+          Swizzle.identity
+        )
+      ], size.width, size.height, 1);
+    }
+
+    override void dispose() {
+      cmdPool.free([ cast(CommandBuffer)cmdBuf ]);
+      frameBuffer.unload();
+      super.dispose();
+    }
+  }
+}
+
 unittest {
   version (GPU) {
     import gfx.core : none;
@@ -781,13 +814,7 @@ unittest {
       none!AttachmentRef, []
     )];
     auto renderPass = device.createRenderPass(attachments, subpasses, []);
-    auto frameBuffer = device.createFramebuffer(renderPass, [
-      renderTarget.createView(
-        renderTarget.info.type,
-        ImageSubresourceRange(ImageAspect.color),
-        Swizzle.identity
-      )
-    ], renderTargetSize.width, renderTargetSize.height, 1);
+    auto frameBuffer = new TestFrameData(device, graphicsQueueIndex, renderTarget, renderPass);
 
     auto triangle = new Mesh!VertexPosColor([
       VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
@@ -841,12 +868,11 @@ unittest {
     };
     pipelines[material] = device.createPipelines([info])[0];
 
-    auto commandPool = device.createCommandPool(graphicsQueueIndex);
-    auto commands = commandPool.allocatePrimary(1)[0];
+    auto commands = frameBuffer.cmdPool.allocatePrimary(1)[0];
     commands.begin(CommandBufferUsage.oneTimeSubmit);
     const clearColor = Color.black.toVulkan;
     commands.beginRenderPass(
-      renderPass, frameBuffer,
+      renderPass, frameBuffer.frameBuffer,
       Rect(0, 0, renderTargetSize.width, renderTargetSize.height),
       [ClearValues(clearColor)]
     );
