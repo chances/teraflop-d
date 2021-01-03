@@ -1,3 +1,5 @@
+/// Utilities for <a href="https://github.com/rtbo/gfx-d#readme">gfx</a> graphics library integration.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: MIT License
@@ -77,12 +79,13 @@ package (teraflop) Device selectGraphicsDevice(uint queueFamilyIndex, Surface su
   return enforce(selectedPhysicalDevice.open([QueueRequest(queueFamilyIndex, [1.0f])]), error);
 }
 
-/// Data that is duplicated for every frame in the swapchain
-/// This typically include framebuffer and command pool.
+/// Data that is duplicated for every frame in the swapchain.
+/// This typically includes a framebuffer and command pool.
 abstract class FrameData : AtomicRefCounted {
   import teraflop.math : Size;
 
-  Rc!Fence fence; // to keep track of when command processing is done
+  /// To keep track of when command processing is done.
+  Rc!Fence fence;
   ///
   Rc!CommandPool cmdPool;
 

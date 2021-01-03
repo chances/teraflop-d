@@ -1,3 +1,5 @@
+/// Application primitives.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
@@ -93,7 +95,7 @@ abstract class Game {
   /// Called when the Game should initialize its `World`.
   protected abstract void initializeWorld(scope World world);
 
-  /// Run the game
+  /// Run the game.
   void run() {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
@@ -440,7 +442,7 @@ abstract class Game {
     active_ = false;
   }
 
-  /// Build a submission for the simplest cases with one submission
+  /// Build a graphics pipeline submission for the simplest cases with a single submission.
   final Submission[] simpleSubmission(Window window, PrimaryCommandBuffer[] cmdBufs) {
     return [Submission(
       [ StageWait(imageAvailable[window], PipelineStage.transfer) ],
