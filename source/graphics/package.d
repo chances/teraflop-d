@@ -141,13 +141,12 @@ struct VertexPosColorTex {
   }
 }
 
-/// Return the index of a memory type supporting all of props, or uint.max if none was found.
+/// Return the index of a memory type supporting all of the given props.
 private uint findMemoryType(
   PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal
 ) {
   const memoryProperties = physicalDevice.memoryProperties;
   for (uint i = 0, typeMask = 1; i < memoryProperties.types.length; i += 1, typeMask <<= 1) {
-    // TODO: Fix memory type mask filter
     auto memoryTypesMatch = (typeFilter & typeMask) != 0;
     auto memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
     if (memoryTypesMatch && memoryPropsMatch) return i;
@@ -766,8 +765,7 @@ unittest {
         .withUsage(ImageUsage.colorAttachment)
     );
     const memoryType = findMemoryType(
-      device.physicalDevice, renderTarget.memoryRequirements.memTypeMask,
-      MemProps.hostVisible | MemProps.hostCoherent
+      device.physicalDevice, renderTarget.memoryRequirements.memTypeMask
     );
     auto mem = device.allocateMemory(memoryType, renderTarget.memoryRequirements.size).rc;
     renderTarget.bindMemory(mem, 0);
