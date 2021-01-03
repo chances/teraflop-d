@@ -12,7 +12,7 @@ Ported from its original [C# implementation](https://github.com/chances/teraflop
 
 ```json
 "dependencies": {
-    "teraflop": "0.1.0-pre-alpha-1"
+    "teraflop": "0.1.0"
 }
 ```
 
