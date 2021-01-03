@@ -142,16 +142,19 @@ struct VertexPosColorTex {
 }
 
 /// Return the index of a memory type supporting all of props, or uint.max if none was found.
-private uint findMemoryType(PhysicalDevice physicalDevice, MemoryRequirements reqs, MemProps props) {
-  // TODO: Integrate memory requirements (reqs)
-  assert(reqs.size);
-  const devMemProps = physicalDevice.memoryProperties;
-  foreach (i, memory; devMemProps.types) {
-    if ((memory.props & props) == props) {
-      return cast(uint) i;
-    }
+private uint findMemoryType(
+  PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal
+) {
+  const memoryProperties = physicalDevice.memoryProperties;
+  for (uint i = 0, typeMask = 1; i < memoryProperties.types.length; i += 1, typeMask <<= 1) {
+    // TODO: Fix memory type mask filter
+    auto memoryTypesMatch = (typeFilter & typeMask) != 0;
+    auto memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
+    if (memoryTypesMatch && memoryPropsMatch) return i;
   }
-  return uint.max;
+
+  enforce(false, "Could not allocate GPU memory: Failed to find suitable GPU memory type!");
+  assert(0);
 }
 
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
@@ -213,18 +216,19 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     import gfx.graal : BufferUsage;
 
     _vertexBuffer = device.createBuffer(BufferUsage.vertex, size);
-
-    const memType = findMemoryType(
-      device.physicalDevice, vertexBuffer.memoryRequirements,
+    auto memType = findMemoryType(
+      device.physicalDevice, vertexBuffer.memoryRequirements.memTypeMask,
       MemProps.hostVisible | MemProps.hostCoherent
     );
-    enforce(memType != uint.max, "Could not allocate GPU memory!");
-
     vertexBuffer.bindMemory(device.allocateMemory(memType, vertexBuffer.size), 0);
     void[] unfilled = data.copy(vertexBuffer.boundMemory.map.view!(ubyte[])[]);
     assert(unfilled.length == 0);
 
     _indexBuffer = device.createBuffer(BufferUsage.index, uint.sizeof * indices.length);
+    memType = findMemoryType(
+      device.physicalDevice, indexBuffer.memoryRequirements.memTypeMask,
+      MemProps.hostVisible | MemProps.hostCoherent
+    );
     indexBuffer.bindMemory(device.allocateMemory(memType, indexBuffer.size), 0);
     unfilled = indices.copy(indexBuffer.boundMemory.map.view!(uint[])[]);
     assert(unfilled.length == 0);
@@ -528,10 +532,9 @@ class Texture : BindingDescriptor, IResource {
 
     stagingBuffer = device.createBuffer(BufferUsage.transferSrc, size.width * size.height * 4);
     const memType = findMemoryType(
-      device.physicalDevice, stagingBuffer.memoryRequirements,
+      device.physicalDevice, stagingBuffer.memoryRequirements.memTypeMask,
       MemProps.hostVisible | MemProps.hostCoherent // Use deviceLocal for destinations of staging buffers
     );
-    enforce(memType != uint.max, "Could not allocate GPU memory!");
     stagingBuffer.bindMemory(device.allocateMemory(memType, stagingBuffer.size), 0);
 
     image_ = device.createImage(ImageInfo.d2(size.width, size.height));
@@ -744,27 +747,49 @@ class Material : NamedComponent, IResource {
 
 unittest {
   version (GPU) {
+    import gfx.core : none;
     import std.conv : to;
+    import std.typecons : No;
+    import teraflop.platform.vulkan;
 
-    assert(initVulkan());
-    auto device = new Device("test-triangle", []);
-    device.acquire();
-    enforce(device.ready, "GPU Device initialization failed");
+    assert(initVulkan("test-triangle"));
+    const graphicsQueueIndex = selectGraphicsQueue();
+    enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
+    auto device = selectGraphicsDevice(graphicsQueueIndex);
+    auto graphicsQueue = device.getQueue(graphicsQueueIndex, 0);
 
     // Render a blank scene to a single image
-    const renderTarget = new Image(device, Size(400, 300), ImageUsage.colorAttachment);
-    const renderTargetView = renderTarget.defaultView;
-    RenderPass presentationPass = new RenderPass(device);
-    VkFramebuffer framebuffer;
-    VkFramebufferCreateInfo framebufferInfo = {
-      renderPass: presentationPass.handle,
-      attachmentCount: 1,
-      pAttachments: &renderTargetView,
-      width: renderTarget.extent.width,
-      height: renderTarget.extent.height,
-      layers: 1,
-    };
-    enforceVk(vkCreateFramebuffer(device.handle, &framebufferInfo, null, &framebuffer));
+    auto renderTargetSize = new Size(400, 400);
+    auto renderTarget = device.createImage(
+      ImageInfo.d2(renderTargetSize.width, renderTargetSize.height)
+        .withFormat(Format.bgra8_sRgb)
+        .withUsage(ImageUsage.colorAttachment)
+    );
+    const memoryType = findMemoryType(
+      device.physicalDevice, renderTarget.memoryRequirements.memTypeMask,
+      MemProps.hostVisible | MemProps.hostCoherent
+    );
+    auto mem = device.allocateMemory(memoryType, renderTarget.memoryRequirements.size).rc;
+    renderTarget.bindMemory(mem, 0);
+
+    const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
+      AttachmentOps(LoadOp.clear, StoreOp.store),
+      AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
+      trans(ImageLayout.undefined, ImageLayout.presentSrc),
+      No.mayAlias
+    )];
+    const subpasses = [SubpassDescription(
+      [], [ AttachmentRef(0, ImageLayout.colorAttachmentOptimal) ],
+      none!AttachmentRef, []
+    )];
+    auto renderPass = device.createRenderPass(attachments, subpasses, []);
+    auto frameBuffer = device.createFramebuffer(renderPass, [
+      renderTarget.createView(
+        renderTarget.info.type,
+        ImageSubresourceRange(ImageAspect.color),
+        Swizzle.identity
+      )
+    ], renderTargetSize.width, renderTargetSize.height, 1);
 
     auto triangle = new Mesh!VertexPosColor([
       VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
@@ -784,37 +809,71 @@ unittest {
     material.initialize(device);
     assert(vert.initialized && frag.initialized);
     assert(material.initialized);
-    const layout = PipelineLayout([], VertexDataDescriptor(
-      triangle.bindingDescription,
-      triangle.attributeDescriptions
-    ));
-    Pipeline[Material] pipelines;
-    pipelines[material] = new Pipeline(device, renderTarget.extent2d, presentationPass, material, layout, []);
 
-    auto commands = new CommandBuffer(device, [framebuffer], renderTarget.extent2d, presentationPass);
+    Pipeline[Material] pipelines;
+    DescriptorSetLayout[] descriptors;
+    PipelineInfo info = {
+      shaders: material.shaders,
+      inputBindings: [triangle.bindingDescription],
+      inputAttribs: triangle.attributeDescriptions,
+      assembly: InputAssembly(Primitive.triangleList, No.primitiveRestart),
+      rasterizer: Rasterizer(
+        PolygonMode.fill, material.cullMode, material.frontFace, No.depthClamp,
+        none!DepthBias, 1f
+      ),
+      viewports: [
+        ViewportConfig(
+          Viewport(0, 0, renderTargetSize.width.to!float, renderTargetSize.height.to!float),
+          Rect(0, 0, renderTargetSize.width, renderTargetSize.height)
+        )
+      ],
+      blendInfo: ColorBlendInfo(
+        none!LogicOp, [
+          ColorBlendAttachment(No.enabled,
+            BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+            BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+            ColorMask.all
+          )
+        ],
+        [ 0f, 0f, 0f, 0f ]
+      ),
+      layout: device.createPipelineLayout(descriptors.length ? descriptors : [], []),
+      renderPass: renderPass,
+      subpassIndex: 0
+    };
+    pipelines[material] = device.createPipelines([info])[0];
+
+    auto commandPool = device.createCommandPool(graphicsQueueIndex);
+    auto commands = commandPool.allocatePrimary(1)[0];
+    commands.begin(CommandBufferUsage.oneTimeSubmit);
     const clearColor = Color.black.toVulkan;
-    commands.beginRenderPass(&clearColor);
+    commands.beginRenderPass(
+      renderPass, frameBuffer,
+      Rect(0, 0, renderTargetSize.width, renderTargetSize.height),
+      [ClearValues(clearColor)]
+    );
     commands.bindPipeline(pipelines[material]);
-    commands.bindVertexBuffers(triangle.vertexBuffer);
-    commands.bindIndexBuffer(triangle.indexBuffer);
+    commands.bindVertexBuffers(0, [VertexBinding(triangle.vertexBuffer, 0)]);
+    commands.bindIndexBuffer(triangle.indexBuffer, 0, IndexType.u32);
     commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
     commands.endRenderPass();
+    commands.end();
     // TODO: Diff with a PPM file, e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
 
-    VkSubmitInfo submitInfo;
-    submitInfo.waitSemaphoreCount = 0;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commands.handles[0];
-    submitInfo.signalSemaphoreCount = 0;
-    enforceVk(vkQueueSubmit(device.presentQueue, 1, &submitInfo, VK_NULL_HANDLE));
+    auto submissions = [Submission([], [], [commands])];
+    graphicsQueue.submit(submissions, null);
 
-    vkDeviceWaitIdle(device.handle);
-    vkDestroyFramebuffer(device.handle, framebuffer, null);
-    destroy(triangle);
-    destroy(pipelines[material]);
-    destroy(material);
-    destroy(commands);
-    destroy(presentationPass);
-    destroy(renderTarget);
+    // Gracefully teardown GPU resources
+    foreach (pipeline; pipelines.values) {
+      device.waitIdle();
+      pipeline.dispose();
+    }
+    device.waitIdle();
+    renderPass.dispose();
+    frameBuffer.release();
+
+    device.waitIdle();
+    device.release();
+    unloadVulkan();
   }
 }

@@ -70,12 +70,12 @@ package (teraflop) uint selectGraphicsQueue() {
   return -1;
 }
 
-package (teraflop) Device selectGraphicsDevice(uint queueFamilyIndex, Surface surface) {
+package (teraflop) Device selectGraphicsDevice(uint queueFamilyIndex, Surface surface = null) {
   import std.exception : enforce;
 
   const error = "Cannot find a suitable graphics device! Try upgrading your graphics drivers.";
 
-  enforce(selectedPhysicalDevice.supportsSurface(queueFamilyIndex, surface), error);
+  if (surface !is null) enforce(selectedPhysicalDevice.supportsSurface(queueFamilyIndex, surface), error);
   return enforce(selectedPhysicalDevice.open([QueueRequest(queueFamilyIndex, [1.0f])]), error);
 }
 
