@@ -46,7 +46,6 @@ abstract class Game {
   /// name = Name of the Game.
   this(string name) {
     name_ = name;
-    initVulkan(name);
   }
 
   /// Name of the Game.
@@ -99,12 +98,11 @@ abstract class Game {
   void run() {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
+    import std.exception : enforce;
     import teraflop.platform.window : initGlfw, terminateGlfw;
 
-    if (!initGlfw() || !initVulkan(name)) {
-      // TODO: Log an error
-      return;
-    }
+    enforce(initGlfw()); // TODO: Log an error
+    enforce(initVulkan(name), "Unsupported platform: Could not load Vulkan! Try upgrading your graphics drivers.");
     scope(exit) terminateGlfw();
 
     initialize();
