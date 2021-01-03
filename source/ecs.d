@@ -542,7 +542,7 @@ unittest {
       assert(world.entities.length == 0);
     }
   }
-  const foo = new Foo(new World());
+  auto foo = new Foo(new World());
 
   import std.traits : fullyQualifiedName;
   assert(foo.name == fullyQualifiedName!Foo);
