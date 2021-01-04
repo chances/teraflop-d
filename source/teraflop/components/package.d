@@ -7,6 +7,8 @@ module teraflop.components;
 
 import gfx.graal : Device;
 
+public import teraflop.components.transform;
+
 /// A Component that holds one or more handles to GPU resources.
 ///
 /// See_Also: `teraflop.ecs.Component`
