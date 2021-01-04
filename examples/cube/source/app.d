@@ -1,8 +1,10 @@
 import std.stdio;
 
 import teraflop.game : Game;
+import teraflop.graphics;
 import teraflop.math;
 import teraflop.platform : Window;
+import teraflop.time : Time;
 
 void main()
 {
@@ -13,7 +15,6 @@ void main()
 
 private final class Cube : Game {
   import teraflop.ecs : System, World;
-  import teraflop.graphics : Camera, Color, FrontFace, Material, Mesh, Shader, ShaderStage, VertexPosColor;
 
   this() {
     super("Cube");
@@ -33,7 +34,7 @@ private final class Cube : Game {
       new Shader(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
 
-    world.spawn(new Material(shaders, FrontFace.counterClockwise), new Mesh!VertexPosColor([
+    world.spawn(new Material(shaders, FrontFace.counterClockwise, CullMode.none), new Mesh!VertexPosColor([
       VertexPosColor(vec3f(-0.5f, -0.5f, 0.0f), Color.red.vec3f),
       VertexPosColor(vec3f(0.5f, -0.5f, 0.0f), Color.green.vec3f),
       VertexPosColor(vec3f(0.5f, 0.5f, 0.0f), Color.blue.vec3f),
@@ -49,6 +50,7 @@ private final class Cube : Game {
     ]));
 
     this.add(System.from!aspectRatio);
+    this.add(System.from!rotate);
   }
 
   static void aspectRatio(scope const Window window, scope Camera camera) {
@@ -56,5 +58,13 @@ private final class Cube : Game {
     camera.projection = mat4f.perspective(
       45.radians, framebufferSize.width / cast(float) framebufferSize.height, 0.05f, 10.0f
     );
+  }
+
+  static void rotate(scope Time time, scope Camera camera) {
+    import std.math : PI;
+
+    // 6 RPM at 60 FPS
+    const puls = 6 * 2*PI / 60f;
+    camera.model = camera.model.rotation(puls * time.totalSeconds, up);
   }
 }
