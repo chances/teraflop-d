@@ -299,7 +299,11 @@ struct ModelViewProjection {
 }
 
 /// A GPU descriptor binding, e.g. uniform buffer or texture sampler.
-/// See_Also: `teraflop.graphics.UniformBuffer`
+/// See_Also:
+/// $(UL
+///   $(LI `teraflop.graphics.UniformBuffer`)
+///   $(LI `teraflop.ecs.NamedComponent`)
+/// )
 abstract class BindingDescriptor : NamedComponent {
   protected uint bindingLocation_;
   protected ShaderStage shaderStage_;

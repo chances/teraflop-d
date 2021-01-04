@@ -11,7 +11,14 @@ public import teraflop.components.transform;
 
 /// A Component that holds one or more handles to GPU resources.
 ///
-/// See_Also: `teraflop.ecs.Component`
+/// See_Also:
+/// <h3>Implementations</h3>
+/// $(UL
+///   $(LI `teraflop.graphics.Material`)
+///   $(LI `teraflop.graphics.Mesh`)
+///   $(LI `teraflop.graphics.Shader`)
+///   $(LI `teraflop.graphics.Texture`)
+/// )
 interface IResource {
   /// Whether this Resource has been successfully initialized.
   bool initialized() @property const;
