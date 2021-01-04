@@ -762,17 +762,8 @@ unittest {
     auto graphicsQueue = device.getQueue(graphicsQueueIndex, 0);
 
     // Render a blank scene to a single image
-    auto renderTargetSize = new Size(400, 400);
-    auto renderTarget = device.createImage(
-      ImageInfo.d2(renderTargetSize.width, renderTargetSize.height)
-        .withFormat(Format.bgra8_sRgb)
-        .withUsage(ImageUsage.colorAttachment)
-    );
-    const memoryType = findMemoryType(
-      device.physicalDevice, renderTarget.memoryRequirements.memTypeMask
-    );
-    auto renderTargetMemory = device.allocateMemory(memoryType, renderTarget.memoryRequirements.size).rc;
-    renderTarget.bindMemory(renderTargetMemory, 0);
+    auto renderTargetSize = Size(400, 400);
+    auto renderTarget = createImage(device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
 
     const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
       AttachmentOps(LoadOp.clear, StoreOp.store),
@@ -872,7 +863,6 @@ unittest {
     device.waitIdle();
     renderPass.dispose();
     frameBuffer.dispose();
-    renderTargetMemory.dispose();
 
     device.waitIdle();
     device.release();

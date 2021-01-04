@@ -8,6 +8,7 @@ module teraflop.platform.vulkan;
 import gfx.graal;
 import gfx.vulkan;
 import std.exception : enforce;
+import teraflop.math : Size;
 
 // https://www.glfw.org/docs/3.3/vulkan_guide.html#vulkan_present
 alias GLFWvkproc = void function();
@@ -105,6 +106,14 @@ package (teraflop) Buffer createBuffer(Device device, size_t size, BufferUsage u
 /// The buffer will be host visible and host coherent such that content can be updated without a staging buffer.
 package (teraflop) Buffer createDynamicBuffer(Device device, size_t size, BufferUsage usage) {
   return createBuffer(device, size, usage, MemProps.hostVisible | MemProps.hostCoherent);
+}
+
+package (teraflop) ImageBase createImage(Device device, Size size, Format format, ImageUsage usage) {
+  auto image = device.createImage(ImageInfo.d2(size.width, size.height).withFormat(format).withUsage(usage));
+  const memoryType = findMemoryType(device.physicalDevice, image.memoryRequirements.memTypeMask);
+  auto memory = device.allocateMemory(memoryType, image.memoryRequirements.size).rc;
+  image.bindMemory(memory, 0);
+  return image;
 }
 
 /// Data that is duplicated for every frame in the swapchain.
