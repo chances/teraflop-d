@@ -17,6 +17,19 @@ struct Vertex {
 }
 
 /// Generate a cube of a normalized size, i.e. all axes bounded by `[-1, 1]`.
+///
+/// Examples:
+/// <h3>Generate a Cube <a href="../Mesh.html">`Mesh`</a></h3>
+/// ---
+/// import std.algorithm : map;
+/// import std.array : array;
+/// import std.conv : to;
+/// import teraflop.graphics : Mesh, Primitive, VertexPosColor;
+///
+/// auto cubeData = cube();
+/// auto vertices = cubeData.vertices.map!(v => VertexPosColor(v.position, color)).array;
+/// auto mesh = new Mesh!VertexPosColor(Primitive.triangleList, vertices, cubeData.indices.to!(uint[]));
+/// ---
 auto cube() {
   import gfx.genmesh.cube : genCube;
   import gfx.genmesh.poly : quad;
