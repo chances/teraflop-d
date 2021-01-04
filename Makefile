@@ -69,13 +69,16 @@ docs/sitemap.xml: $(SOURCES)
 docs: docs/sitemap.xml
 .PHONY: docs
 
-clean:
+clean: clean-docs
 	rm -f bin/teraflop-test-library
 	rm -f bin/triangle
 	rm -f bin/cube
 	rm -f $(EXAMPLES)
+	rm -f -- *.lst
+.PHONY: clean
+
+clean-docs:
 	rm -f docs.json
 	rm -f docs/sitemap.xml docs/file_hashes.json
 	rm -rf `find docs -name '*.html'`
-	rm -f -- *.lst
-.PHONY: clean
+.PHONY: clean-docs
