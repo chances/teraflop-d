@@ -18,8 +18,9 @@ import teraflop.math;
 import teraflop.traits : isStruct;
 
 public {
-  static import gfx.graal.pipeline;
+  import gfx.graal : Primitive;
 
+  static import gfx.graal.pipeline;
   alias Pipeline = gfx.graal.pipeline.Pipeline;
   import gfx.graal.pipeline : ShaderStage;
 }
@@ -147,8 +148,12 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   private uint[] indices_;
   private auto dirty_ = true;
 
-  this(string name) {
+  ///
+  Primitive topology = Primitive.triangleStrip;
+
+  this(string name, Primitive topology = Primitive.triangleStrip) {
     super(name);
+    this.topology = topology;
   }
   ~this() {
     _vertexBuffer.dispose();
@@ -223,13 +228,31 @@ class Mesh(T) : MeshBase if (isStruct!T) {
   this(T[] vertices = [], uint[] indices = []) {
     this(fullyQualifiedName!(Mesh!T), vertices, indices);
   }
+  /// Initialize a new mesh.
+  /// Params:
+  /// topology =
+  /// vertices = Mesh vertex data to optionally pre-populate.
+  /// indices = Mesh vertex indices to optionally pre-populate.
+  this(Primitive topology = Primitive.triangleStrip, T[] vertices = [], uint[] indices = []) {
+    this(fullyQualifiedName!(Mesh!T), topology, vertices, indices);
+  }
   /// Initialize a new named mesh.
   /// Params:
   /// name = The name of this mesh.
   /// vertices = Mesh vertex data to optionally pre-populate.
   /// indices = Mesh vertex indices to optionally pre-populate.
   this(string name, T[] vertices = [], uint[] indices = []) {
+    this(name, Primitive.triangleStrip, vertices, indices);
+  }
+  /// Initialize a new named mesh.
+  /// Params:
+  /// name = The name of this mesh.
+  /// topology =
+  /// vertices = Mesh vertex data to optionally pre-populate.
+  /// indices = Mesh vertex indices to optionally pre-populate.
+  this(string name, Primitive topology = Primitive.triangleStrip, T[] vertices = [], uint[] indices = []) {
     super(name);
+    this.topology = topology;
     this.vertices_ = vertices;
     this.indices = indices;
   }

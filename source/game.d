@@ -380,7 +380,7 @@ abstract class Game {
         shaders: material.shaders,
         inputBindings: [mesh.bindingDescription],
         inputAttribs: mesh.attributeDescriptions,
-        assembly: InputAssembly(Primitive.triangleList, No.primitiveRestart),
+        assembly: InputAssembly(mesh.topology, No.primitiveRestart),
         rasterizer: Rasterizer(
           PolygonMode.fill, material.cullMode, material.frontFace, No.depthClamp,
           none!DepthBias, 1f
