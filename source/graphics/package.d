@@ -462,13 +462,17 @@ class Camera : NamedComponent {
   }
 
   /// A combined model-view-projection matrix.
+  ///
+  /// The result is corrected for the Vulkan coordinate system.
+  /// Vulkan clip space has inverted Y and half Z.
   mat4f mvp() @property const {
-    // Vulkan clip space has inverted Y and half Z
-    const clip = mat4f(1.0f, 0.0f, 0.0f, 0.0f,
-                         0.0f, invertY ? -1.0f : 1.0f, 0.0f, 0.0f,
-                         0.0f, 0.0f, 0.5f, 0.0f,
-                         0.0f, 0.0f, 0.5f, 1.0f);
-    return projection * view * model * clip;
+    const clip = mat4f(
+      1f, 0f, 0f, 0f,
+      0f, invertY ? -1f : 1.0f, 0f, 0f,
+      0f, 0f, 0.5f, 0.5f,
+      0f, 0f, 0f, 1f,
+    );
+    return (clip * projection * view * model).transposed;
   }
 }
 
