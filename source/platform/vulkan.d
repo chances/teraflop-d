@@ -79,6 +79,34 @@ package (teraflop) Device selectGraphicsDevice(uint queueFamilyIndex, Surface su
   return enforce(selectedPhysicalDevice.open([QueueRequest(queueFamilyIndex, [1.0f])]), error);
 }
 
+/// Return the index of a memory type supporting all of the given props.
+private uint findMemoryType(PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal) {
+  const memoryProperties = physicalDevice.memoryProperties;
+  for (uint i = 0, typeMask = 1; i < memoryProperties.types.length; i += 1, typeMask <<= 1) {
+    auto memoryTypesMatch = (typeFilter & typeMask) != 0;
+    auto memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
+    if (memoryTypesMatch && memoryPropsMatch) return i;
+  }
+
+  enforce(false, "Could not allocate GPU memory: Failed to find suitable GPU memory type!");
+  assert(0);
+}
+
+package (teraflop) Buffer createBuffer(Device device, size_t size, BufferUsage usage, MemProps props) {
+  auto buffer = device.createBuffer(usage, size);
+  const memoryType = findMemoryType(device.physicalDevice, buffer.memoryRequirements.memTypeMask, props);
+  auto memory = device.allocateMemory(memoryType, buffer.memoryRequirements.size);
+  buffer.bindMemory(memory, 0);
+
+  return buffer;
+}
+
+/// Create a buffer, bind memory to it, and leave content undefined.
+/// The buffer will be host visible and host coherent such that content can be updated without a staging buffer.
+package (teraflop) Buffer createDynamicBuffer(Device device, size_t size, BufferUsage usage) {
+  return createBuffer(device, size, usage, MemProps.hostVisible | MemProps.hostCoherent);
+}
+
 /// Data that is duplicated for every frame in the swapchain.
 /// This typically includes a framebuffer and command pool.
 abstract class FrameData : AtomicRefCounted {

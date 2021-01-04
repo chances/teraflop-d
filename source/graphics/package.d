@@ -141,21 +141,6 @@ struct VertexPosColorTex {
   }
 }
 
-/// Return the index of a memory type supporting all of the given props.
-private uint findMemoryType(
-  PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal
-) {
-  const memoryProperties = physicalDevice.memoryProperties;
-  for (uint i = 0, typeMask = 1; i < memoryProperties.types.length; i += 1, typeMask <<= 1) {
-    auto memoryTypesMatch = (typeFilter & typeMask) != 0;
-    auto memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
-    if (memoryTypesMatch && memoryPropsMatch) return i;
-  }
-
-  enforce(false, "Could not allocate GPU memory: Failed to find suitable GPU memory type!");
-  assert(0);
-}
-
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   private Buffer _vertexBuffer;
   private Buffer _indexBuffer;
@@ -212,25 +197,17 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   /// Initialize this Mesh.
   void initialize(scope Device device) {
     import std.algorithm.mutation : copy;
-    import gfx.graal : BufferUsage;
+    import teraflop.platform.vulkan : createDynamicBuffer;
 
-    _vertexBuffer = device.createBuffer(BufferUsage.vertex, size);
-    auto memType = findMemoryType(
-      device.physicalDevice, vertexBuffer.memoryRequirements.memTypeMask,
-      MemProps.hostVisible | MemProps.hostCoherent
-    );
-    vertexBuffer.bindMemory(device.allocateMemory(memType, vertexBuffer.size), 0);
-    void[] unfilled = data.copy(vertexBuffer.boundMemory.map.view!(ubyte[])[]);
-    assert(unfilled.length == 0);
+    _vertexBuffer = device.createDynamicBuffer(size, BufferUsage.vertex);
+    auto vertexBuf = vertexBuffer.boundMemory.map.view!(ubyte[])[];
+    assert(data.copy(vertexBuf).length == vertexBuf.length - size);
 
-    _indexBuffer = device.createBuffer(BufferUsage.index, uint.sizeof * indices.length);
-    memType = findMemoryType(
-      device.physicalDevice, indexBuffer.memoryRequirements.memTypeMask,
-      MemProps.hostVisible | MemProps.hostCoherent
-    );
-    indexBuffer.bindMemory(device.allocateMemory(memType, indexBuffer.size), 0);
-    unfilled = indices.copy(indexBuffer.boundMemory.map.view!(uint[])[]);
-    assert(unfilled.length == 0);
+    _indexBuffer = device.createDynamicBuffer(uint.sizeof * indices.length, BufferUsage.index);
+    auto sz = uint.sizeof * indices.length;
+    auto indexBuf = indexBuffer.boundMemory.map.view!(uint[])[];
+    auto unfilled = indices.copy(indexBuf);
+    assert(unfilled.length == indexBuf.length - indices.length);
   }
 }
 
@@ -527,15 +504,9 @@ class Texture : BindingDescriptor, IResource {
 
   /// Initialize this Texture.
   void initialize(scope Device device) {
-    import gfx.graal : BufferUsage;
+    import teraflop.platform.vulkan : createDynamicBuffer;
 
-    stagingBuffer = device.createBuffer(BufferUsage.transferSrc, size.width * size.height * 4);
-    const memType = findMemoryType(
-      device.physicalDevice, stagingBuffer.memoryRequirements.memTypeMask,
-      MemProps.hostVisible | MemProps.hostCoherent // Use deviceLocal for destinations of staging buffers
-    );
-    stagingBuffer.bindMemory(device.allocateMemory(memType, stagingBuffer.size), 0);
-
+    stagingBuffer = device.createDynamicBuffer(size.width * size.height * 4, BufferUsage.transferSrc);
     image_ = device.createImage(ImageInfo.d2(size.width, size.height));
     sampler_ = device.createSampler(SamplerInfo.nearest.withWrapMode(WrapMode.border));
 
