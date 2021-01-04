@@ -80,6 +80,40 @@ package (teraflop) Device selectGraphicsDevice(uint queueFamilyIndex, Surface su
   return enforce(selectedPhysicalDevice.open([QueueRequest(queueFamilyIndex, [1.0f])]), error);
 }
 
+/// Find a format supported by the device for the given tiling and features
+private Format findSupportedFormat(
+  PhysicalDevice physicalDevice, in Format[] candidates, in ImageTiling tiling, in FormatFeatures features
+) {
+  foreach (f; candidates) {
+    const props = physicalDevice.formatProperties(f);
+    if (tiling == ImageTiling.optimal && (props.optimalTiling & features) == features) {
+      return f;
+    }
+    if (tiling == ImageTiling.linear && (props.linearTiling & features) == features) {
+      return f;
+    }
+  }
+  throw new Exception("Could not find supported image format!");
+}
+
+/// Find a supported depth format
+package (teraflop) Format findDepthFormat(PhysicalDevice physicalDevice) {
+  return findSupportedFormat(
+    physicalDevice,
+    [ Format.d32_sFloat, Format.d32s8_sFloat, Format.d24s8_uNorm, Format.d16_uNorm, Format.d16s8_uNorm ],
+    ImageTiling.optimal, FormatFeatures.depthStencilAttachment
+  );
+}
+
+/// Find a supported stencil format
+package (teraflop) Format findStencilFormat(PhysicalDevice physicalDevice) {
+  return findSupportedFormat(
+    physicalDevice,
+    [ Format.s8_uInt, Format.d16s8_uNorm, Format.d24s8_uNorm, Format.d32s8_sFloat ],
+    ImageTiling.optimal, FormatFeatures.depthStencilAttachment
+  );
+}
+
 /// Return the index of a memory type supporting all of the given props.
 private uint findMemoryType(PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal) {
   const memoryProperties = physicalDevice.memoryProperties;
@@ -108,12 +142,20 @@ package (teraflop) Buffer createDynamicBuffer(Device device, size_t size, Buffer
   return createBuffer(device, size, usage, MemProps.hostVisible | MemProps.hostCoherent);
 }
 
-package (teraflop) ImageBase createImage(Device device, Size size, Format format, ImageUsage usage) {
+package (teraflop) Image createImage(Device device, Size size, Format format, ImageUsage usage) {
   auto image = device.createImage(ImageInfo.d2(size.width, size.height).withFormat(format).withUsage(usage));
   const memoryType = findMemoryType(device.physicalDevice, image.memoryRequirements.memTypeMask);
   auto memory = device.allocateMemory(memoryType, image.memoryRequirements.size).rc;
   image.bindMemory(memory, 0);
   return image;
+}
+
+package (teraflop) Image createDepthImage(Device device, Size size) {
+  return createImage(device, size, findDepthFormat(device.physicalDevice), ImageUsage.depthStencilAttachment);
+}
+
+package (teraflop) Image createStencilImage(Device device, Size size) {
+  return createImage(device, size, findStencilFormat(device.physicalDevice), ImageUsage.depthStencilAttachment);
 }
 
 /// Data that is duplicated for every frame in the swapchain.

@@ -188,7 +188,7 @@ abstract class Game {
   }
 
   private void initialize() {
-    import gfx.core : none, retainObj;
+    import gfx.core : retainObj, some;
     import std.typecons : No;
     import std.exception : enforce;
     import teraflop.systems : TextureUploader, ResourceInitializer;
@@ -215,15 +215,24 @@ abstract class Game {
     renderingFinished[mainWindow] = device.createSemaphore();
 
     // Setup render pass
-    const attachments = [AttachmentDescription(swapChains[mainWindow].format, 1,
-      AttachmentOps(LoadOp.clear, StoreOp.store),
-      AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
-      trans(ImageLayout.undefined, ImageLayout.presentSrc),
-      No.mayAlias
-    )];
+    const attachments = [
+      AttachmentDescription(swapChains[mainWindow].format, 1,
+        AttachmentOps(LoadOp.clear, StoreOp.store),
+        AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
+        trans(ImageLayout.undefined, ImageLayout.presentSrc),
+        No.mayAlias
+      ),
+      AttachmentDescription(findDepthFormat(device.physicalDevice), 1,
+        AttachmentOps(LoadOp.clear, StoreOp.dontCare),
+        AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
+        trans(ImageLayout.undefined, ImageLayout.depthStencilAttachmentOptimal),
+        No.mayAlias
+      )
+    ];
     const subpasses = [SubpassDescription(
       [], [ AttachmentRef(0, ImageLayout.colorAttachmentOptimal) ],
-      none!AttachmentRef, []
+      some(AttachmentRef(1, ImageLayout.depthStencilAttachmentOptimal)),
+      []
     )];
     renderPass = device.createRenderPass(attachments, subpasses, []);
 
@@ -324,7 +333,7 @@ abstract class Game {
     import std.algorithm : all, filter, map, joiner, sum;
     import std.array : array;
     import std.range : enumerate;
-    import std.typecons : No;
+    import std.typecons : No, Yes;
     import teraflop.graphics : BindingDescriptor, Camera, Color;
     import teraflop.platform.vulkan : createDynamicBuffer;
 
@@ -382,6 +391,7 @@ abstract class Game {
                 Rect(0, 0, surfaceSize.width, surfaceSize.height)
             )
         ],
+        depthInfo: DepthInfo(Yes.enabled, Yes.write, CompareOp.less, No.boundsTest, 0f, 1f),
         blendInfo: ColorBlendInfo(
             none!LogicOp, [
                 ColorBlendAttachment(No.enabled,
@@ -392,6 +402,7 @@ abstract class Game {
             ],
             [ 0f, 0f, 0f, 0f ]
         ),
+        // dynamicStates: [DynamicState.viewport, DynamicState.scissor],
         layout: device.createPipelineLayout(descriptors.length ? descriptors : [], []),
         renderPass: renderPass,
         subpassIndex: 0
@@ -420,7 +431,7 @@ abstract class Game {
       commands.beginRenderPass(
         renderPass, frame.frameBuffer,
         Rect(0, 0, surfaceSize.width, surfaceSize.height),
-        [ClearValues(clearColor)]
+        [ClearValues(clearColor), ClearValues(ClearDepthStencilValues(1f, 0))]
       );
       foreach (renderable; renderables.values.joiner) {
         commands.bindPipeline(renderable.pipeline);
@@ -510,19 +521,26 @@ abstract class Game {
   private class GameFrameData : FrameData {
     protected auto _fresh = true;
     PrimaryCommandBuffer cmdBuf;
+    Rc!Image depth;
     Rc!Framebuffer frameBuffer;
 
-    this(uint queueFamilyIndex, ImageBase swcColor, CommandBuffer tempBuf = null) {
-      super(device, queueFamilyIndex, swcColor);
+    this(uint queueFamilyIndex, ImageBase color, CommandBuffer tempBuf = null) {
+      super(device, queueFamilyIndex, color);
       cmdBuf = cmdPool.allocatePrimary(1)[0];
-
       cmdBuf.begin(CommandBufferUsage.simultaneousUse);
       cmdBuf.end();
 
-      frameBuffer = device.createFramebuffer(this.outer.renderPass.obj, [
-        swcColor.createView(
+      depth = createDepthImage(this.outer.device, size);
+
+      frameBuffer = this.outer.device.createFramebuffer(this.outer.renderPass.obj, [
+        color.createView(
           ImageType.d2,
           ImageSubresourceRange(ImageAspect.color),
+          Swizzle.identity
+        ),
+        depth.createView(
+          ImageType.d2,
+          ImageSubresourceRange(ImageAspect.depth),
           Swizzle.identity
         )
       ], size.width, size.height, 1);
@@ -539,6 +557,7 @@ abstract class Game {
 
     override void dispose() {
       cmdPool.free([ cast(CommandBuffer)cmdBuf ]);
+      depth.unload();
       frameBuffer.unload();
       super.dispose();
     }
