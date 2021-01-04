@@ -302,11 +302,22 @@ struct ModelViewProjection {
 
 /// A GPU descriptor binding, e.g. uniform buffer or texture sampler.
 /// See_Also: `teraflop.graphics.UniformBuffer`
-abstract class BindingDescriptor {
+abstract class BindingDescriptor : NamedComponent {
   protected uint bindingLocation_;
   protected ShaderStage shaderStage_;
   protected DescriptorType bindingType_;
   private auto dirty_ = true;
+
+  ///
+  this(uint bindingLocation = 0) {
+    super(this.classinfo.name);
+    this.bindingLocation_ = bindingLocation;
+  }
+  ///
+  this(string name, uint bindingLocation = 0) {
+    super(name);
+    this.bindingLocation_ = bindingLocation;
+  }
 
   /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
   bool dirty() @property const {
@@ -388,7 +399,19 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   /// shaderStage = Which shader stages the UBO is going to be referenced.
   /// value = Uniform data to optionally pre-populate.
   this(uint bindingLocation = 0, ShaderStage shaderStage = ShaderStage.allGraphics, T value = T.init) {
-    this.bindingLocation_ = bindingLocation;
+    super(bindingLocation);
+    this.shaderStage_ = shaderStage;
+    this.bindingType_ = DescriptorType.uniformBuffer;
+    this.value_ = value;
+  }
+  /// Initialize a new named uniform buffer.
+  /// Params:
+  /// name =
+  /// bindingLocation = Uniform binding location, e.g. `layout(binding = 0)` in GLSL.
+  /// shaderStage = Which shader stages the UBO is going to be referenced.
+  /// value = Uniform data to optionally pre-populate.
+  this(string name, uint bindingLocation = 0, ShaderStage shaderStage = ShaderStage.allGraphics, T value = T.init) {
+    super(name, bindingLocation);
     this.shaderStage_ = shaderStage;
     this.bindingType_ = DescriptorType.uniformBuffer;
     this.value_ = value;
@@ -490,7 +513,15 @@ class Texture : BindingDescriptor, IResource {
 
   /// Initialize a new Texture.
   this(const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
-    bindingLocation_ = bindingLocation;
+    super(bindingLocation);
+    bindingType_ = DescriptorType.sampledImage;
+    shaderStage_ = shaderStage;
+
+    this.size = size;
+  }
+  /// Initialize a new named Texture.
+  this(string name, const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
+    super(name, bindingLocation);
     bindingType_ = DescriptorType.sampledImage;
     shaderStage_ = shaderStage;
 
@@ -498,11 +529,15 @@ class Texture : BindingDescriptor, IResource {
   }
   /// Initialize a new Texture with initial data.
   this(const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
-    bindingLocation_ = bindingLocation;
-    bindingType_ = DescriptorType.sampledImage;
-    shaderStage_ = shaderStage;
-
-    this.size = size;
+    this(size, bindingLocation, shaderStage);
+    this.data_ = data;
+    dirty = true;
+  }
+  /// Initialize a new named Texture with initial data.
+  this(
+    string name, const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment
+  ) {
+    this(name, size, bindingLocation, shaderStage);
     this.data_ = data;
     dirty = true;
   }
