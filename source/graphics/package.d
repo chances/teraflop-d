@@ -307,7 +307,7 @@ abstract class BindingDescriptor {
     return bindingType_;
   }
 
-  package const(WriteDescriptorSet) descriptorWrite(DescriptorSet set, Buffer uniformBuffer) const {
+  package (teraflop) WriteDescriptorSet descriptorWrite(DescriptorSet set, Buffer uniformBuffer) const {
     WriteDescriptorSet descriptorSet = {
       dstSet: set,
       dstBinding: bindingLocation_,
@@ -333,7 +333,7 @@ abstract class BindingDescriptor {
         break;
       default: assert(0, "Descriptor type not supported");
     }
-    return descriptorSet;
+    return cast(WriteDescriptorSet) descriptorSet;
   }
 
   size_t size() @property const {

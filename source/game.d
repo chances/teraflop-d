@@ -13,7 +13,7 @@ import teraflop.platform.window;
 abstract class Game {
   import core.time : msecs;
   import gfx.core.rc : Rc;
-  import teraflop.graphics : Pipeline, Material;
+  import teraflop.graphics : BindingGroup, Pipeline, Material;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
@@ -34,6 +34,11 @@ abstract class Game {
   private Rc!Semaphore[const Window] renderingFinished;
   private FrameData[] frameDatas;
   private Rc!RenderPass renderPass;
+  private DescriptorPool[const Material] descriptorPools;
+  private DescriptorSet[const Material] descriptorSets;
+  private Buffer[const Material] uniformBuffers;
+  private alias BindingGroups = BindingGroup[];
+  private BindingGroups[const Material] bindingGroups;
   private Pipeline[const Material] pipelines;
   private EventLoop eventLoop;
 
@@ -167,16 +172,14 @@ abstract class Game {
       destroy(window);
     }
 
-    foreach (pipeline; pipelines.values) {
-      device.waitIdle();
-      pipeline.dispose();
-    }
+    device.waitIdle();
+    foreach (pipeline; pipelines.values) pipeline.dispose();
+    foreach (descriptorPool; descriptorPools.values) descriptorPool.dispose();
+    foreach (uniformBuffer; uniformBuffers.values) uniformBuffer.dispose();
+
     device.waitIdle();
     renderPass.unload();
-    foreach (i, frameData; frameDatas) {
-      device.waitIdle();
-      frameData.release();
-    }
+    foreach (i, frameData; frameDatas) frameData.release();
 
     device.waitIdle();
     device.release();
@@ -299,17 +302,21 @@ abstract class Game {
   private void updatePipelines() {
     import gfx.core : none;
     import gfx.core.rc : rc;
-    import std.algorithm.iteration : filter, map;
+    import std.algorithm.iteration : filter, map, sum;
+    import std.array : array;
     import std.conv : to;
     import std.range : enumerate;
     import std.typecons : No;
-    import teraflop.graphics : Camera, Color, Material, MeshBase;
+    import teraflop.graphics : BindingDescriptor, Camera, Color, Material, MeshBase;
+    import teraflop.platform.vulkan : createDynamicBuffer;
 
     const window = world.resources.get!Window;
     auto surfaceSize = window.framebufferSize;
 
     struct Renderable {
       Pipeline pipeline;
+      PipelineLayout layout;
+      DescriptorSet set;
       const MeshBase mesh;
     }
     Renderable[] renderables;
@@ -323,13 +330,30 @@ abstract class Game {
 
       if (hasPipeline(material)) continue;
 
+      DescriptorPoolSize[] poolSizes;
       DescriptorSetLayout[] descriptors;
+      const(BindingDescriptor)[] uniforms;
       // Bind the World's primary camera mvp uniform, if any
       if (world.resources.contains!Camera) {
         auto uniform = world.resources.get!Camera.uniform;
+        poolSizes ~= DescriptorPoolSize(DescriptorType.uniformBuffer, 1);
         descriptors ~= device.createDescriptorSetLayout([
           PipelineLayoutBinding(uniform.bindingLocation, uniform.bindingType, 1, uniform.shaderStage)
         ]);
+        uniforms ~= uniform;
+      }
+
+      if (descriptors.length) {
+        bindingGroups[material] = [BindingGroup(bindingGroups.length.to!uint, uniforms)];
+        descriptorPools[material] = device.createDescriptorPool(1, poolSizes);
+        descriptorSets[material] = descriptorPools[material].allocate(descriptors)[0];
+        uniformBuffers[material] = device.createDynamicBuffer(
+          uniforms.map!(uniform => uniform.size).sum, BufferUsage.uniform
+        );
+        WriteDescriptorSet[] descriptorWrites = uniforms.map!(
+          uniform => uniform.descriptorWrite(descriptorSets[material], uniformBuffers[material])
+        ).array;
+        device.updateDescriptorSets(descriptorWrites, []);
       }
 
       PipelineInfo info = {
@@ -364,7 +388,7 @@ abstract class Game {
 
       auto pipeline = device.createPipelines([info])[0];
       pipelines[material] = pipeline;
-      renderables ~= Renderable(pipeline, mesh);
+      renderables ~= Renderable(pipeline, info.layout, descriptors.length ? descriptorSets[material] : null, mesh);
     }
 
     if (renderables.length == 0) return;
@@ -387,6 +411,8 @@ abstract class Game {
         // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
         commands.bindVertexBuffers(0, [VertexBinding(renderable.mesh.vertexBuffer, 0)]);
         commands.bindIndexBuffer(renderable.mesh.indexBuffer, 0, IndexType.u32);
+        if (renderable.set !is null)
+          commands.bindDescriptorSets(PipelineBindPoint.graphics, renderable.layout, 0, [renderable.set], []);
         commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
       }
       commands.endRenderPass();
@@ -397,6 +423,9 @@ abstract class Game {
   /// Called when the Game should render itself.
   private void render() {
     import gfx.graal.error : OutOfDateException;
+    import std.algorithm.iteration : filter, joiner, map;
+    import std.algorithm.mutation : copy;
+    import std.array : array;
 
     foreach (window; windows_) {
       // Wait for minimized windows to restore
@@ -410,6 +439,20 @@ abstract class Game {
         auto frameData = frameDatas[acq.index];
         frameData.fence.wait();
         frameData.fence.reset();
+
+        // Update uniforms
+        foreach (material, descriptorGroups; bindingGroups) {
+          // TODO: Only blit dirty uniforms?
+          ubyte[] uniformData;
+          auto uniforms = descriptorGroups
+            .map!(group => group.bindings.filter!(b => b.bindingType == DescriptorType.uniformBuffer))
+            .joiner;
+          foreach (uniform; uniforms)
+            uniformData ~= uniform.data;
+          auto buf = uniformBuffers[material].boundMemory.map.view!(ubyte[])[];
+          const unfilled = uniformData.copy(buf);
+          assert(unfilled.length == buf.length - uniformData.length);
+        }
 
         auto commands = (cast(GameFrameData) frameData).cmdBuf;
         auto submissions = simpleSubmission(window, [commands]);

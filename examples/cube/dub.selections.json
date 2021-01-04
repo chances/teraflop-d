@@ -4,10 +4,14 @@
 		"bindbc-glfw": "0.10.1",
 		"bindbc-loader": "0.3.2",
 		"concepts": "0.0.8",
+		"derelict-util": "2.0.6",
 		"gfm": "8.0.4",
+		"gfx": {"path":"../../../gfx-d"},
 		"intel-intrinsics": "1.3.6",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",
-		"teraflop": {"path":"../../"}
+		"teraflop": {"path":"../../"},
+		"wayland": "0.2.0",
+		"xcb-d": "2.1.1+1.11.1"
 	}
 }
