@@ -6,6 +6,7 @@
 module teraflop.game;
 
 import gfx.graal;
+import std.conv : to;
 import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
@@ -13,7 +14,7 @@ import teraflop.platform.window;
 abstract class Game {
   import core.time : msecs;
   import gfx.core.rc : Rc;
-  import teraflop.graphics : BindingGroup, Pipeline, Material;
+  import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
   import libasync.events : EventLoop, getThreadEventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
@@ -179,7 +180,7 @@ abstract class Game {
 
     device.waitIdle();
     renderPass.unload();
-    foreach (i, frameData; frameDatas) frameData.release();
+    foreach (frameData; frameDatas) frameData.release();
 
     device.waitIdle();
     device.release();
@@ -271,55 +272,64 @@ abstract class Game {
   }
 
   private void updateSwapChain(const Window window, bool needsRebuild = false) {
+    import gfx.core : retainObj;
     import gfx.graal : Surface;
     import gfx.graal.format : Format;
     import gfx.graal.image : ImageUsage;
     import gfx.graal.presentation : CompositeAlpha, PresentMode;
 
-    // If the window is new, create its swap chain and graphics command buffer
-    if ((window in swapChains) is null) {
-      swapChains[window] = device.createSwapchain(
-        window.surface, PresentMode.fifo, 3, Format.bgra8_sRgb,
-        [window.framebufferSize.width, window.framebufferSize.height],
-        ImageUsage.colorAttachment, CompositeAlpha.opaque
-      );
-      return;
-    }
+    auto hasSwapchain = (window in swapChains) !is null;
+    if (!hasSwapchain || window.dirty || needsRebuild) {
+      if (hasSwapchain) foreach (frameData; frameDatas) {
+        frameData.fence.wait();
+        frameData.release();
+      }
 
-    // Otherwise, recreate the window's swap chain
-    auto swapChain = swapChains[window];
-    if (window.dirty || needsRebuild)
+      auto former = hasSwapchain ? swapChains[window] : null;
       swapChains[window] = device.createSwapchain(
         window.surface, PresentMode.fifo, 3, Format.bgra8_sRgb,
         [window.framebufferSize.width, window.framebufferSize.height],
-        ImageUsage.colorAttachment, CompositeAlpha.opaque, swapChain
+        ImageUsage.colorAttachment, CompositeAlpha.opaque,
+        former
       );
+
+      // Recreate frame buffers when swapchains are recreated
+      if (hasSwapchain) {
+        device.waitIdle();
+        former.dispose();
+
+        auto images = swapChains[window].images;
+        frameDatas = new FrameData[images.length];
+
+        foreach(i, img; images)
+          frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[window].index, img));
+      }
+    }
   }
 
+  // TODO: Extract this into a pipeline system
+  private struct Renderable {
+    Pipeline pipeline;
+    PipelineLayout layout;
+    DescriptorSet set;
+    const MeshBase mesh;
+  }
+  alias Renderables = Renderable[];
+  private Renderables[const Material] renderables;
   private bool hasPipeline(const Material material) {
     return (material in pipelines) !is null;
   }
   private void updatePipelines() {
     import gfx.core : none;
-    import gfx.core.rc : rc;
-    import std.algorithm.iteration : filter, map, sum;
+    import std.algorithm : all, filter, map, joiner, sum;
     import std.array : array;
-    import std.conv : to;
     import std.range : enumerate;
     import std.typecons : No;
-    import teraflop.graphics : BindingDescriptor, Camera, Color, Material, MeshBase;
+    import teraflop.graphics : BindingDescriptor, Camera, Color;
     import teraflop.platform.vulkan : createDynamicBuffer;
 
     const window = world.resources.get!Window;
     auto surfaceSize = window.framebufferSize;
-
-    struct Renderable {
-      Pipeline pipeline;
-      PipelineLayout layout;
-      DescriptorSet set;
-      const MeshBase mesh;
-    }
-    Renderable[] renderables;
 
     foreach (entity; world.entities) {
       if (!entity.contains!Material || !entity.contains!MeshBase) continue;
@@ -329,6 +339,7 @@ abstract class Game {
       if (!mesh.initialized) continue;
 
       if (hasPipeline(material)) continue;
+      renderables[material] = new Renderable[0];
 
       DescriptorPoolSize[] poolSizes;
       DescriptorSetLayout[] descriptors;
@@ -388,25 +399,30 @@ abstract class Game {
 
       auto pipeline = device.createPipelines([info])[0];
       pipelines[material] = pipeline;
-      renderables ~= Renderable(pipeline, info.layout, descriptors.length ? descriptorSets[material] : null, mesh);
+      renderables[material] ~= Renderable(
+        pipeline, info.layout,
+        descriptors.length ? descriptorSets[material] : null, mesh
+      );
     }
 
-    if (renderables.length == 0) return;
+    if (renderables.length == 0 || !frameDatas.all!(fb => fb.to!GameFrameData.fresh)()) return;
 
-    // Renderables in the world changed, re-record graphics commands
+    // Renderables in the world changed or framebuffers were recreated, re-record graphics commands
     foreach (frameData; frameDatas) {
-      auto frame = (cast(GameFrameData) frameData);
+      auto frame = frameData.to!GameFrameData;
       auto commands = frame.cmdBuf;
       auto clearColor = window.clearColor.toVulkan;
 
-      frameData.fence.wait();
+      frame.fence.wait();
+      frame.markRecorded();
+
       commands.begin(CommandBufferUsage.simultaneousUse);
       commands.beginRenderPass(
         renderPass, frame.frameBuffer,
         Rect(0, 0, surfaceSize.width, surfaceSize.height),
         [ClearValues(clearColor)]
       );
-      foreach (renderable; renderables) {
+      foreach (renderable; renderables.values.joiner) {
         commands.bindPipeline(renderable.pipeline);
         // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
         commands.bindVertexBuffers(0, [VertexBinding(renderable.mesh.vertexBuffer, 0)]);
@@ -454,7 +470,7 @@ abstract class Game {
           assert(unfilled.length == buf.length - uniformData.length);
         }
 
-        auto commands = (cast(GameFrameData) frameData).cmdBuf;
+        auto commands = frameData.to!GameFrameData.cmdBuf;
         auto submissions = simpleSubmission(window, [commands]);
 
         graphicsQueue[window].submit(submissions, frameData.fence);
@@ -492,6 +508,7 @@ abstract class Game {
   }
 
   private class GameFrameData : FrameData {
+    protected auto _fresh = true;
     PrimaryCommandBuffer cmdBuf;
     Rc!Framebuffer frameBuffer;
 
@@ -509,6 +526,15 @@ abstract class Game {
           Swizzle.identity
         )
       ], size.width, size.height, 1);
+    }
+
+    /// Whether this framebuffer is newly created
+    bool fresh() @property const {
+      return _fresh;
+    }
+    ///
+    void markRecorded() {
+      _fresh = false;
     }
 
     override void dispose() {

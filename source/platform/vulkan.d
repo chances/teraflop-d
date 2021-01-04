@@ -116,7 +116,6 @@ abstract class FrameData : AtomicRefCounted {
   Rc!Fence fence;
   ///
   Rc!CommandPool cmdPool;
-
   ///
   ImageBase swapChainColor;
   /// Size of this frame's framebuffer.
