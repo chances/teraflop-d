@@ -209,10 +209,8 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     assert(data.copy(vertexBuf).length == vertexBuf.length - size);
 
     _indexBuffer = device.createDynamicBuffer(uint.sizeof * indices.length, BufferUsage.index);
-    auto sz = uint.sizeof * indices.length;
     auto indexBuf = indexBuffer.boundMemory.map.view!(uint[])[];
-    auto unfilled = indices.copy(indexBuf);
-    assert(unfilled.length == indexBuf.length - indices.length);
+    assert(indices.copy(indexBuf).length == indexBuf.length - indices.length);
   }
 }
 
@@ -811,12 +809,15 @@ version (unittest) {
   }
 }
 
+version (GPU) {
+  import teraflop.platform.vulkan;
+}
+
 unittest {
   version (GPU) {
     import gfx.core : none;
     import std.conv : to;
     import std.typecons : No;
-    import teraflop.platform.vulkan;
 
     assert(initVulkan("test-triangle"));
     const graphicsQueueIndex = selectGraphicsQueue();

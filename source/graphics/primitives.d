@@ -8,8 +8,11 @@ module teraflop.graphics.primitives;
 import gfx.genmesh.algorithm : indexCollectMesh, triangulate, vertices;
 import teraflop.math;
 
+/// A generated vertex.
 struct Vertex {
+  ///
   vec3f position;
+  ///
   vec3f normal;
 }
 

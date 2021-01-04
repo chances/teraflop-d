@@ -118,8 +118,8 @@ package (teraflop) Format findStencilFormat(PhysicalDevice physicalDevice) {
 private uint findMemoryType(PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal) {
   const memoryProperties = physicalDevice.memoryProperties;
   for (uint i = 0, typeMask = 1; i < memoryProperties.types.length; i += 1, typeMask <<= 1) {
-    auto memoryTypesMatch = (typeFilter & typeMask) != 0;
-    auto memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
+    const memoryTypesMatch = (typeFilter & typeMask) != 0;
+    const memoryPropsMatch = (memoryProperties.types[i].props & props) == props;
     if (memoryTypesMatch && memoryPropsMatch) return i;
   }
 

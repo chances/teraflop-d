@@ -287,7 +287,7 @@ abstract class Game {
     import gfx.graal.image : ImageUsage;
     import gfx.graal.presentation : CompositeAlpha, PresentMode;
 
-    auto hasSwapchain = (window in swapChains) !is null;
+    const hasSwapchain = (window in swapChains) !is null;
     if (!hasSwapchain || window.dirty || needsRebuild) {
       if (hasSwapchain) foreach (frameData; frameDatas) {
         frameData.fence.wait();
