@@ -350,30 +350,32 @@ abstract class Game {
       if (hasPipeline(material)) continue;
       renderables[material] = new Renderable[0];
 
-      DescriptorPoolSize[] poolSizes;
-      DescriptorSetLayout[] descriptors;
-      const(BindingDescriptor)[] uniforms;
+      const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();
       // Bind the World's primary camera mvp uniform, if any
       if (world.resources.contains!Camera) {
-        auto uniform = world.resources.get!Camera.uniform;
-        poolSizes ~= DescriptorPoolSize(DescriptorType.uniformBuffer, 1);
-        descriptors ~= device.createDescriptorSetLayout([
-          PipelineLayoutBinding(uniform.bindingLocation, uniform.bindingType, 1, uniform.shaderStage)
-        ]);
-        uniforms ~= uniform;
+        bindings = world.resources.get!Camera.uniform ~ bindings;
       }
 
+      auto descriptors = bindings.map!(binding => device.createDescriptorSetLayout([
+        PipelineLayoutBinding(binding.bindingLocation, binding.bindingType, 1, binding.shaderStage)
+      ])).array;
       if (descriptors.length) {
-        bindingGroups[material] = [BindingGroup(bindingGroups.length.to!uint, uniforms)];
-        descriptorPools[material] = device.createDescriptorPool(1, poolSizes);
+        bindingGroups[material] = [BindingGroup(bindingGroups.length.to!uint, bindings)];
+        descriptorPools[material] = device.createDescriptorPool(
+          1, bindings.map!(binding => DescriptorPoolSize(binding.bindingType, 1)).array
+        );
         descriptorSets[material] = descriptorPools[material].allocate(descriptors)[0];
-        uniformBuffers[material] = device.createDynamicBuffer(
+
+        auto uniforms = bindings.filter!(binding => binding.bindingType == DescriptorType.uniformBuffer).array;
+        if (uniforms.length) uniformBuffers[material] = device.createDynamicBuffer(
           uniforms.map!(uniform => uniform.size).sum, BufferUsage.uniform
         );
-        WriteDescriptorSet[] descriptorWrites = uniforms.map!(
-          uniform => uniform.descriptorWrite(descriptorSets[material], uniformBuffers[material])
-        ).array;
-        device.updateDescriptorSets(descriptorWrites, []);
+        device.updateDescriptorSets(
+          bindings.map!(binding => binding.descriptorWrite(
+            descriptorSets[material], uniforms.length ? uniformBuffers[material] : null
+          )).array,
+          []
+        );
       }
 
       PipelineInfo info = {

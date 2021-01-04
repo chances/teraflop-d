@@ -349,6 +349,7 @@ abstract class BindingDescriptor : NamedComponent {
     };
     switch (bindingType_) {
       case DescriptorType.uniformBuffer:
+        assert(uniformBuffer !is null);
         descriptorSet.write = DescriptorWrite.make(
           bindingType_, BufferDescriptor(uniformBuffer, 0, uniformBuffer.size)
         );
