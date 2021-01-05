@@ -3,6 +3,10 @@
 lib/glfw-3.3.2/
 scripts/upload-coverage.sh
 
+# RenderDoc Capture Settings and Files
+cube.cap
+*.rdc
+
 # Compiled Object files
 *.o
 *.obj
