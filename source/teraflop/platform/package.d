@@ -11,5 +11,6 @@
 module teraflop.platform;
 
 public {
+  import teraflop.platform.vulkan;
   import teraflop.platform.window;
 }

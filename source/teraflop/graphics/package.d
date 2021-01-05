@@ -762,10 +762,10 @@ class Material : NamedComponent, IResource {
     return texture_ !is null;
   }
 
-  // Pipelines are keyed on Material instances
-  // https://dlang.org/spec/hash-map.html#using_classes_as_key
+  /// Pipelines are keyed on `Material`s, `MeshBase.bindingDescription`, `MeshBase.attributeDescriptions`, and `MeshBase.topology`
+  /// See_Also: <a href="https://dlang.org/spec/hash-map.html#using_classes_as_key" title="The D Language Website">Associative Arrays - Using Classes as the <em>KeyType</em></a>
   override size_t toHash() const pure {
-    size_t accumulatedHash = cullMode.hashOf(frontFace);
+    size_t accumulatedHash = cullMode.hashOf(frontFace.hashOf(depthTest));
     foreach (shader; _shaders)
       accumulatedHash = shader.spv.hashOf(accumulatedHash);
     return accumulatedHash;

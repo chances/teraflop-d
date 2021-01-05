@@ -18,6 +18,7 @@ abstract class Game {
   import std.exception : enforce;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
+  import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
 
   private string name_;
@@ -34,14 +35,9 @@ abstract class Game {
   private Queue[const Window] presentQueue;
   private Rc!Semaphore[const Window] imageAvailable;
   private Rc!Semaphore[const Window] renderingFinished;
-  private FrameData[] frameDatas;
+  private FrameData[] frameBuffers;
   private Rc!RenderPass renderPass;
-  private DescriptorPool[const Material] descriptorPools;
-  private DescriptorSet[const Material] descriptorSets;
-  private Buffer[const Material] uniformBuffers;
-  private alias BindingGroups = BindingGroup[];
-  private BindingGroups[const Material] bindingGroups;
-  private Pipeline[const Material] pipelines;
+  private PipelinePreparer pipelinePreparer;
   private EventLoop eventLoop;
 
   private auto world = new World();
@@ -174,13 +170,11 @@ abstract class Game {
     }
 
     device.waitIdle();
-    foreach (pipeline; pipelines.values) pipeline.dispose();
-    foreach (descriptorPool; descriptorPools.values) descriptorPool.dispose();
-    foreach (uniformBuffer; uniformBuffers.values) uniformBuffer.dispose();
+    destroy(pipelinePreparer);
 
     device.waitIdle();
     renderPass.unload();
-    foreach (frameData; frameDatas) frameData.release();
+    foreach (frameBuffer; frameBuffers) frameBuffer.release();
 
     device.waitIdle();
     device.release();
@@ -235,12 +229,15 @@ abstract class Game {
     )];
     renderPass = device.createRenderPass(attachments, subpasses, []);
 
+    // Setup pipeline preparer
+    pipelinePreparer = new PipelinePreparer(world, device, renderPass.obj);
+
     // Setup frame buffers
     auto images = swapChains[mainWindow].images;
-    frameDatas = new FrameData[images.length];
+    frameBuffers = new FrameData[images.length];
 
     foreach(i, img; images)
-      frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[mainWindow].index, img));
+      frameBuffers[i] = retainObj(new GameFrameData(graphicsQueue[mainWindow].index, img));
 
     // Setup built-in Systems
     systems ~= new ResourceInitializer(world, device);
@@ -262,7 +259,8 @@ abstract class Game {
       // Wait for minimized windows to restore
       if (window.minimized) continue;
       updateSwapChain(window, swapchainNeedsRebuild[window]);
-      updatePipelines();
+      pipelinePreparer.run();
+      recordCommands();
     }
 
     // Raise callbacks on the event loop
@@ -288,9 +286,9 @@ abstract class Game {
 
     const hasSwapchain = (window in swapChains) !is null;
     if (!hasSwapchain || window.dirty || needsRebuild) {
-      if (hasSwapchain) foreach (frameData; frameDatas) {
-        frameData.fence.wait();
-        frameData.release();
+      if (hasSwapchain) foreach (frameBuffer; frameBuffers) {
+        frameBuffer.fence.wait();
+        frameBuffer.release();
       }
 
       auto former = hasSwapchain ? swapChains[window] : null;
@@ -307,155 +305,25 @@ abstract class Game {
         former.dispose();
 
         auto images = swapChains[window].images;
-        frameDatas = new FrameData[images.length];
+        frameBuffers = new FrameData[images.length];
 
         foreach(i, img; images)
-          frameDatas[i] = retainObj(new GameFrameData(graphicsQueue[window].index, img));
+          frameBuffers[i] = retainObj(new GameFrameData(graphicsQueue[window].index, img));
       }
     }
   }
 
-  // TODO: Extract this into a pipeline system
-  private struct Renderable {
-    Pipeline pipeline;
-    PipelineLayout layout;
-    DescriptorSet set;
-    const MeshBase mesh;
-  }
-  alias Renderables = Renderable[];
-  private Renderables[const Material] renderables;
-  private bool hasPipeline(const Material material) {
-    return (material in pipelines) !is null;
-  }
-  private void updatePipelines() {
-    import gfx.core : none;
-    import std.algorithm : all, canFind, countUntil, filter, map, joiner, sum;
-    import std.array : array;
-    import std.range : tail;
-    import std.typecons : No, Yes;
-    import teraflop.components : Transform;
-    import teraflop.graphics : BindingDescriptor, Camera, Color;
-    import teraflop.platform.vulkan : createDynamicBuffer;
+  // TODO: Extract this into a command recorder system
+  private void recordCommands() {
+    import std.algorithm : all;
 
-    const window = world.resources.get!Window;
-    auto surfaceSize = window.framebufferSize;
-
-    foreach (entity; world.entities) {
-      if (!entity.contains!Material || !entity.contains!MeshBase) continue;
-      const material = entity.get!Material()[0];
-      if (!material.initialized) continue;
-      const mesh = entity.get!MeshBase()[0];
-      if (!mesh.initialized) continue;
-
-      if (hasPipeline(material)) continue;
-      renderables[material] = new Renderable[0];
-      bindingGroups[material] = new BindingGroup[0];
-      const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();
-
-      // Bind the World's primary camera mvp uniform, if any
-      const(BindingDescriptor)[] transformBindings;
-      const hasWorldCamera = world.resources.contains!Camera;
-      if (hasWorldCamera) {
-        transformBindings ~= world.resources.get!Camera.uniform;
-      }
-      // Bind the Entity's `Transform` uniform in the same binding group as the World camera, if any
-      auto findBinding = (const BindingDescriptor binding, TypeInfo_Class type) => binding.classinfo.isBaseOf(type);
-      const hasTransform = bindings.canFind!(findBinding)(typeid(Transform));
-      if (hasTransform) {
-        auto transformIndex = bindings.countUntil!(findBinding)(typeid(Transform));
-        transformBindings ~= bindings[transformIndex];
-        // Remove the uniform from general array of bindings
-        bindings = bindings[0 .. transformIndex] ~ bindings.tail(transformIndex);
-      }
-
-      auto pipelineBindings = new PipelineLayoutBinding[0];
-      foreach (i, binding; transformBindings) pipelineBindings ~= PipelineLayoutBinding(
-        i.to!uint, DescriptorType.uniformBuffer, 1, binding.shaderStage
-      );
-      pipelineBindings ~= bindings.map!(binding =>
-        PipelineLayoutBinding(binding.bindingLocation, binding.bindingType, 1, binding.shaderStage)
-      ).array;
-      bindings = transformBindings ~ bindings;
-      // TODO: Support more than one binding set
-      DescriptorSetLayout[] descriptorSetLayouts;
-
-      if (pipelineBindings.length) {
-        bindingGroups[material] ~= BindingGroup(0, bindings);
-
-        descriptorPools[material] = device.createDescriptorPool(
-          pipelineBindings.length.to!uint,
-          bindings.map!(binding => DescriptorPoolSize(binding.bindingType, 1)).array
-        );
-        descriptorSetLayouts ~= device.createDescriptorSetLayout(pipelineBindings);
-        descriptorSets[material] = descriptorPools[material].allocate(descriptorSetLayouts)[0];
-
-        auto uniforms = bindings.filter!(binding => binding.bindingType == DescriptorType.uniformBuffer).array;
-        if (uniforms.length) enforce(
-          uniforms.length <= device.physicalDevice.limits.maxDescriptorSetUniformBuffersDynamic,
-          "Exceeded maximum number of dynamic uniforms per descriptor set!"
-        );
-        if (uniforms.length) {
-          // Align uniform buffer size to `Device`'s minimum uniform buffer offset alignment
-          auto size = uniforms.map!(uniform => device.physicalDevice.uniformAlignment(uniform.size)).sum;
-          uniformBuffers[material] = device.createDynamicBuffer(size, BufferUsage.uniform);
-        }
-        WriteDescriptorSet[] descriptorWrites;
-        for (auto i = 0, offset = 0; i < pipelineBindings.length; i += 1) {
-          const size = bindings[i].size;
-          descriptorWrites ~= bindings[i].descriptorWrite(
-            descriptorSets[material], i,
-            uniforms.length ? uniformBuffers[material] : null,
-            offset, size
-          );
-          // Align binding offset in uniform buffer to `Device`'s minimum uniform buffer offset alignment
-          offset += device.physicalDevice.uniformAlignment(size);
-        }
-        device.updateDescriptorSets(descriptorWrites, []);
-      }
-
-      PipelineInfo info = {
-        shaders: material.shaders,
-        inputBindings: [mesh.bindingDescription],
-        inputAttribs: mesh.attributeDescriptions,
-        assembly: InputAssembly(mesh.topology, No.primitiveRestart),
-        rasterizer: Rasterizer(
-          PolygonMode.fill, material.cullMode, material.frontFace, No.depthClamp, none!DepthBias, 1f
-        ),
-        viewports: [ViewportConfig(
-          Viewport(0, 0, surfaceSize.width.to!float, surfaceSize.height.to!float),
-          Rect(0, 0, surfaceSize.width, surfaceSize.height)
-        )],
-        depthInfo: DepthInfo(Yes.enabled, Yes.write, CompareOp.less, No.boundsTest, 0f, 1f),
-        blendInfo: ColorBlendInfo(
-            none!LogicOp, [
-                ColorBlendAttachment(No.enabled,
-                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
-                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
-                    ColorMask.all
-                )
-            ],
-            [ 0f, 0f, 0f, 0f ]
-        ),
-        // dynamicStates: [DynamicState.viewport, DynamicState.scissor],
-        layout: device.createPipelineLayout(descriptorSetLayouts.length ? descriptorSetLayouts : [], []),
-        renderPass: renderPass,
-        subpassIndex: 0
-      };
-
-      auto pipeline = device.createPipelines([info])[0];
-      pipelines[material] = pipeline;
-      renderables[material] ~= Renderable(
-        pipeline, info.layout,
-        pipelineBindings.length ? descriptorSets[material] : null, mesh
-      );
-    }
-
-    const isFrameDataFresh = frameDatas.all!(fb => fb.to!GameFrameData.fresh)();
-    if (renderables.length == 0 || !isFrameDataFresh) return;
+    const isFrameDataFresh = frameBuffers.all!(fb => fb.to!GameFrameData.fresh)();
+    if (pipelinePreparer.renderables.length == 0 || !isFrameDataFresh) return;
 
     // Renderables in the world changed or framebuffers were recreated, re-record graphics commands
-    foreach (frameData; frameDatas) {
-      auto frame = frameData.to!GameFrameData;
+    const window = world.resources.get!Window;
+    foreach (frameBuffer; frameBuffers) {
+      auto frame = frameBuffer.to!GameFrameData;
       auto commands = frame.cmdBuf;
       auto clearColor = window.clearColor.toVulkan;
 
@@ -465,16 +333,18 @@ abstract class Game {
       commands.begin(CommandBufferUsage.simultaneousUse);
       commands.beginRenderPass(
         renderPass, frame.frameBuffer,
-        Rect(0, 0, surfaceSize.width, surfaceSize.height),
+        Rect(0, 0, window.framebufferSize.width, window.framebufferSize.height),
         [ClearValues(clearColor), ClearValues(ClearDepthStencilValues(1f, 0))]
       );
-      foreach (renderable; renderables.values.joiner) {
-        commands.bindPipeline(renderable.pipeline);
+      foreach (renderable; pipelinePreparer.renderables) {
+        commands.bindPipeline(cast(Pipeline) renderable.pipeline);
         // TODO: Use a staging buffer? https://vulkan-tutorial.com/en/Vertex_buffers/Staging_buffer
         commands.bindVertexBuffers(0, [VertexBinding(renderable.mesh.vertexBuffer, 0)]);
         commands.bindIndexBuffer(renderable.mesh.indexBuffer, 0, IndexType.u32);
-        if (renderable.set !is null)
-          commands.bindDescriptorSets(PipelineBindPoint.graphics, renderable.layout, 0, [renderable.set], []);
+        if (renderable.descriptorSet !is null) commands.bindDescriptorSets(
+          PipelineBindPoint.graphics, cast(PipelineLayout) renderable.layout, 0,
+          cast(DescriptorSet[]) [renderable.descriptorSet], []
+        );
         commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
       }
       commands.endRenderPass();
@@ -499,14 +369,14 @@ abstract class Game {
       swapchainNeedsRebuild[window] = acq.swapchainNeedsRebuild;
 
       if (acq.hasIndex) {
-        auto frameData = frameDatas[acq.index];
-        frameData.fence.wait();
-        frameData.fence.reset();
+        auto frameBuffer = frameBuffers[acq.index];
+        frameBuffer.fence.wait();
+        frameBuffer.fence.reset();
 
         // Update uniforms
-        foreach (material, descriptorGroups; bindingGroups) {
+        foreach (material, descriptorGroups; pipelinePreparer.bindingGroups) {
           if (!descriptorGroups.length) continue;
-          if ((material in uniformBuffers) is null) continue;
+          if ((material in pipelinePreparer.uniformBuffers) is null) continue;
           // TODO: Only blit dirty uniforms?
           ubyte[] uniformData;
           auto uniforms = descriptorGroups
@@ -518,15 +388,15 @@ abstract class Game {
             const padding = device.physicalDevice.uniformAlignment(uniform.size) - uniform.size;
             uniformData ~= 0.to!ubyte.repeat(padding).array;
           }
-          auto buf = uniformBuffers[material].boundMemory.map.view!(ubyte[])[];
+          auto buf = pipelinePreparer.uniformBuffers[material].boundMemory.map.view!(ubyte[])[];
           const unfilled = uniformData.copy(buf);
           assert(unfilled.length == buf.length - uniformData.length);
         }
 
-        auto commands = frameData.to!GameFrameData.cmdBuf;
+        auto commands = frameBuffer.to!GameFrameData.cmdBuf;
         auto submissions = simpleSubmission(window, [commands]);
 
-        graphicsQueue[window].submit(submissions, frameData.fence);
+        graphicsQueue[window].submit(submissions, frameBuffer.fence);
 
         try {
           presentQueue[window].present(

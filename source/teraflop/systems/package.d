@@ -5,6 +5,8 @@
 /// License: 3-Clause BSD License
 module teraflop.systems;
 
+public import teraflop.systems.rendering;
+
 import teraflop.components : IResource;
 import teraflop.ecs : Component, System, World;
 import gfx.graal;

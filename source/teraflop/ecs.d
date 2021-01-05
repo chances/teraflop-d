@@ -526,6 +526,11 @@ abstract class System {
     return name_;
   }
 
+  /// Retreive the World's `Resources`.
+  Resources resources() @property const {
+    return world.resources;
+  }
+
   /// Operate this System on Resources and Components in the `World`.
   abstract void run();
 
