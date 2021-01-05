@@ -28,6 +28,13 @@ class Transform : UniformBuffer!mat4f {
     super(0 /* bindingLocation */, shaderStage, value);
   }
 
+  /// The 3D transformation matrix.
+  ///
+  /// The result is corrected for the Vulkan coordinate system.
+  override mat4f value() @property const {
+    return super.value.transposed;
+  }
+
   ///
   vec3f translation() @property const {
     return vec3f(value.c[0][3], value.c[1][3], value.c[2][3]);
@@ -38,7 +45,7 @@ class Transform : UniformBuffer!mat4f {
     matrix.c[0][3] = value.x;
     matrix.c[1][3] = value.y;
     matrix.c[2][3] = value.z;
-    this.value = matrix;
+    super.value = matrix;
   }
   // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
   // ///
@@ -55,7 +62,7 @@ class Transform : UniformBuffer!mat4f {
     matrix.c[0][0] = value.x;
     matrix.c[1][1] = value.y;
     matrix.c[2][2] = value.z;
-    this.value = matrix;
+    super.value = matrix;
   }
 }
 

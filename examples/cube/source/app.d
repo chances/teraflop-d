@@ -48,7 +48,7 @@ private final class Cube : Game {
     world.spawn(
       flat,
       new Mesh!VertexPosColor(Primitive.triangleList, mesh(colors[1]), cubeData.indices.to!(uint[])),
-      mat4f.rotation(45.radians, up).transform
+      (mat4f.translation(vec3f(1.2f, 1.50f, 0)) * mat4f.rotation(45.radians, up)).transform
     );
     world.spawn(
       flat,
