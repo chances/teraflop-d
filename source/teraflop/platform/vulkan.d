@@ -114,6 +114,13 @@ package (teraflop) Format findStencilFormat(PhysicalDevice physicalDevice) {
   );
 }
 
+/// Pad a given size by the device's minimum uniform buffer offset alignment.
+/// See_Also: <a href="https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkPhysicalDeviceLimits.html">VkPhysicalDeviceLimits</a>
+size_t uniformAlignment(PhysicalDevice physicalDevice, size_t size) {
+  const limits = physicalDevice.limits;
+  return size + (limits.minUniformBufferOffsetAlignment - (size % limits.minUniformBufferOffsetAlignment));
+}
+
 /// Return the index of a memory type supporting all of the given props.
 private uint findMemoryType(PhysicalDevice physicalDevice, uint typeFilter, MemProps props = MemProps.deviceLocal) {
   const memoryProperties = physicalDevice.memoryProperties;

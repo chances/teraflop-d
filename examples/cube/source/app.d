@@ -2,10 +2,7 @@ import std.stdio;
 
 import teraflop.game : Game;
 import teraflop.graphics;
-static import teraflop.graphics.primitives;
 import teraflop.math;
-import teraflop.platform : Window;
-import teraflop.time : Time;
 
 void main()
 {
@@ -16,6 +13,8 @@ void main()
 
 private final class Cube : Game {
   import teraflop.ecs : System, World;
+  import teraflop.platform : Window;
+  import teraflop.time : Time;
 
   this() {
     super("Cube");
@@ -25,6 +24,8 @@ private final class Cube : Game {
     import std.algorithm : map;
     import std.conv : to;
     import std.array : array;
+    import teraflop.components : Transform;
+    import teraflop.graphics.primitives : cube;
 
     const framebufferSize = world.resources.get!Window.framebufferSize;
     auto camera = new Camera();
@@ -40,13 +41,13 @@ private final class Cube : Game {
     ];
 
     auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1, 0, 1).vec3f];
-    auto color = colors[3];
-    auto cube = teraflop.graphics.primitives.cube();
-    auto mesh = cube.vertices.map!(v => VertexPosColor(v.position, color)).array;
+    auto cubeData = cube();
+    auto mesh = (vec3f color) => cubeData.vertices.map!(v => VertexPosColor(v.position, color)).array;
 
     world.spawn(
       new Material(shaders, FrontFace.clockwise),
-      new Mesh!VertexPosColor(Primitive.triangleList, mesh, cube.indices.to!(uint[]))
+      new Mesh!VertexPosColor(Primitive.triangleList, mesh(colors[3]), cubeData.indices.to!(uint[])),
+      new Transform(mat4f.scaling(vec3f(1.2f, 0.45f, 1.2f)))
     );
     this.add(System.from!aspectRatio);
     this.add(System.from!rotate);

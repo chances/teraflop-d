@@ -18,11 +18,10 @@ import teraflop.math;
 import teraflop.traits : isStruct;
 
 public {
-  import gfx.graal : Primitive;
+  import gfx.graal : Primitive, ShaderStage;
 
   static import gfx.graal.pipeline;
   alias Pipeline = gfx.graal.pipeline.Pipeline;
-  import gfx.graal.pipeline : ShaderStage;
 }
 
 /// RGBA double precision color.
@@ -305,7 +304,7 @@ struct ModelViewProjection {
 ///   $(LI `teraflop.ecs.NamedComponent`)
 /// )
 abstract class BindingDescriptor : NamedComponent {
-  protected uint bindingLocation_;
+  protected uint _bindingLocation;
   protected ShaderStage shaderStage_;
   protected DescriptorType bindingType_;
   private auto dirty_ = true;
@@ -313,12 +312,12 @@ abstract class BindingDescriptor : NamedComponent {
   ///
   this(uint bindingLocation = 0) {
     super(this.classinfo.name);
-    this.bindingLocation_ = bindingLocation;
+    this._bindingLocation = bindingLocation;
   }
   ///
   this(string name, uint bindingLocation = 0) {
     super(name);
-    this.bindingLocation_ = bindingLocation;
+    this._bindingLocation = bindingLocation;
   }
 
   /// Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
@@ -331,7 +330,7 @@ abstract class BindingDescriptor : NamedComponent {
 
   /// Descriptor binding location, e.g. `layout(binding = 0)` in GLSL.
   uint bindingLocation() @property const {
-    return bindingLocation_;
+    return _bindingLocation;
   }
 
   /// Which shader stages this descriptor is going to be referenced.
@@ -343,17 +342,20 @@ abstract class BindingDescriptor : NamedComponent {
     return bindingType_;
   }
 
-  package (teraflop) WriteDescriptorSet descriptorWrite(DescriptorSet set, Buffer uniformBuffer) const {
+  package (teraflop) WriteDescriptorSet descriptorWrite(
+    DescriptorSet set, uint bindingLocation, Buffer uniformBuffer, size_t bufferOffset = 0, size_t uniformSize = 0
+  ) const {
     WriteDescriptorSet descriptorSet = {
       dstSet: set,
-      dstBinding: bindingLocation_,
+      dstBinding: bindingLocation,
       dstArrayElem: 0,
     };
     switch (bindingType_) {
       case DescriptorType.uniformBuffer:
         assert(uniformBuffer !is null);
+        if (uniformSize == 0) uniformSize = uniformBuffer.size;
         descriptorSet.write = DescriptorWrite.make(
-          bindingType_, BufferDescriptor(uniformBuffer, 0, uniformBuffer.size)
+          bindingType_, BufferDescriptor(uniformBuffer, bufferOffset, uniformSize)
         );
         break;
       case DescriptorType.sampler:
@@ -394,7 +396,7 @@ package (teraflop) struct BindingGroup {
 
 /// A uniform buffer object.
 class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
-  private T value_;
+  private T _value;
 
   /// Initialize a new uniform buffer.
   /// Params:
@@ -405,7 +407,7 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
     super(bindingLocation);
     this.shaderStage_ = shaderStage;
     this.bindingType_ = DescriptorType.uniformBuffer;
-    this.value_ = value;
+    this._value = value;
   }
   /// Initialize a new named uniform buffer.
   /// Params:
@@ -417,11 +419,14 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
     super(name, bindingLocation);
     this.shaderStage_ = shaderStage;
     this.bindingType_ = DescriptorType.uniformBuffer;
-    this.value_ = value;
+    this._value = value;
   }
 
   T value() @property const {
-    return value_;
+    return _value;
+  }
+  void value(T value) @property {
+    update(value);
   }
 
   override size_t size() @property const {
@@ -429,14 +434,14 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   }
   override const(ubyte[]) data() @property const {
     // https://dlang.org/spec/arrays.html#void_arrays
-    const(void[]) uniformData = [value_];
+    const(void[]) uniformData = [value];
     assert(uniformData.length == size);
     return cast(ubyte[]) uniformData;
   }
 
   /// Update the uniform value.
   void update(T value) {
-    this.value_ = value;
+    this._value = value;
     this.dirty = true;
   }
 }
@@ -491,13 +496,11 @@ class Camera : NamedComponent {
   ///
   /// The result is corrected for the Vulkan coordinate system.
   /// Vulkan clip space has inverted Y and half Z.
+  /// See_Also: `vulkanClipCorrection`
   mat4f mvp() @property const {
-    const clip = mat4f(
-      1f, 0f, 0f, 0f,
-      0f, invertY ? -1f : 1.0f, 0f, 0f,
-      0f, 0f, 0.5f, 0.5f,
-      0f, 0f, 0f, 1f,
-    );
+    import std.typecons : No, Yes;
+
+    const clip = vulkanClipCorrection(invertY ? Yes.invertY : No.invertY);
     return (clip * projection * view * model).transposed;
   }
 }

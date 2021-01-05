@@ -6,6 +6,7 @@
 module teraflop.math;
 
 public import gfm.math;
+import std.typecons : Flag, Yes;
 
 private const float ONE_DEGREE_IN_RADIANS = 0.01745329252;
 
@@ -35,6 +36,19 @@ unittest {
 enum vec3f up = vec3f(0, 1, 0);
 /// Down unit vector, i.e. inverse of Y-up.
 enum vec3f down = vec3f(0, -1, 0);
+
+/// Transformation matrix to correct for the Vulkan coordinate system.
+/// Vulkan clip space has inverted Y and half Z.
+/// Params:
+/// invertY = Whether the Y axis of the matrix is inverted.
+mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
+  return mat4f(
+    1f, 0f, 0f, 0f,
+    0f, invertY ? -1f : 1.0f, 0f, 0f,
+    0f, 0f, 0.5f, 0.5f,
+    0f, 0f, 0f, 1f,
+  );
+}
 
 /// Size of an object.
 struct Size {

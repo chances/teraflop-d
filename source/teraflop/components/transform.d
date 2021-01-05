@@ -15,11 +15,17 @@ import teraflop.math;
 ///
 /// See_Also: `teraflop.graphics.UniformBuffer`
 class Transform : UniformBuffer!mat4f {
+  import teraflop.graphics : ShaderStage;
+
   alias value this;
 
   ///
-  this(uint bindingLocation = 0) {
-    super(bindingLocation);
+  this(ShaderStage shaderStage = ShaderStage.vertex) {
+    super(0 /* bindingLocation */, shaderStage, mat4f.identity);
+  }
+  ///
+  this(mat4f value = mat4f.identity, ShaderStage shaderStage = ShaderStage.vertex) {
+    super(0 /* bindingLocation */, shaderStage, value);
   }
 
   ///
@@ -28,9 +34,11 @@ class Transform : UniformBuffer!mat4f {
   }
   /// ditto
   void translation(vec3f value) @property {
-    this.value.c[0][3] = value.x;
-    this.value.c[1][3] = value.y;
-    this.value.c[2][3] = value.z;
+    auto matrix = this.value;
+    matrix.c[0][3] = value.x;
+    matrix.c[1][3] = value.y;
+    matrix.c[2][3] = value.z;
+    this.value = matrix;
   }
   // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
   // ///
@@ -43,9 +51,11 @@ class Transform : UniformBuffer!mat4f {
   }
   /// ditto
   void scale(vec3f value) @property {
-    this.value.c[0][0] = value.x;
-    this.value.c[1][1] = value.y;
-    this.value.c[2][2] = value.z;
+    auto matrix = this.value;
+    matrix.c[0][0] = value.x;
+    matrix.c[1][1] = value.y;
+    matrix.c[2][2] = value.z;
+    this.value = matrix;
   }
 }
 
