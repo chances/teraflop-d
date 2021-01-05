@@ -2,7 +2,7 @@
 ///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
-/// License: MIT License
+/// License: 3-Clause BSD License
 module teraflop.graphics.primitives;
 
 import gfx.genmesh.algorithm : indexCollectMesh, triangulate, vertices;
