@@ -59,6 +59,11 @@ class Transform : UniformBuffer!mat4f {
   }
 }
 
+/// Construct a `Transform` Component given a transformation matrix.
+Transform transform(mat4f matrix) {
+  return new Transform(matrix);
+}
+
 ///
 struct Parent {
   ///
