@@ -138,6 +138,7 @@ final class PipelinePreparer : System {
         if (uniforms.length) {
           // Align uniform buffer size to `Device`'s minimum uniform buffer offset alignment
           auto size = uniforms.map!(uniform => device.physicalDevice.uniformAlignment(uniform.size)).sum;
+          enforce(size <= device.physicalDevice.limits.maxUniformBufferSize, "Exceeded maximum uniform buffer size!");
           _uniformBuffers[material] = device.createDynamicBuffer(size, BufferUsage.uniform);
         }
         WriteDescriptorSet[] descriptorWrites;
