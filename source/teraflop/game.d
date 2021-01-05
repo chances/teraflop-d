@@ -345,6 +345,9 @@ abstract class Game {
           PipelineBindPoint.graphics, cast(PipelineLayout) renderable.layout, 0,
           cast(DescriptorSet[]) [renderable.descriptorSet], []
         );
+        foreach (i, pushConstant; renderable.pushBindings) commands.pushConstants(
+          cast(PipelineLayout) renderable.layout, pushConstant.shaderStage, i, pushConstant.size, pushConstant.data.ptr
+        );
         commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
       }
       commands.endRenderPass();

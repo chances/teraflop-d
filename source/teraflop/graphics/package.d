@@ -342,6 +342,9 @@ abstract class BindingDescriptor : NamedComponent {
     return bindingType_;
   }
 
+  package (teraflop) static auto findBinding =
+    (const BindingDescriptor binding, TypeInfo_Class type) => binding.classinfo.isBaseOf(type);
+
   package (teraflop) WriteDescriptorSet descriptorWrite(
     DescriptorSet set, uint bindingLocation, Buffer uniformBuffer, size_t bufferOffset = 0, size_t uniformSize = 0
   ) const {

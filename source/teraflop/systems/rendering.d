@@ -18,6 +18,8 @@ struct Renderable {
   DescriptorSet descriptorSet;
   ///
   MeshBase mesh;
+  ///
+  const(BindingDescriptor)[] pushBindings;
 }
 
 /// Initialize GPU pipelines for Entity `Material`-`Mesh` combinations.
@@ -99,15 +101,19 @@ final class PipelinePreparer : System {
       if (hasWorldCamera) {
         transformBindings ~= this.resources.get!Camera.uniform;
       }
-      // Bind the Entity's `Transform` uniform in the same binding group as the World camera, if any
-      auto findBinding = (const BindingDescriptor binding, TypeInfo_Class type) => binding.classinfo.isBaseOf(type);
-      const hasTransform = bindings.canFind!(findBinding)(typeid(Transform));
-      if (hasTransform) {
-        auto transformIndex = bindings.countUntil!(findBinding)(typeid(Transform));
-        transformBindings ~= bindings[transformIndex];
+      // Bind the Entity's `Transform` uniform, if any, as a push constant
+      PushConstantRange[] pushConstants;
+      const transformIndex = bindings.countUntil!(BindingDescriptor.findBinding)(typeid(Transform));
+      if (transformIndex >= 0) {
+        auto binding = bindings[transformIndex];
+        pushConstants ~= PushConstantRange(binding.shaderStage, pushConstants.length.to!uint, binding.size.to!uint);
         // Remove the uniform from general array of bindings
         bindings = bindings[0 .. transformIndex] ~ bindings.tail(transformIndex);
       }
+      enforce(
+        pushConstants.map!(pushConstant => pushConstant.size).sum <= device.physicalDevice.limits.maxPushConstantsSize,
+        "Exceeded maximum push constants size!"
+      );
 
       auto pipelineBindings = new PipelineLayoutBinding[0];
       foreach (i, binding; transformBindings) pipelineBindings ~= PipelineLayoutBinding(
@@ -178,7 +184,7 @@ final class PipelinePreparer : System {
             [ 0f, 0f, 0f, 0f ]
         ),
         // dynamicStates: [DynamicState.viewport, DynamicState.scissor],
-        layout: device.createPipelineLayout(descriptorSetLayouts.length ? descriptorSetLayouts : [], []),
+        layout: device.createPipelineLayout(descriptorSetLayouts, pushConstants),
         renderPass: renderPass,
         subpassIndex: 0
       };
@@ -199,11 +205,18 @@ final class PipelinePreparer : System {
       const mesh = entity.get!MeshBase()[0];
       if (!mesh.initialized) continue;
 
+      // Bind the Entity's `Transform` uniform, if any, as a push constant
+      const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();
+      const(BindingDescriptor)[] pushBindings;
+      const transformIndex = bindings.countUntil!(BindingDescriptor.findBinding)(typeid(Transform));
+      if (transformIndex >= 0) pushBindings ~= bindings[transformIndex];
+
       const key = this.key(material, mesh);
       _renderables ~= Renderable(
         pipelines[key], pipelineLayouts[key],
         (key in descriptorSets) !is null ? descriptorSets[key] : null,
-        cast(MeshBase) mesh
+        cast(MeshBase) mesh,
+        pushBindings
       );
     }
   }

@@ -7,7 +7,7 @@ layout(location = 1) in vec3 inColor;
 layout(binding = 0) uniform ModelViewProjection {
     mat4 mvp;
 } camera;
-layout(binding = 1) uniform ModelTransform {
+layout(push_constant) uniform ModelTransform {
     mat4 transform;
 } model;
 
