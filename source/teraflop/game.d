@@ -317,8 +317,10 @@ abstract class Game {
   private void recordCommands() {
     import std.algorithm : all;
 
-    const isFrameDataFresh = frameBuffers.all!(fb => fb.to!GameFrameData.fresh)();
-    if (pipelinePreparer.renderables.length == 0 || !isFrameDataFresh) return;
+    const nothingToRender = pipelinePreparer.renderables.length == 0;
+    const frameBuffersAreNotFresh = !frameBuffers.all!(fb => fb.to!GameFrameData.fresh)();
+    const materialsDidNotChange = !pipelinePreparer.materialsChanged;
+    if ((nothingToRender || frameBuffersAreNotFresh) && materialsDidNotChange) return;
 
     // Renderables in the world changed or framebuffers were recreated, re-record graphics commands
     const window = world.resources.get!Window;

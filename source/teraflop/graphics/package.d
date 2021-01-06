@@ -695,7 +695,7 @@ class Shader : ObservableFile, IResource {
   /// stage = The stage in the graphics pipeline in which this Shader performs.
   /// filePath = Path to a file containing SPIR-V source bytecode.
   /// See_Also: `teraflop.systems.FileWatcher`
-  static Shader watch(ShaderStage stage, string filePath) {
+  static Shader watched(ShaderStage stage, string filePath) {
     return new Shader(stage, filePath, Yes.hotReload);
   }
 
@@ -741,17 +741,12 @@ struct MaterialDirtied {
   size_t formerMaterialHash;
   ///
   Shader changedShader;
-
-  ///
-  this(const Material material, Shader changedShader = null) {
-    formerMaterialHash = material.toHash;
-    this.changedShader = changedShader;
-  }
 }
 
 /// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
 /// See_Also: `teraflop.systems.rendering.PipelinePreparer`
 class Material : ObservableFileCollection, IResource {
+  private size_t _formerMaterialHash;
   private MaterialDirtied* _dirtied = null;
 
   private bool _depthTest = true;
@@ -795,17 +790,18 @@ class Material : ObservableFileCollection, IResource {
     FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back,
     Flag!"depthTest" depthTest = Yes.depthTest
   ) {
-    super(name, this._shaders.to!(ObservableFile[]));
-
     this._depthTest = depthTest;
     this._frontFace = frontFace;
     this._cullMode = cullMode;
     this._shaders = shaders;
     this._texture = texture;
+    this._formerMaterialHash = this.toHash;
 
+    super(name, shaders.to!(ObservableFile[]));
     foreach(shader; shaders) {
       shader.onChanged ~= (const(ubyte)[] _) => {
-        _dirtied = new MaterialDirtied(this, shader);
+        _dirtied = new MaterialDirtied(_formerMaterialHash, shader);
+        _formerMaterialHash = this.toHash;
       }();
     }
   }
@@ -882,7 +878,7 @@ class Material : ObservableFileCollection, IResource {
   ///
   /// Be sure to check `Material.dirty` before accessing this property.
   /// See_Also: `Material.dirty`
-  @property MaterialDirtied dirtied() {
+  @property const(MaterialDirtied) dirtied() {
     assert(dirty, "This Material is not dirty!\n\tHint: Check `Material.dirty` beforehand.");
     auto result = *_dirtied;
     _dirtied = null;

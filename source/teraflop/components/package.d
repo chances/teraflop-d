@@ -78,13 +78,13 @@ abstract class ObservableFileCollection : NamedComponent {
   package (teraflop) ObservableFile[] observableFiles;
 
   /// Initialize a new named ObservableFileCollection.
-  this(string name, ObservableFile[] observableFiles = []) {
+  this(string name, ObservableFile[] observableFiles) {
     this.observableFiles = observableFiles;
     super(name);
   }
 }
 
-/// A file readable from the user's disk that may be watched for changes at runtime.
+/// A file that may be watched for changes at runtime.
 /// See_Also: `File`
 abstract class ObservableFile : File {
   static import std.file;

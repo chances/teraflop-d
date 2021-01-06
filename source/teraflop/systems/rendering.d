@@ -36,6 +36,7 @@ final class PipelinePreparer : System {
   private BindingGroups[const Material] _bindingGroups;
   private Pipeline[PipelineKey] pipelines;
   private PipelineLayout[PipelineKey] pipelineLayouts;
+  private bool _materialsChanged = false;
   private Renderable[] _renderables;
 
   /// Initialize a new ResourceInitializer.
@@ -54,16 +55,28 @@ final class PipelinePreparer : System {
   const(BindingGroups[const Material]) bindingGroups() @property const {
     return _bindingGroups;
   }
-  const(Renderable)[] renderables() @property const {
-    return _renderables;
-  }
   ///
   @property Buffer[const Material] uniformBuffers() {
     return _uniformBuffers;
   }
+  /// Whether one or more materials have changed, e.g. when a `Shader` is recompiled.
+  /// Observers of this property ought re-record render pass command buffers.
+  @property bool materialsChanged() {
+    auto result = _materialsChanged;
+    _materialsChanged = false;
+    return result;
+  }
+  const(Renderable)[] renderables() @property const {
+    return _renderables;
+  }
 
   private PipelineKey key(const Material material, const MeshBase mesh) {
     return material.hashOf(mesh.bindingDescription.hashOf(mesh.attributeDescriptions.hashOf(mesh.topology)));
+  }
+  private PipelineKey key(const MaterialDirtied material, const MeshBase mesh) {
+    return material.formerMaterialHash.hashOf(
+      mesh.bindingDescription.hashOf(mesh.attributeDescriptions.hashOf(mesh.topology))
+    );
   }
   private bool hasPipeline(PipelineKey key) {
     return (key in pipelines) !is null;
@@ -90,7 +103,27 @@ final class PipelinePreparer : System {
       const mesh = entity.get!MeshBase()[0];
       if (!mesh.initialized) continue;
 
-      const key = this.key(material, mesh);
+      const materialDirtied = material.dirty;
+      const key = materialDirtied
+        ? this.key((cast(Material) material).dirtied, mesh)
+        : this.key(material, mesh);
+
+      // Prune dirtied Materials
+      if (materialDirtied) {
+        _materialsChanged = true;
+        device.waitIdle();
+
+        pipelines[key].dispose();
+        pipelines.remove(key);
+        descriptorPools[key].dispose();
+        descriptorPools.remove(key);
+        descriptorSets.remove(key);
+        if ((material in _uniformBuffers) !is null) _uniformBuffers[material].dispose();
+        _uniformBuffers.remove(material);
+        _bindingGroups.remove(material);
+        pipelineLayouts.remove(key);
+      }
+
       if (hasPipeline(key)) continue;
       _bindingGroups[material] = new BindingGroup[0];
       const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();

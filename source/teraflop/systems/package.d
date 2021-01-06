@@ -113,7 +113,7 @@ final class FileWatcher : System {
   }
 
   override void run() {
-    import std.algorithm : canFind, find, setDifference, sort, SwapStrategy;
+    import std.algorithm : canFind, find, multiwayUnion, setSymmetricDifference, sort, SwapStrategy;
     import std.path : dirName;
     import std.range : chain;
     import std.string : format;
@@ -122,8 +122,10 @@ final class FileWatcher : System {
       query().map!(entity => entity.getMut!ObservableFileCollection).joiner.map!(c => c.observableFiles).joiner,
       query().map!(entity => entity.getMut!ObservableFile).joiner
     ).filter!(file => file.hotReload).array;
-    auto observableFilePaths = observableFiles.map!(c => c.filePath).array.dup.sort!("a < b", SwapStrategy.stable);
-    auto changes = setDifference(observedFiles.keys, observableFilePaths).array;
+    auto observableFilePaths = multiwayUnion([
+      observableFiles.map!(c => c.filePath).array.dup.sort!("a < b", SwapStrategy.stable)
+    ]);
+    auto changes = setSymmetricDifference(observedFiles.keys, observableFilePaths).array;
 
     // Unwatch files removed from the World
     foreach (removedFile; changes.filter!(f => observedFiles.keys.canFind(f))) {
@@ -143,11 +145,12 @@ final class FileWatcher : System {
     foreach (addedFile; additions) {
       observedFiles[addedFile] =
         observableFiles.find!((ObservableFile c, string filePath) => c.filePath == filePath)(addedFile)[0];
-      auto parentDirectory = observedDirectories[addedFile] = addedFile.dirName;
+      auto parentDirectory = addedFile.dirName;
       // Watch the added file's parent directory if it's _not_ already being watched
       if (!observedDirectories.values.canFind(parentDirectory)) {
         const error = format!"Could not watch %s for changes!"(addedFile);
         assert(watcher.watchDir(parentDirectory), error);
+        observedDirectories[addedFile] = parentDirectory;
         // TODO: Log `error`
       }
     }
@@ -155,13 +158,11 @@ final class FileWatcher : System {
 
   private void watch() {
     import libasync.watcher : DWChangeInfo, DWFileEvent;
-    import std.stdio : writeln;
 
     watcher.run(() => {
-      DWChangeInfo[] changes;
+      auto changes = new DWChangeInfo[observedFiles.length ? observedFiles.length : 1];
       while(watcher.readChanges(changes)) {
         foreach (change; changes) {
-          writeln(change.path);
           if ((change.path in observedFiles) is null) continue;
 
           auto file = observedFiles[change.path];

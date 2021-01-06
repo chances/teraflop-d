@@ -15,6 +15,7 @@ void main()
 private final class Cube : Game {
   import teraflop.ecs : System, World;
   import teraflop.platform : Window;
+  import teraflop.systems : FileWatcher;
   import teraflop.time : Time;
 
   this() {
@@ -34,10 +35,13 @@ private final class Cube : Game {
       45.radians, framebufferSize.width / cast(float) framebufferSize.height, 0.01f, 1000.0f
     );
     world.resources.add(camera);
+    this.add(new FileWatcher(world));
+    this.add(System.from!aspectRatio);
+    this.add(System.from!rotate);
 
     auto shaders = [
-      new Shader(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
-      new Shader(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
+      Shader.watched(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
+      Shader.watched(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
     auto flat = new Material(shaders, FrontFace.clockwise, CullMode.front);
 
@@ -55,8 +59,6 @@ private final class Cube : Game {
       new Mesh!VertexPosNormalColor(Primitive.triangleList, mesh(colors[3]), cubeData.indices.to!(uint[])),
       mat4f.scaling(vec3f(1.2f, 0.45f, 1.2f)).transform
     );
-    this.add(System.from!aspectRatio);
-    this.add(System.from!rotate);
   }
 
   static void aspectRatio(scope const Window window, scope Camera camera) {
