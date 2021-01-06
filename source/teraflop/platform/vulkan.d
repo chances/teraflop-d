@@ -29,8 +29,7 @@ package (teraflop) bool initVulkan(string appName) {
 
   vulkanInit();
 
-  VulkanCreateInfo createInfo;
-  createInfo.appName = appName;
+  auto createInfo = VulkanCreateInfo.defaultExts(appName /* TODO: Integrate an appVersion */);
   createInfo.optionalLayers ~= enableValidationLayers
     ? [
         "VK_LAYER_KHRONOS_validation",
@@ -38,7 +37,6 @@ package (teraflop) bool initVulkan(string appName) {
         "VK_LAYER_LUNARG_object_tracker",
         "VK_LAYER_GOOGLE_unique_objects"
     ] : [];
-  createInfo.optionalExtensions ~= enableValidationLayers ? debugReportInstanceExtensions : [];
 
   try {
     instance = createVulkanInstance(createInfo);
