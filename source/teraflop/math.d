@@ -36,6 +36,10 @@ unittest {
 enum vec3f up = vec3f(0, 1, 0);
 /// Down unit vector, i.e. inverse of Y-up.
 enum vec3f down = vec3f(0, -1, 0);
+/// Forward unit vector, i.e. Z-forward.
+enum vec3f forward = vec3f(0, 0, 1);
+/// Backward unit vector, i.e. inverse of Z-forward.
+enum vec3f back = vec3f(0, 0, -1);
 
 /// Transformation matrix to correct for the Vulkan coordinate system.
 /// Vulkan clip space has inverted Y and half Z.
