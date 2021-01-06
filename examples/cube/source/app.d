@@ -43,16 +43,16 @@ private final class Cube : Game {
 
     auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1, 0, 1).vec3f];
     auto cubeData = cube();
-    auto mesh = (vec3f color) => cubeData.vertices.map!(v => VertexPosColor(v.position, color)).array;
+    auto mesh = (vec3f color) => cubeData.vertices.map!(v => VertexPosNormalColor(v.position, v.normal, color)).array;
 
     world.spawn(
       flat,
-      new Mesh!VertexPosColor(Primitive.triangleList, mesh(colors[1]), cubeData.indices.to!(uint[])),
+      new Mesh!VertexPosNormalColor(Primitive.triangleList, mesh(colors[1]), cubeData.indices.to!(uint[])),
       (mat4f.translation(vec3f(1.2f, 1.50f, 0)) * mat4f.rotation(45.radians, up)).transform
     );
     world.spawn(
       flat,
-      new Mesh!VertexPosColor(Primitive.triangleList, mesh(colors[3]), cubeData.indices.to!(uint[])),
+      new Mesh!VertexPosNormalColor(Primitive.triangleList, mesh(colors[3]), cubeData.indices.to!(uint[])),
       mat4f.scaling(vec3f(1.2f, 0.45f, 1.2f)).transform
     );
     this.add(System.from!aspectRatio);

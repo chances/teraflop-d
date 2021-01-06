@@ -2,7 +2,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 #pragma shader_stage(fragment)
 
-layout(location = 0) in vec3 fragColor;
+layout(location = 0) in vec3 fragNormal;
+layout(location = 1) in vec3 fragColor;
 
 layout(location = 0) out vec4 outColor;
 

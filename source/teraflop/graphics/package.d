@@ -68,11 +68,13 @@ template isVertexData(T) if (isStruct!T) {
   // static immutable attributes = [__traits(allMembers, T)];
 }
 
+// TODO: Construct vertex attribute data with a template, e.g. `VertexData!(vec3f, "position", vec3f, "color")`
+
 /// Vertex attribute data comprising a 3D position and opaque color.
 struct VertexPosColor {
   /// 3D position.
   vec3f position;
-  /// Opaque color.
+  /// Opaque diffuse color.
   vec3f color;
 
   /// Describes how vertex attributes should be bound to the vertex shader.
@@ -101,11 +103,51 @@ struct VertexPosColor {
   }
 }
 
-/// Vertex attribute data comprising a 3D position, diffuse color, and texture coordinates.
+/// Vertex attribute data comprising a 3D position, normal vector, and opaque diffuse color.
+struct VertexPosNormalColor {
+  /// 3D position.
+  vec3f position;
+  /// Normal vector.
+  vec3f normal;
+  /// Opaque diffuse color.
+  vec3f color;
+
+  /// Describes how vertex attributes should be bound to the vertex shader.
+  static VertexInputBinding bindingDescription() {
+    VertexInputBinding bindingDescription = {
+      binding: 0,
+      stride: VertexPosNormalColor.sizeof,
+    };
+    return bindingDescription;
+  }
+
+  /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
+  static VertexInputAttrib[3] attributeDescriptions() {
+    VertexInputAttrib[3] attributeDescriptions;
+    // Position
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = Format.rgb32_sFloat;
+    attributeDescriptions[0].offset = position.offsetof;
+    // Normal
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = Format.rgb32_sFloat;
+    attributeDescriptions[1].offset = normal.offsetof;
+    // Color
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = Format.rgb32_sFloat;
+    attributeDescriptions[2].offset = color.offsetof;
+    return attributeDescriptions;
+  }
+}
+
+/// Vertex attribute data comprising a 3D position, opaque diffuse color, and texture coordinates.
 struct VertexPosColorTex {
   /// 3D position.
   vec3f position;
-  /// Diffuse color.
+  /// Opaque diffuse color.
   vec3f color;
   /// Texture UV coordinates.
   vec2f uv;
