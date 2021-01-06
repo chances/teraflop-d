@@ -195,6 +195,4 @@ final class FileWatcher : System {
   }
 }
 
-unittest {
-  // TODO: Write a text file to temp_dir, watch it, and then change its contents
-}
+// TODO: Add an integration test that writes to a text file to temp_dir, watches it, and then changes its contents
