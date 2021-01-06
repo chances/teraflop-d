@@ -7,9 +7,11 @@ module teraflop.systems;
 
 public import teraflop.systems.rendering;
 
+import gfx.graal;
+import std.algorithm.iteration : filter, map, joiner;
+import std.array : array;
 import teraflop.components : IResource;
 import teraflop.ecs : Component, System, World;
-import gfx.graal;
 
 /// Initialize un-initialized Components with handles to GPU resources.
 final class ResourceInitializer : System {
@@ -23,9 +25,6 @@ final class ResourceInitializer : System {
   }
 
   override void run() {
-    import std.algorithm.iteration : filter, map, joiner;
-    import std.array : array;
-
     auto resources = query().map!(entity => entity.getMut!IResource).joiner
       .filter!(c => !c.initialized).array;
     foreach (resource; resources)
@@ -50,8 +49,6 @@ final class TextureUploader : System {
   }
 
   override void run() {
-    import std.algorithm.iteration : filter, map, joiner;
-    import std.array : array;
     import teraflop.graphics : Material;
 
     auto textures = query().map!(entity => entity.getMut!Material).joiner
@@ -90,4 +87,114 @@ final class TextureUploader : System {
     }
     cmdBuf.submit(commands);
   }
+}
+
+/// Watch `teraflop.components.ObservableFile`s for changes where `ObservableFile.hotReload` is `true`.
+/// See_Also: `teraflop.components.ObservableFile`
+final class FileWatcher : System {
+  import libasync.watcher : AsyncDirectoryWatcher;
+  import teraflop.components : ObservableFile, ObservableFileCollection;
+
+  private ObservableFile[string] observedFiles;
+  private string[string] observedDirectories;
+  private AsyncDirectoryWatcher watcher;
+
+  /// Initialize a new FileWatcher.
+  this(const World world /* TODO: Add a whitelist of directories that may be watched */) {
+    import libasync.events : getThreadEventLoop;
+
+    super(world);
+    watcher = new AsyncDirectoryWatcher(getThreadEventLoop);
+    assert(watcher !is null);
+    this.watch();
+  }
+  ~this() {
+    watcher.kill();
+  }
+
+  override void run() {
+    import std.algorithm : canFind, find, setDifference, sort, SwapStrategy;
+    import std.path : dirName;
+    import std.range : chain;
+    import std.string : format;
+
+    auto observableFiles = chain(
+      query().map!(entity => entity.getMut!ObservableFileCollection).joiner.map!(c => c.observableFiles).joiner,
+      query().map!(entity => entity.getMut!ObservableFile).joiner
+    ).filter!(file => file.hotReload).array;
+    auto observableFilePaths = observableFiles.map!(c => c.filePath).array.dup.sort!("a < b", SwapStrategy.stable);
+    auto changes = setDifference(observedFiles.keys, observableFilePaths).array;
+
+    // Unwatch files removed from the World
+    foreach (removedFile; changes.filter!(f => observedFiles.keys.canFind(f))) {
+      observedFiles.remove(removedFile);
+      observedDirectories.remove(removedFile);
+      auto parentDirectory = removedFile.dirName;
+      // Unwatch the removed file's parent directory iff no other files in the directory are being watched
+      if (!observedDirectories.values.canFind(parentDirectory)) {
+        const error = format!"Could not unwatch %s for changes!"(removedFile);
+        assert(watcher.unwatchDir(parentDirectory, false), error);
+        // TODO: Log `error`
+      }
+    }
+
+    // Watch files added to the World
+    auto additions = changes.filter!(f => !observedFiles.keys.canFind(f));
+    foreach (addedFile; additions) {
+      observedFiles[addedFile] =
+        observableFiles.find!((ObservableFile c, string filePath) => c.filePath == filePath)(addedFile)[0];
+      auto parentDirectory = observedDirectories[addedFile] = addedFile.dirName;
+      // Watch the added file's parent directory if it's _not_ already being watched
+      if (!observedDirectories.values.canFind(parentDirectory)) {
+        const error = format!"Could not watch %s for changes!"(addedFile);
+        assert(watcher.watchDir(parentDirectory), error);
+        // TODO: Log `error`
+      }
+    }
+  }
+
+  private void watch() {
+    import libasync.watcher : DWChangeInfo, DWFileEvent;
+    import std.stdio : writeln;
+
+    watcher.run(() => {
+      DWChangeInfo[] changes;
+      while(watcher.readChanges(changes)) {
+        foreach (change; changes) {
+          writeln(change.path);
+          if ((change.path in observedFiles) is null) continue;
+
+          auto file = observedFiles[change.path];
+
+          switch (change.event) {
+            case DWFileEvent.ERROR:
+              // TODO: Log something here?
+              break;
+	          case DWFileEvent.MODIFIED:
+              file.readFile();
+              file.onChanged(file.contents);
+              break;
+	          case DWFileEvent.CREATED:
+              file.readFile();
+              file.onChanged(file.contents);
+              break;
+	          case DWFileEvent.DELETED:
+              file.readFile();
+              if (!file.exists) file.onDeleted(change.path);
+              break;
+            default:
+              if (change.event == DWFileEvent.MOVED_FROM || change.event == DWFileEvent.MOVED_TO) {
+                // TODO: Report this status, maybe with an `onMoved` or `onLost` event?
+                break;
+              }
+              assert(0);
+          }
+        }
+      }
+    }());
+  }
+}
+
+unittest {
+  // TODO: Write a text file to temp_dir, watch it, and then change its contents
 }
