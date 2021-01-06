@@ -39,7 +39,7 @@ private final class Cube : Game {
       new Shader(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
       new Shader(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
-    auto flat = new Material(shaders, FrontFace.clockwise);
+    auto flat = new Material(shaders, FrontFace.clockwise, CullMode.front);
 
     auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1, 0, 1).vec3f];
     auto cubeData = cube();
