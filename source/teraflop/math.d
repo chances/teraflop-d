@@ -1,5 +1,7 @@
 /// Mathematics primitives.
 ///
+/// See_Also: The <a href="https://code.dlang.org/packages/gfm">gfm</a> library and its <a href="https://gfm.dpldocs.info/gfm.math.html">API documentation</a>.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
