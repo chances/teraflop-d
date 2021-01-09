@@ -1,4 +1,4 @@
-/// Scripting API
+/// Scripting API integration primitives.
 ///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
@@ -7,6 +7,7 @@ module teraflop.scripting;
 
 import libasync : EventLoop, getThreadEventLoop, AsyncSignal;
 import std.container : DList;
+import teraflop.ecs : NamedComponent;
 import wasmer;
 public import wasmer : Extern, Function, Memory, Module, Trap, Value;
 
@@ -15,16 +16,32 @@ public import std.json : JSONType, JSONValue, parseJSON, toJSON;
 
 alias Queue = DList;
 
+/// A computational `teraflop.ecs.Component` that concurrently:
+/// $(UL
+///   $(LI Send messages to other actors)
+///   $(LI Create new actors)
+///   $(LI Behaviorly respond to messages it receives from other actors)
+/// )
 ///
-abstract class Actor(Msg) {
+/// Recipients of messages are identified by an Entity's `teraflop.ecs.Entity.id`. Thus, an actor can only
+/// communicate with actors whose addresses it has. It can obtain those from a message it receives, or if the address
+/// is for an actor it has itself created.
+///
+/// The actor model is characterized by inherent concurrency of computation within and among actors, dynamic creation
+/// of actors, inclusion of actor addresses in messages, and interaction only through direct asynchronous message
+/// passing with no restriction on message arrival order.
+/// See_Also: <a href="https://en.wikipedia.org/wiki/Actor_model#Fundamental_concepts">Fundamental Concepts, Actor Model</a> on Wikipedia
+abstract class Actor(Msg) : NamedComponent {
   private EventLoop eventLoop;
   private auto mailbox = Queue!Msg();
   private shared AsyncSignal onMessageSignal;
 
+  /// Fired when this Actor pops a received message from its mailbox.
   protected Event!Msg onMessage;
 
   ///
-  this() {
+  this(string name = "") {
+    super(name);
     eventLoop = getThreadEventLoop();
     onMessageSignal = new shared AsyncSignal(eventLoop);
   }
@@ -37,8 +54,8 @@ abstract class Actor(Msg) {
     onMessageSignal.trigger();
   }
 
-  ///
-  void start() {
+  /// Start processing this Actor's mailbox in a new event loop.
+  package (teraflop) void start() {
     import std.range : popFrontN, walkLength;
 
     onMessageSignal.run({
@@ -51,7 +68,7 @@ abstract class Actor(Msg) {
     });
   }
 
-  ///
+  /// Stop this Actor's event loop, effectually ending processing of its mailbox.
   void stop() {
     onMessageSignal.kill();
   }
