@@ -1,4 +1,9 @@
-module engine.scripting;
+/// Scripting API
+///
+/// Authors: Chance Snow
+/// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
+/// License: 3-Clause BSD License
+module teraflop.scripting;
 
 import libasync : EventLoop, getThreadEventLoop, AsyncSignal;
 import std.container : DList;
@@ -10,6 +15,7 @@ public import std.json : JSONType, JSONValue, parseJSON, toJSON;
 
 alias Queue = DList;
 
+///
 abstract class Actor(Msg) {
   private EventLoop eventLoop;
   private auto mailbox = Queue!Msg();
@@ -17,11 +23,13 @@ abstract class Actor(Msg) {
 
   protected Event!Msg onMessage;
 
+  ///
   this() {
     eventLoop = getThreadEventLoop();
     onMessageSignal = new shared AsyncSignal(eventLoop);
   }
 
+  ///
   void postMessage(Msg message) {
     synchronized {
       assert(mailbox.insertBack!Msg(message) == 1);
@@ -29,6 +37,7 @@ abstract class Actor(Msg) {
     onMessageSignal.trigger();
   }
 
+  ///
   void start() {
     import std.range : popFrontN, walkLength;
 
@@ -42,11 +51,13 @@ abstract class Actor(Msg) {
     });
   }
 
+  ///
   void stop() {
     onMessageSignal.kill();
   }
 }
 
+///
 auto externNameMatches = (Extern a, string b) => a.name == b;
 
 /// An abstract class with helpers to create WebAssembly bindings.

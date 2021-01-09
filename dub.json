@@ -25,13 +25,18 @@
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
     "concepts": "~>0.0.8",
-    "erupted": "~>2.1.0",
     "gfm:math": "~>8.0",
+    "gfx:genmesh": "~>0.2.1",
+    "gfx:graal": "~>0.2.1",
+    "gfx:vulkan": {
+      "path": "../gfx-d"
+    },
     "libasync": "~>0.8.6",
     "wasmer": "0.1.0-alpha.4"
   },
   "subConfigurations": {
-    "bindbc-glfw": "static"
+    "bindbc-glfw": "static",
+    "gfx:vulkan": "glfw"
   },
   "lflags-linux": [
     "-Llib/glfw-3.3.2/src"

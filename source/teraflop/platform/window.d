@@ -6,8 +6,8 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
-import erupted : VkInstance;
 import libasync.notifier : AsyncNotifier;
+import std.exception : enforce;
 import std.string : toStringz;
 
 private uint lastWindowId = 0;
@@ -16,13 +16,15 @@ private uint lastWindowId = 0;
 class Window {
   import teraflop.graphics : Color;
   import teraflop.math : Size;
-  import teraflop.vulkan : Device, Surface;
+  import gfx.core.rc : atomicRcCode;
+  import gfx.graal : Device, Instance, Surface;
+  import gfx.vulkan : VkSurfaceKHR;
 
   private GLFWwindow* window;
-  private Surface surface_;
+  private Surface _surface;
   private WindowData data;
-  private bool valid_ = false;
-  private string title_;
+  private bool _valid = false;
+  private string _title;
 
   /// Window identifier.
   const int id;
@@ -37,9 +39,12 @@ class Window {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+  this(string title, int width = 960, int height = 720, bool initiallyFocused = true) {
+    import gfx.vulkan.wsi : createVulkanGlfwSurface;
+    import teraflop.platform.vulkan : instance;
+
     id = lastWindowId += 1;
-    title_ = title;
+    _title = title;
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
     glfwWindowHint(GLFW_RESIZABLE, true);
@@ -48,11 +53,13 @@ class Window {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by wgpu
 
     window = glfwCreateWindow(width, height, toStringz(title), null, null);
-    valid_ = window !is null;
-    if (!valid_) {
+    _valid = window !is null;
+    if (!_valid) {
       errorCallback(0, toStringz("Failed to initialize a new GLFW Window."));
       return;
     }
+    _surface = createVulkanGlfwSurface(instance, window);
+
     glfwSetWindowUserPointer(window, &data);
     glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
     glfwSetWindowIconifyCallback(window, &iconifyCallback);
@@ -60,9 +67,10 @@ class Window {
     data.update(window);
   }
 
-  ~this() {
+  ///
+  void dispose() {
     if (valid) glfwDestroyWindow(window);
-    destroy(surface_);
+    _surface.dispose();
   }
 
   // Swap chains are keyed on their windows
@@ -79,15 +87,17 @@ class Window {
   ///
   /// May be `false` if Window initialization failed .
   bool valid() @property const {
-    return valid_;
+    return _valid;
   }
 
   /// Title of this Window.
   string title() @property const {
-    return title_;
+    return _title;
   }
   void title(string value) @property {
-    title_ = value;
+    _title = value;
+
+    if (valid) glfwSetWindowTitle(window, toStringz(_title));
   }
 
   /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
@@ -114,24 +124,19 @@ class Window {
   package (teraflop) bool dirty() @property const {
     return data.dirty;
   }
-  package (teraflop) const(Surface) surface() @property const {
-    return surface_;
-  }
-  package (teraflop) void createSurface(VkInstance instance) {
-    surface_ = Surface.fromGlfw(instance, window);
+  package (teraflop) Surface surface() @property const {
+    return cast(Surface) _surface;
   }
 
   package (teraflop) void update() {
     if (glfwWindowShouldClose(window)) {
       glfwDestroyWindow(window);
-      valid_ = false;
+      _valid = false;
       return;
     }
 
     glfwPollEvents();
     data.update(window);
-
-    glfwSetWindowTitle(window, toStringz(title_));
 
     // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
   }

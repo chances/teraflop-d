@@ -526,8 +526,13 @@ abstract class System {
     return name_;
   }
 
+  /// Retreive the World's `Resources`.
+  Resources resources() @property const {
+    return world.resources;
+  }
+
   /// Operate this System on Resources and Components in the `World`.
-  abstract void run() inout;
+  abstract void run();
 
   /// Query the `World` for Entities containing Components of the given types.
   const(Entity[]) query(ComponentT...)() const {
@@ -538,11 +543,11 @@ abstract class System {
 unittest {
   class Foo : System {
     this(World world) { super(world); }
-    override void run() const {
+    override void run() {
       assert(world.entities.length == 0);
     }
   }
-  const foo = new Foo(new World());
+  auto foo = new Foo(new World());
 
   import std.traits : fullyQualifiedName;
   assert(foo.name == fullyQualifiedName!Foo);
@@ -703,7 +708,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     super(world, "teraflop.ecs.GeneratedSystem:" ~ systemName);
   }
 
-  override void run() const {
+  override void run() {
     import std.algorithm.iteration : each, joiner, map;
     import std.string : join;
 
