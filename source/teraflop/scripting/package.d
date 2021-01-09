@@ -33,6 +33,7 @@ alias Queue = DList;
 /// See_Also: <a href="https://en.wikipedia.org/wiki/Actor_model#Fundamental_concepts">Fundamental Concepts, Actor Model</a> on Wikipedia
 abstract class Actor(Msg) : NamedComponent {
   private auto mailbox = Queue!Msg();
+  // https://libasync.dpldocs.info/libasync.signal.AsyncSignal.html
   private shared AsyncSignal onMessageSignal;
 
   /// Fired when this Actor pops a received message from its mailbox.
@@ -80,14 +81,14 @@ abstract class Actor(Msg) : NamedComponent {
 // unittest {}
 
 ///
-auto externNameMatches = (Extern a, string b) => a.name == b;
+auto externNameMatches = (const Extern a, string b) => a.name == b;
 
 /// An abstract class with helpers to create WebAssembly bindings.
 /// See_Also: <a href="https://chances.github.io/wasmer-d">`wasmer` API Documentation</a>
 abstract class ScriptableComponent : Actor!string {
   protected Module entryModule;
   protected Instance instance;
-  protected Extern[] exports;
+  protected const(Extern)[] exports;
   protected Function entryPoint;
 
   /// Params:
@@ -107,7 +108,7 @@ abstract class ScriptableComponent : Actor!string {
 
     const entryPointError = format!"Could not retreive '%s' entry point function."(entryPoint);
     const entryPointIndex = enforce(exports.countUntil!(externNameMatches)(entryPoint) >= 0, entryPointError);
-    this.entryPoint = Function.from(exports[entryPointIndex]);
+    this.entryPoint = Function.from(cast() exports[entryPointIndex]);
     enforce(this.entryPoint.valid, entryPointError);
   }
 }

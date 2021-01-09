@@ -32,7 +32,7 @@
       "path": "../gfx-d"
     },
     "libasync": "~>0.8.6",
-    "wasmer": "0.1.0-alpha.4"
+    "wasmer": "0.2.0"
   },
   "subConfigurations": {
     "bindbc-glfw": "static",
