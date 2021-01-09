@@ -4,6 +4,7 @@
 module teraflop.input.map;
 
 import teraflop.input.event;
+import teraflop.input.keyboard;
 import teraflop.math : vec2i;
 
 // Inspired by Godot's input map and,

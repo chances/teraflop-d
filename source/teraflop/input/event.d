@@ -4,7 +4,7 @@
 module teraflop.input.event;
 
 import teraflop.math : vec2i;
-public import teraflop.input.keyboard : KeyboardKey;
+import teraflop.input.keyboard;
 
 alias ActionInput = void delegate(InputEventAction event);
 alias UnhandledInput = bool delegate(InputEvent event);
@@ -72,26 +72,6 @@ abstract class InputEvent {
     }
     return null;
   }
-}
-
-///
-enum Modifiers {
-  NONE = 0,
-  SHIFT = 1,
-  CONTROL = 2,
-  ALT = 4,
-  SUPER = 8,
-  LEFT_SHIFT = 16,
-  LEFT_CONTROL = 32,
-  LEFT_ALT = 64,
-  LEFT_SUPER = 128,
-  RIGHT_SHIFT = 256,
-  RIGHT_CONTROL = 512,
-  RIGHT_ALT = 1024,
-  RIGHT_SUPER = 2048,
-
-  CAPS_LOCK = 0x0010, // Added in GLFW 3.3
-  NUM_LOCK = 0x0020,  // ditto
 }
 
 // TODO: Joypad input enums: https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/types.d#L229-L283

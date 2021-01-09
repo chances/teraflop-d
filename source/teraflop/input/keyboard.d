@@ -1,9 +1,31 @@
+/// Keyboard input primitives.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
 module teraflop.input.keyboard;
 
 import bindbc.glfw;
+
+///
+enum Modifiers {
+  NONE = 0,
+  SHIFT = 1,
+  CONTROL = 2,
+  ALT = 4,
+  SUPER = 8,
+  LEFT_SHIFT = 16,
+  LEFT_CONTROL = 32,
+  LEFT_ALT = 64,
+  LEFT_SUPER = 128,
+  RIGHT_SHIFT = 256,
+  RIGHT_CONTROL = 512,
+  RIGHT_ALT = 1024,
+  RIGHT_SUPER = 2048,
+
+  CAPS_LOCK = 0x0010, // Added in GLFW 3.3
+  NUM_LOCK = 0x0020,  // ditto
+}
 
 ///
 enum KeyboardKey {
