@@ -95,7 +95,7 @@ abstract class ScriptableComponent : Actor!string {
   /// entryPoint=Name of the entry point function to retreive from the module
   /// imports=Globals, memories, tables, and functions to expose to the module
   this(Module entry, string entryPoint, Extern[] imports = []) {
-    import std.algorithm : canFind, find;
+    import std.algorithm : countUntil;
     import std.exception : enforce;
     import std.string : format;
 
@@ -106,8 +106,8 @@ abstract class ScriptableComponent : Actor!string {
     exports = instance.exports;
 
     const entryPointError = format!"Could not retreive '%s' entry point function."(entryPoint);
-    enforce(exports.canFind!(externNameMatches)(entryPoint), entryPointError);
-    this.entryPoint = Function.from(exports.find!(externNameMatches)(entryPoint)[0]);
+    const entryPointIndex = enforce(exports.countUntil!(externNameMatches)(entryPoint) >= 0, entryPointError);
+    this.entryPoint = Function.from(exports[entryPointIndex]);
     enforce(this.entryPoint.valid, entryPointError);
   }
 }
