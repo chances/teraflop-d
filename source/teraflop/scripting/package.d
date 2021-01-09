@@ -18,9 +18,9 @@ alias Queue = DList;
 
 /// A computational `teraflop.ecs.Component` that concurrently:
 /// $(UL
-///   $(LI Send messages to other actors)
-///   $(LI Create new actors)
-///   $(LI Behaviorly respond to messages it receives from other actors)
+///   $(LI Sends messages to other actors)
+///   $(LI Creates new actors)
+///   $(LI Behaviorly responds to messages it receives from other actors)
 /// )
 ///
 /// Recipients of messages are identified by an Entity's `teraflop.ecs.Entity.id`. Thus, an actor can only
@@ -44,6 +44,9 @@ abstract class Actor(Msg) : NamedComponent {
     auto eventLoop = getThreadEventLoop();
     onMessageSignal = new shared AsyncSignal(eventLoop);
   }
+  ~this() {
+    onMessageSignal.kill();
+  }
 
   /// Push a new `Msg` to this Actor's mailbox queue.
   package (teraflop) void postMessage(Msg message) {
@@ -53,7 +56,7 @@ abstract class Actor(Msg) : NamedComponent {
     onMessageSignal.trigger();
   }
 
-  /// Start processing this Actor's mailbox in a new event loop.
+  /// Start processing this Actor's mailbox in its thread's event loop.
   package (teraflop) void start() {
     import std.range : popFrontN, walkLength;
 
@@ -67,7 +70,7 @@ abstract class Actor(Msg) : NamedComponent {
     });
   }
 
-  /// Stop this Actor's event loop, effectually ending processing of its mailbox.
+  /// Stop processing this Actor's mailbox.
   package (teraflop) void stop() {
     onMessageSignal.kill();
   }
