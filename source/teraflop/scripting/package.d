@@ -78,7 +78,7 @@ abstract class Actor(Msg) : NamedComponent {
 auto externNameMatches = (Extern a, string b) => a.name == b;
 
 /// An abstract class with helpers to create WebAssembly bindings.
-abstract class Interface : Actor!string {
+abstract class ScriptableComponent : Actor!string {
   protected Module entryModule;
   protected Instance instance;
   protected Extern[] exports;
