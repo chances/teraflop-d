@@ -9,10 +9,11 @@ import concepts : implements;
 import gfx.core.rc;
 import gfx.graal;
 import std.traits : fullyQualifiedName;
+import std.typecons : Flag, No, Yes;
 
 import std.conv : to;
 import std.exception : enforce;
-import teraflop.components : IResource;
+import teraflop.components : IResource, ObservableFile, ObservableFileCollection;
 import teraflop.ecs : NamedComponent;
 import teraflop.math;
 import teraflop.traits : isStruct;
@@ -543,8 +544,6 @@ class Camera : NamedComponent {
   /// Vulkan clip space has inverted Y and half Z.
   /// See_Also: `vulkanClipCorrection`
   mat4f mvp() @property const {
-    import std.typecons : No, Yes;
-
     const clip = vulkanClipCorrection(invertY ? Yes.invertY : No.invertY);
     return (clip * projection * view * model).transposed;
   }
@@ -645,31 +644,34 @@ class Texture : BindingDescriptor, IResource {
 }
 
 /// A SPIR-V program for one programmable stage in the graphics `Pipeline`.
-class Shader : IResource {
+/// See_Also: `ObservableFile`
+class Shader : ObservableFile, IResource {
   /// The stage in the graphics pipeline in which this Shader performs.
   const ShaderStage stage;
 
   private Device device;
   private ShaderModule _shaderModule;
-  private ubyte[] spv;
 
-  /// Initialize a new Shader.
+  /// Initialize a new Shader compiled from the given `filePath`.
   ///
   /// Params:
   /// stage = The stage in the graphics pipeline in which this Shader performs.
   /// filePath = Path to a file containing SPIR-V source bytecode.
-  this(ShaderStage stage, string filePath) {
-    import std.file : exists;
-    import std.stdio : File;
+  /// hotReload = Whether to watch the given `filePath` for changes and to recompile this Shader at runtime.
+  this(ShaderStage stage, string filePath, Flag!"hotReload" hotReload = No.hotReload) {
     import std.string : format;
 
-    enforce(exists(filePath), format!"File not found: %s"(filePath));
-
-    auto file = File(filePath, "rb");
-    auto spvBuffer = file.rawRead(new ubyte[file.size()]);
-    file.close();
-
-    this(stage, spvBuffer);
+    this.stage = stage;
+    super(filePath, hotReload);
+    enforce(exists, format!"File not found: %s"(filePath));
+    onChanged ~= (const(ubyte)[] _) => {
+      if (_shaderModule !is null) {
+        // TODO: Log "Reloading shader: filePath"
+        device.waitIdle();
+        _shaderModule.dispose();
+        _shaderModule = null;
+      }
+    }();
   }
   /// Initialize a new Shader.
   ///
@@ -678,12 +680,23 @@ class Shader : IResource {
   /// spv = SPIR-V source bytecode.
   this(ShaderStage stage, ubyte[] spv) {
     this.stage = stage;
-    this.spv = spv;
+    super(spv);
   }
-
   ~this() {
     _shaderModule.dispose();
-    spv = new ubyte[0];
+  }
+
+  /// Initialize a new Shader compiled from the given `filePath`.
+  /// The constructed Shader will be marked for `hotReload`.
+  ///
+  /// Add the `teraflop.systems.FileWatcher` System to your game's World to watch the Shader's source file for changes.
+  ///
+  /// Params:
+  /// stage = The stage in the graphics pipeline in which this Shader performs.
+  /// filePath = Path to a file containing SPIR-V source bytecode.
+  /// See_Also: `teraflop.systems.FileWatcher`
+  static Shader watched(ShaderStage stage, string filePath) {
+    return new Shader(stage, filePath, Yes.hotReload);
   }
 
   /// Whether this Shader has been successfully initialized.
@@ -698,7 +711,7 @@ class Shader : IResource {
   /// Initialize this Shader.
   void initialize(scope Device device) {
     this.device = device;
-    this._shaderModule = device.createShaderModule(cast(uint[]) spv, "main");
+    this._shaderModule = device.createShaderModule(cast(uint[]) contents, "main");
   }
 }
 
@@ -722,45 +735,75 @@ enum FrontFace : gfx.graal.FrontFace {
   counterClockwise = gfx.graal.FrontFace.ccw
 }
 
+/// Argument to the `Material.onDirtied` `Event`.
+struct MaterialDirtied {
+  ///
+  size_t formerMaterialHash;
+  ///
+  Shader changedShader;
+}
+
 /// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
-class Material : NamedComponent, IResource {
-  /// Whether to perform the depth test. If `true`, assumes the render target has a depth buffer attachment.
-  bool depthTest = true;
-  /// Specifies the vertex order for faces to be considered front-facing.
-  FrontFace frontFace = FrontFace.clockwise;
-  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
-  CullMode cullMode = CullMode.back;
+/// See_Also: `teraflop.systems.rendering.PipelinePreparer`
+class Material : ObservableFileCollection, IResource {
+  private size_t _formerMaterialHash;
+  private MaterialDirtied* _dirtied = null;
+
+  private bool _depthTest = true;
+  private FrontFace _frontFace = FrontFace.clockwise;
+  private CullMode _cullMode = CullMode.back;
 
   package (teraflop) Shader[] _shaders;
-  package (teraflop) Texture texture_;
+  package (teraflop) Texture _texture;
 
   /// Initialize a new Material.
-  this(Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back) {
-    this(fullyQualifiedName!Material, shaders, frontFace, cullMode);
+  this(Shader[] shaders, Flag!"depthTest" depthTest = Yes.depthTest) {
+    this(fullyQualifiedName!Material, shaders, FrontFace.clockwise, CullMode.back, depthTest);
+  }
+  /// Initialize a new Material.
+  this(
+    Shader[] shaders,
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back,
+    Flag!"depthTest" depthTest = Yes.depthTest
+  ) {
+    this(fullyQualifiedName!Material, shaders, frontFace, cullMode, depthTest);
   }
   /// Initialize a new textured Material.
   this(
-    Shader[] shaders, Texture texture, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
+    Shader[] shaders, Texture texture,
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back,
+    Flag!"depthTest" depthTest = Yes.depthTest
   ) {
-    this(fullyQualifiedName!Material, shaders, texture, frontFace, cullMode);
+    this(fullyQualifiedName!Material, shaders, texture, frontFace, cullMode, depthTest);
   }
   /// Initialize a new named Material.
   this(
-    string name, Shader[] shaders, FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
+    string name, Shader[] shaders,
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back,
+    Flag!"depthTest" depthTest = Yes.depthTest
   ) {
-    this(name, shaders, null, frontFace, cullMode);
+    this(name, shaders, null, frontFace, cullMode, depthTest);
   }
   /// Initialize a new named and textured Material.
   this(
     string name, Shader[] shaders, Texture texture,
-    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back
+    FrontFace frontFace = FrontFace.clockwise, CullMode cullMode = CullMode.back,
+    Flag!"depthTest" depthTest = Yes.depthTest
   ) {
-    super(name);
-
+    this._depthTest = depthTest;
+    this._frontFace = frontFace;
+    this._cullMode = cullMode;
     this._shaders = shaders;
-    this.texture_ = texture;
-    this.frontFace = frontFace;
-    this.cullMode = cullMode;
+    this._texture = texture;
+    this._formerMaterialHash = this.toHash;
+
+    super(name, shaders.to!(ObservableFile[]));
+    foreach(shader; shaders) {
+      shader.onChanged ~= (const(ubyte)[] _) => {
+        _dirtied = new MaterialDirtied(_formerMaterialHash, shader);
+        _formerMaterialHash = this.toHash;
+      }();
+    }
   }
   ~this() {
     foreach (shader; _shaders)
@@ -773,6 +816,19 @@ class Material : NamedComponent, IResource {
 
     if (!_shaders.length) return true;
     return _shaders.all!(shader => shader.initialized) && (texture is null || texture.initialized);
+  }
+
+  /// Whether to perform the depth test. If `true`, assumes the render target has a depth buffer attachment.
+  bool depthTest() @property const {
+    return _depthTest;
+  }
+  /// Specifies the vertex order for faces to be considered front-facing.
+  FrontFace frontFace() @property const {
+    return _frontFace;
+  }
+  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
+  CullMode cullMode() @property const {
+    return _cullMode;
   }
 
   GraphicsShaderSet shaders() @property const {
@@ -801,18 +857,40 @@ class Material : NamedComponent, IResource {
   }
 
   Texture texture() @property const {
-    return cast(Texture) texture_;
+    return cast(Texture) _texture;
   }
+  /// Whether this Material is textured.
+  /// See_Also: `Material.texture`
   bool textured() @property const {
-    return texture_ !is null;
+    return _texture !is null;
+  }
+
+  /// Whether this Material has changed and requires reprocessing into the graphics pipeline.
+  /// See_Also:
+  /// $(UL
+  ///   $(LI `Material.dirtied`)
+  ///   $(LI `teraflop.systems.rendering.PipelinePreparer`)
+  /// )
+  bool dirty() @property const {
+    return _dirtied !is null;
+  }
+  /// The properties of this Material that have changed.
+  ///
+  /// Be sure to check `Material.dirty` before accessing this property.
+  /// See_Also: `Material.dirty`
+  @property const(MaterialDirtied) dirtied() {
+    assert(dirty, "This Material is not dirty!\n\tHint: Check `Material.dirty` beforehand.");
+    auto result = *_dirtied;
+    _dirtied = null;
+    return result;
   }
 
   /// Pipelines are keyed on `Material`s, `MeshBase.bindingDescription`, `MeshBase.attributeDescriptions`, and `MeshBase.topology`
   /// See_Also: <a href="https://dlang.org/spec/hash-map.html#using_classes_as_key" title="The D Language Website">Associative Arrays - Using Classes as the <em>KeyType</em></a>
   override size_t toHash() const pure {
-    size_t accumulatedHash = cullMode.hashOf(frontFace.hashOf(depthTest));
+    size_t accumulatedHash = _cullMode.hashOf(_frontFace.hashOf(_depthTest));
     foreach (shader; _shaders)
-      accumulatedHash = shader.spv.hashOf(accumulatedHash);
+      accumulatedHash = shader.contents.hashOf(accumulatedHash);
     return accumulatedHash;
   }
   override bool opEquals(Object o) const pure {
@@ -823,7 +901,7 @@ class Material : NamedComponent, IResource {
   /// Initialize this Material.
   void initialize(scope Device device) {
     foreach (shader; _shaders) shader.initialize(device);
-    if (texture_ !is null)
+    if (_texture !is null)
       texture.initialize(device);
   }
 }
@@ -869,7 +947,6 @@ unittest {
   version (GPU) {
     import gfx.core : none;
     import std.conv : to;
-    import std.typecons : No;
 
     assert(initVulkan("test-triangle"));
     const graphicsQueueIndex = selectGraphicsQueue();
@@ -907,8 +984,11 @@ unittest {
 
     auto vert = new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv");
     auto frag = new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv");
-    auto material = new Material([vert, frag]);
-    material.depthTest = false;
+    auto material = new Material([vert, frag], No.depthTest);
+    assert( material.frontFace == FrontFace.clockwise);
+    assert( material.cullMode == CullMode.back);
+    assert(!material.textured);
+    assert(!material.dirty);
     material.initialize(device);
     assert(vert.initialized && frag.initialized);
     assert(material.initialized);

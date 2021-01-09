@@ -9,3 +9,6 @@
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
 module teraflop.async;
+
+public import teraflop.async.event;
+public import teraflop.async.worker;

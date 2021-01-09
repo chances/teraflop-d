@@ -39,7 +39,7 @@ class Window {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+  this(string title, int width = 960, int height = 720, bool initiallyFocused = true) {
     import gfx.vulkan.wsi : createVulkanGlfwSurface;
     import teraflop.platform.vulkan : instance;
 
