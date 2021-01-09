@@ -109,7 +109,7 @@ final class PipelinePreparer : System {
         : this.key(material, mesh);
 
       // Prune dirtied Materials
-      if (materialDirtied) {
+      if (materialDirtied && (key in pipelines) !is null) {
         _materialsChanged = true;
         device.waitIdle();
 
