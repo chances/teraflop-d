@@ -32,7 +32,6 @@ alias Queue = DList;
 /// passing with no restriction on message arrival order.
 /// See_Also: <a href="https://en.wikipedia.org/wiki/Actor_model#Fundamental_concepts">Fundamental Concepts, Actor Model</a> on Wikipedia
 abstract class Actor(Msg) : NamedComponent {
-  private EventLoop eventLoop;
   private auto mailbox = Queue!Msg();
   private shared AsyncSignal onMessageSignal;
 
@@ -42,12 +41,12 @@ abstract class Actor(Msg) : NamedComponent {
   ///
   this(string name = "") {
     super(name);
-    eventLoop = getThreadEventLoop();
+    auto eventLoop = getThreadEventLoop();
     onMessageSignal = new shared AsyncSignal(eventLoop);
   }
 
-  ///
-  void postMessage(Msg message) {
+  /// Push a new `Msg` to this Actor's mailbox queue.
+  package (teraflop) void postMessage(Msg message) {
     synchronized {
       assert(mailbox.insertBack!Msg(message) == 1);
     }
@@ -69,15 +68,19 @@ abstract class Actor(Msg) : NamedComponent {
   }
 
   /// Stop this Actor's event loop, effectually ending processing of its mailbox.
-  void stop() {
+  package (teraflop) void stop() {
     onMessageSignal.kill();
   }
 }
+
+// TODO: Test the Actor class
+// unittest {}
 
 ///
 auto externNameMatches = (Extern a, string b) => a.name == b;
 
 /// An abstract class with helpers to create WebAssembly bindings.
+/// See_Also: <a href="https://chances.github.io/wasmer-d">`wasmer` API Documentation</a>
 abstract class ScriptableComponent : Actor!string {
   protected Module entryModule;
   protected Instance instance;
