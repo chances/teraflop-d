@@ -61,7 +61,7 @@ vec3 sunColor = rgb(252.0, 252.0, 242.0);
 const float albedo = 0.6;
 const float attenuation = 0.25;
 // TODO: Abstract this into a push constant
-const float brightness = 0.675;
+const float brightness = 0.875;
 
 // Sunlit shader by Chance Snow
 // https://shdr.bkcore.com/#1/fVPLboMwEPwVixOkiBACPSTqoarUW6ueemmqyAGHODI2ApPmofx71xiIoaQXgz2zs7Pe9cVKRFxlhMvSWnxZeUFiWlLB0Y6muxxtmcByueIVp1tRZHqPJM2IcXggcYAKUgpWSQgF5ICLE+WpQuZo+yFKOgq8QzRmcAyAoAnKMOW2s+KXFUeaUlYcPdW/duj7vouielX/ztJkvQgmipYaRIHnoykKosgD9nAbGlunzo6awkDotcCp9gVqMcNZbidC2o1XV1EcF/lKaOaZJrCUhFdYFdr68L1QUfUyQiVJL5upMNEKPUOmAtuQRNzyPKoUevnDer6TTUtMRt3cNBjMgWxvt7voyT/azY020bLXGd+bKZOBWuYOejDkm7CUrZWUERXarUp35VfLvTuqUE5BN5Uk2kF+G74Bwlu37RxnWLanbxioxz4WokwkhH1S8jMO54XYk1gl6/A78373fYw9hG3XMu2NnoltuoRm8P58hKpq4A/86qEK7fZKjAnuPEAUwN7xdF423TCRQYEgCOS6H9+uVWezFvpbTsvqjDkna9Udb19a118=
