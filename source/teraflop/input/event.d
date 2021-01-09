@@ -104,25 +104,13 @@ class InputEventKeyboard : InputEvent {
 ///
 enum MouseButton {
   ///
-  NONE = 1,
+  NONE = 0,
   ///
-  LEFT = 2,
+  LEFT = 1,
   ///
-  RIGHT = 4,
+  RIGHT = 2,
   ///
-  MIDDLE = 8
-}
-
-package (teraflop) int glfw(MouseButton button) @nogc nothrow {
-  import bindbc.glfw: GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE;
-
-  switch (button) {
-    case MouseButton.NONE: return -1;
-    case MouseButton.LEFT: return GLFW_MOUSE_BUTTON_LEFT;
-    case MouseButton.RIGHT: return GLFW_MOUSE_BUTTON_RIGHT;
-    case MouseButton.MIDDLE: return GLFW_MOUSE_BUTTON_MIDDLE;
-    default: assert(0);
-  }
+  MIDDLE = 4
 }
 
 /// Mouse button and/or motion event.

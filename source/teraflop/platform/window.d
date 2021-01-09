@@ -222,6 +222,9 @@ class Window {
     bool[KeyboardKey] wasKeyPressed;
 
     void update(GLFWwindow* window) nothrow {
+      import bindbc.glfw: GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE;
+      import std.conv : to;
+
       assert(window !is null);
 
       const size_t oldData = framebufferSize.width + framebufferSize.height;
@@ -237,14 +240,17 @@ class Window {
       this.hovered = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
       this.lastMouseButtons = this.mouseButtons;
       this.mouseButtons = 0;
-      foreach (mouseButton; MouseButton.min..MouseButton.max) {
-        if (glfwGetMouseButton(window, mouseButton.glfw) == GLFW_PRESS) this.mouseButtons |= mouseButton;
-      }
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) this.mouseButtons |= MouseButton.LEFT;
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) this.mouseButtons |= MouseButton.RIGHT;
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) this.mouseButtons |= MouseButton.MIDDLE;
       // Keyboard input
       foreach (key; keyPressed.keys)
         wasKeyPressed[key] = (key in keyPressed) !is null ? keyPressed[key] : false;
-      foreach (key; KeyboardKey.min..KeyboardKey.max)
+      foreach (key; KeyboardKey.min..KeyboardKey.max) {
+        if (key == KeyboardKey.unknown) continue;
+        if (key.to!int < KeyboardKey.space.to!int) continue;
         keyPressed[key] = glfwGetKey(window, key) == GLFW_PRESS;
+      }
 
       // TODO: Mark the window dirty if the window's display's DPI changed
       // https://www.glfw.org/docs/3.3/window_guide.html#window_scale
