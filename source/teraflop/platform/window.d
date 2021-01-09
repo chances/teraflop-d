@@ -9,13 +9,14 @@ import bindbc.glfw;
 import libasync.notifier : AsyncNotifier;
 import std.exception : enforce;
 import std.string : toStringz;
+import teraflop.input;
 
 private uint lastWindowId = 0;
 
 /// A native window.
 class Window {
   import teraflop.graphics : Color;
-  import teraflop.math : Size;
+  import teraflop.math : Size, vec2d;
   import gfx.core.rc : atomicRcCode;
   import gfx.graal : Device, Instance, Surface;
   import gfx.vulkan : VkSurfaceKHR;
@@ -63,6 +64,18 @@ class Window {
     glfwSetWindowUserPointer(window, &data);
     glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
     glfwSetWindowIconifyCallback(window, &iconifyCallback);
+    // https://www.glfw.org/docs/latest/input_guide.html#input_mouse_button
+    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
+    // https://www.glfw.org/docs/latest/input_guide.html#scrolling
+    // TODO: For GUI scrolling: glfwSetScrollCallback(window, scroll_callback);
+    // https://www.glfw.org/docs/latest/input_guide.html#input_key
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
+    glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+    // TODO: For text inputs in the GUI: glfwSetCharCallback(window, character_callback);
+    // TODO: For text input in the GUI; clipboard: https://www.glfw.org/docs/latest/input_guide.html#clipboard
+    // TODO: For cursor image changes in the GUI: https://www.glfw.org/docs/latest/input_guide.html#cursor_object
+    // TODO: For save games? https://www.glfw.org/docs/latest/input_guide.html#path_drop
+    // TODO: https://www.glfw.org/docs/latest/input_guide.html#joystick and https://www.glfw.org/docs/latest/input_guide.html#gamepad
 
     data.update(window);
   }
@@ -121,6 +134,14 @@ class Window {
     return data.minimized;
   }
 
+  package (teraflop) bool hasMouseInputChanged() @property const {
+    const mouseButtonsChanged = data.lastMouseButtons != data.mouseButtons;
+    // TODO: Check mouse wheel pos for changes
+    // const mouseWheelChanged = GetMouseWheelMove() != 0;
+    const mousePosChanged = data.lastMousePos.x != data.mousePos.x || data.lastMousePos.y != data.mousePos.y;
+    return mouseButtonsChanged || mousePosChanged;
+  }
+
   package (teraflop) bool dirty() @property const {
     return data.dirty;
   }
@@ -139,6 +160,29 @@ class Window {
     data.update(window);
 
     // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
+  }
+
+  bool isKeyDown(KeyboardKey key) @property const {
+    return (key in data.keyPressed) !is null ? data.keyPressed[key] : false;
+  }
+  bool wasKeyDown(KeyboardKey key) @property const {
+    return (key in data.wasKeyPressed) !is null ? data.wasKeyPressed[key] : false;
+  }
+  bool isKeyReleased(KeyboardKey key) @property const {
+    return (key in data.keyPressed) !is null ? !data.keyPressed[key] : true;
+  }
+
+  vec2d mousePosition() @property const {
+    return data.mousePos;
+  }
+  vec2d lastMousePosition() @property const {
+    return data.lastMousePos;
+  }
+  int mouseButtons() @property const {
+    return data.mouseButtons;
+  }
+  int lastMouseButtons() @property const {
+    return data.lastMouseButtons;
   }
 
   extern(C) {
@@ -169,8 +213,15 @@ class Window {
     Size framebufferSize;
     bool minimized = false;
     bool dirty = false;
+    vec2d mousePos = vec2d(0, 0);
+    vec2d lastMousePos = vec2d(0, 0);
+    bool hovered = false;
+    int mouseButtons = 0;
+    int lastMouseButtons = 0;
+    bool[KeyboardKey] keyPressed;
+    bool[KeyboardKey] wasKeyPressed;
 
-    void update(GLFWwindow* window) @nogc nothrow {
+    void update(GLFWwindow* window) nothrow {
       assert(window !is null);
 
       const size_t oldData = framebufferSize.width + framebufferSize.height;
@@ -179,20 +230,26 @@ class Window {
       glfwGetFramebufferSize(window, cast(int*) &this.framebufferSize.width, cast(int*) &this.framebufferSize.height);
       if (!minimized && framebufferSize.width == 0 && framebufferSize.height == 0)
         minimized = true;
+      // Mouse input
+      lastMousePos.x = mousePos.x;
+      lastMousePos.y = mousePos.y;
+      glfwGetCursorPos(window, &this.mousePos.x, &this.mousePos.y);
+      this.hovered = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
+      this.lastMouseButtons = this.mouseButtons;
+      this.mouseButtons = 0;
+      foreach (mouseButton; MouseButton.min..MouseButton.max) {
+        if (glfwGetMouseButton(window, mouseButton.glfw) == GLFW_PRESS) this.mouseButtons |= mouseButton;
+      }
+      // Keyboard input
+      foreach (key; keyPressed.keys)
+        wasKeyPressed[key] = (key in keyPressed) !is null ? keyPressed[key] : false;
+      foreach (key; KeyboardKey.min..KeyboardKey.max)
+        keyPressed[key] = glfwGetKey(window, key) == GLFW_PRESS;
+
       // TODO: Mark the window dirty if the window's display's DPI changed
       // https://www.glfw.org/docs/3.3/window_guide.html#window_scale
       dirty = oldData != framebufferSize.width + framebufferSize.height;
     }
-  }
-}
-
-version(linux) {
-  import std.meta : Alias;
-  alias Display = Alias!(void*);
-  // https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/bindstatic.d#L224
-  extern(C) @nogc nothrow {
-    private Display* glfwGetX11Display();
-    private ulong glfwGetX11Window(GLFWwindow*);
   }
 }
 

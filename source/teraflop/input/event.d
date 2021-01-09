@@ -3,21 +3,21 @@
 /// License: 3-Clause BSD License
 module teraflop.input.event;
 
-import teraflop.math : vec2i;
+import teraflop.math : vec2d;
 import teraflop.input.keyboard;
 
-alias ActionInput = void delegate(InputEventAction event);
-alias UnhandledInput = bool delegate(InputEvent event);
+alias ActionInput = void delegate(const InputEventAction event);
+alias UnhandledInput = bool delegate(const InputEvent event);
 
 ///
 abstract class InputNode {
   ///
-  void actionInput(InputEventAction event) {
+  void actionInput(const InputEventAction event) {
     assert(event.action.length);
   }
 
   ///
-  bool unhandledInput(InputEvent event) {
+  bool unhandledInput(const InputEvent event) {
     assert(event.device);
     return false;
   }
@@ -78,10 +78,10 @@ abstract class InputEvent {
 
 ///
 class InputEventKeyboard : InputEvent {
-  /// If `true`, the key was just pressed.
-  /// Otherwise the key is being held *or* was just released
+  /// Whether the key was just pressed.
+  /// If `false`, the key is being held *or* was just released
   const bool pressed;
-  /// If `true`, the key was already pressed before this event
+  /// Whether the key was already pressed before this event.
   const bool held;
   ///
   const KeyboardKey key;
@@ -89,51 +89,13 @@ class InputEventKeyboard : InputEvent {
   const int modifiers = 0;
 
   ///
-  this(const KeyboardKey key) {
+  this(const KeyboardKey key, bool pressed, bool held, int modifiers) {
     super(InputDevice.keyboard);
     this.key = key;
-    pressed = IsKeyPressed(key);
-    held = IsKeyDown(key) && !IsKeyPressed(key);
-
-    int keyModifiers = 0;
-    if (IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT))
-      keyModifiers |= Modifiers.SHIFT | Modifiers.LEFT_SHIFT;
-    if (IsKeyDown(KeyboardKey.KEY_LEFT_CONTROL))
-      keyModifiers |= Modifiers.CONTROL | Modifiers.LEFT_CONTROL;
-    if (IsKeyDown(KeyboardKey.KEY_LEFT_ALT))
-      keyModifiers |= Modifiers.ALT | Modifiers.LEFT_ALT;
-    if (IsKeyDown(KeyboardKey.KEY_LEFT_SUPER))
-      keyModifiers |= Modifiers.SUPER | Modifiers.LEFT_SUPER;
-
-    if (IsKeyDown(KeyboardKey.KEY_RIGHT_SHIFT))
-      keyModifiers |= Modifiers.SHIFT | Modifiers.RIGHT_SHIFT;
-    if (IsKeyDown(KeyboardKey.KEY_RIGHT_CONTROL))
-      keyModifiers |= Modifiers.CONTROL | Modifiers.RIGHT_CONTROL;
-    if (IsKeyDown(KeyboardKey.KEY_RIGHT_ALT))
-      keyModifiers |= Modifiers.ALT | Modifiers.RIGHT_ALT;
-    if (IsKeyDown(KeyboardKey.KEY_RIGHT_SUPER))
-      keyModifiers |= Modifiers.SUPER | Modifiers.RIGHT_SUPER;
-
-    this.modifiers = keyModifiers;
+    this.pressed = pressed && !held;
+    this.held = held;
+    this.modifiers = modifiers;
   }
-
-  bool isKeyUp(KeyboardKey key) @property const {
-    return IsKeyUp(key);
-  }
-}
-
-private static int lastMouseButtons = 0;
-private static vec2i lastMousePosition = vec2i(0, 0);
-
-///
-@property bool hasMouseInputChanged() {
-  auto changed = false;
-  changed = changed || lastMouseButtons != getMouseButtons();
-  changed = changed || GetMouseWheelMove() != 0;
-  const position = GetMousePosition();
-  changed = changed || lastMousePosition.x != position.x || lastMousePosition.y != position.y;
-
-  return changed;
 }
 
 ///
@@ -144,82 +106,65 @@ enum MouseButton {
   MIDDLE = 8
 }
 
-private @property int getMouseButtons() {
-  int buttons = 0;
-  if (IsMouseButtonDown(raylib.MouseButton.MOUSE_LEFT_BUTTON))
-    buttons |= MouseButton.LEFT;
-  if (IsMouseButtonDown(raylib.MouseButton.MOUSE_RIGHT_BUTTON))
-    buttons |= MouseButton.RIGHT;
-  if (IsMouseButtonDown(raylib.MouseButton.MOUSE_MIDDLE_BUTTON))
-    buttons |= MouseButton.MIDDLE;
+package (teraflop) int glfw(MouseButton button) @nogc nothrow {
+  import bindbc.glfw: GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE;
 
-  if (buttons == 0)
-    buttons = MouseButton.NONE;
-
-  return buttons;
+  switch (button) {
+    case MouseButton.NONE: return -1;
+    case MouseButton.LEFT: return GLFW_MOUSE_BUTTON_LEFT;
+    case MouseButton.RIGHT: return GLFW_MOUSE_BUTTON_RIGHT;
+    case MouseButton.MIDDLE: return GLFW_MOUSE_BUTTON_MIDDLE;
+    default: assert(0);
+  }
 }
 
 /// Mouse button and/or motion event
 class InputEventMouse : InputEvent {
-  /// One of or a bitwise combination of `MouseButton`s that are down
+  /// One of or a bitwise combination of `MouseButton`s that are down.
   int buttons = MouseButton.NONE;
+  /// One of or a bitwise combination of `MouseButton`s that were just down.
+  int lastButtons = MouseButton.NONE;
   ///
   const bool buttonsChanged = false;
   ///
   const int wheel = 0;
   ///
-  const vec2i position;
+  const vec2d position;
   ///
-  const vec2i delta;
+  const vec2d delta;
   // TODO: Do I need mouse speed? (position delta per unit of time)
 
   ///
-  this() {
+  this(vec2d position, vec2d lastMousePosition, int mouseButtons = 0, int lastMouseButtons = 0, int wheel = 0) {
     super(InputDevice.mouse);
-    buttons = getMouseButtons();
+    buttons = mouseButtons;
+    lastButtons = lastMouseButtons;
     buttonsChanged = buttons != lastMouseButtons;
-    wheel = GetMouseWheelMove();
-    position = GetMousePosition();
+    this.wheel = wheel;
+    this.position = position;
     delta = position - lastMousePosition;
 
     lastMouseButtons = buttons;
     lastMousePosition = position;
   }
 
+  /// Whether the given `button` was just pressed, i.e. it's last state was unpressed and is now pressed.
   bool wasButtonJustPressed(MouseButton button) @property const {
-    switch (button) {
-      case MouseButton.LEFT:
-        return IsMouseButtonPressed(raylib.MouseButton.MOUSE_LEFT_BUTTON);
-      case MouseButton.MIDDLE:
-        return IsMouseButtonPressed(raylib.MouseButton.MOUSE_MIDDLE_BUTTON);
-      case MouseButton.RIGHT:
-        return IsMouseButtonPressed(raylib.MouseButton.MOUSE_RIGHT_BUTTON);
-      default:
-        return false;
-    }
+    return (buttons & button) == button && (lastButtons & button) != button;
   }
 
+  /// Whether the given `button` was just clicked, i.e. it's last state was pressed and is now unpressed.
   bool wasButtonJustClicked(MouseButton button) @property const {
-    return buttonsChanged && isButtonUp(button);
+    return isButtonUp(button) && (lastButtons & button) == button;
   }
 
   bool isButtonUp(MouseButton button) @property const {
-    import raylib : IsMouseButtonReleased;
-    switch (button) {
-      case MouseButton.LEFT:
-        return IsMouseButtonReleased(raylib.MouseButton.MOUSE_LEFT_BUTTON);
-      case MouseButton.MIDDLE:
-        return IsMouseButtonReleased(raylib.MouseButton.MOUSE_MIDDLE_BUTTON);
-      case MouseButton.RIGHT:
-        return IsMouseButtonReleased(raylib.MouseButton.MOUSE_RIGHT_BUTTON);
-      default:
-        return false;
-    }
+    return (buttons & button) != button;
   }
 }
 
 unittest {
-  auto event = new InputEventMouse();
+  auto event = new InputEventMouse(vec2d.init, vec2d.init);
 
   assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
   assert((event.buttons & MouseButton.RIGHT) != MouseButton.RIGHT);
@@ -240,17 +185,16 @@ unittest {
 class InputEventAction : InputEvent {
   ///
   const string action;
-  /// If `true`, the action was just pressed. Otherwise the action was just released
+  /// If `true`, the action was just pressed. Otherwise the action was just released.
   bool pressed;
-  /// If `true`, the action was already pressed before this event
+  /// If `true`, the action was already pressed before this event.
   bool held;
-  /// The discrete change of the action's analog inputs, e.g. mouse wheel, mouse motion, joystick
-  /// motion, etc.
-  vec2i delta = vec2i(0, 0);
-  /// A percentage, between 0.0 and 1.0, indicating the strength of this action given its state
+  /// The discrete change of the action's analog inputs, e.g. mouse wheel, mouse motion, joystick motion, etc.
+  vec2d delta = vec2d(0, 0);
+  /// A percentage, between 0.0 and 1.0, indicating the strength of this action given its state.
   float strength = 1.0;
-  /// The difference between the clamped `strength` value and this action's total accumulation
-  /// given its `StrengthCurve`
+  /// The difference between the clamped `strength` value and this action's total accumulation given
+  /// its `StrengthCurve`.
   float bloomStrength = 0.0;
 
   ///

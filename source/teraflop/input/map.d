@@ -5,15 +5,17 @@ module teraflop.input.map;
 
 import teraflop.input.event;
 import teraflop.input.keyboard;
-import teraflop.math : vec2i;
+import teraflop.math : vec2d;
 
 // Inspired by Godot's input map and,
 // https://github.com/PradeepKumarRajamanickam/bevy_input_map/blob/39443a1a1bc1e59959f31d92543a065575c03a7e/example/binding_in_code.rs#L21
 
 ///
 class InputMap {
+  ///
   InputMapBinding[string] bindings;
 
+  ///
   InputMapBinding bind(string action) {
     assert(action.length > 0);
     return bindings[action] = new InputMapBinding();
@@ -242,18 +244,22 @@ private struct BindingState {
     // Confirm mouse motion expectation if motion is expected
     auto motionAxesApply = motion && (
       // Motionlessness
-      (motionAxes == Axis.static_ && event.delta == vec2i.zero) ||
+      (motionAxes == Axis.static_ && event.delta == vec2d.init) ||
       // Any axis motion axis
-      ((motionAxes & Axis.any) == Axis.any && event.delta != vec2i.zero) ||
+      ((motionAxes & Axis.any) == Axis.any && event.delta != vec2d.init) ||
       // Confirm that no axes are constrained in opposite directions
       // X-negative motion
-      ((motionAxes & Axis.xNegative) == Axis.xNegative && event.delta.x < 0 && (motionAxes & Axis.xPositive) != Axis.xPositive) ||
+      ((motionAxes & Axis.xNegative) ==
+        Axis.xNegative && event.delta.x < 0 && (motionAxes & Axis.xPositive) != Axis.xPositive) ||
       // X-positive motion
-      ((motionAxes & Axis.xPositive) == Axis.xPositive && event.delta.x > 0 && (motionAxes & Axis.xNegative) != Axis.xNegative) ||
+      ((motionAxes & Axis.xPositive) ==
+        Axis.xPositive && event.delta.x > 0 && (motionAxes & Axis.xNegative) != Axis.xNegative) ||
       // Y-negative motion
-      ((motionAxes & Axis.yNegative) == Axis.yNegative && event.delta.y < 0 && (motionAxes & Axis.yPositive) != Axis.yPositive) ||
+      ((motionAxes & Axis.yNegative) ==
+        Axis.yNegative && event.delta.y < 0 && (motionAxes & Axis.yPositive) != Axis.yPositive) ||
       // Y-positive motion
-      ((motionAxes & Axis.yPositive) == Axis.yPositive && event.delta.y > 0 && (motionAxes & Axis.yNegative) != Axis.yNegative)
+      ((motionAxes & Axis.yPositive) ==
+        Axis.yPositive && event.delta.y > 0 && (motionAxes & Axis.yNegative) != Axis.yNegative)
     );
     // Otherwise permit any motion
     motionAxesApply = motionAxesApply || motionAxes == 0;
@@ -261,7 +267,7 @@ private struct BindingState {
     bool buttonApplies = true;
     if (button != MouseButton.NONE) {
       // Check that the event's button state matches this binding's expectation
-      auto isButtonPressed = (event.buttons & button) == button;
+      const isButtonPressed = (event.buttons & button) == button;
 
       import std.conv : to;
       if (pressed && !held) {
@@ -269,7 +275,7 @@ private struct BindingState {
       } else if (!pressed && held) {
         buttonApplies = isButtonPressed && !event.wasButtonJustPressed(button.to!MouseButton);
       } else {
-        buttonApplies = !isButtonPressed && event.isButtonUp(button.to!MouseButton);
+        buttonApplies = !isButtonPressed && event.wasButtonJustClicked(button.to!MouseButton);
       }
     }
 

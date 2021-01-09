@@ -151,6 +151,7 @@ enum KeyboardKey {
   rightAlt = GLFW_KEY_RIGHT_ALT,
   rightSuper = GLFW_KEY_RIGHT_SUPER,
   menu = GLFW_KEY_MENU,
+  /// The highest value of any <a href="https://www.glfw.org/docs/latest/group__keys.html">named key</a>.
   last = GLFW_KEY_LAST,
 
   esc = GLFW_KEY_ESC,

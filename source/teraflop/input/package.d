@@ -30,22 +30,26 @@ void on(T) (Input input, string action, T handler, bool markInputHandled = false
 }
 
 ///
-class Input {
+struct Input {
+  import teraflop.platform : Window;
+
+  ///
+  const Window window;
   ///
   auto map = new InputMap();
   ///
-  auto nodes = new InputEventHandlers[0];
+  InputEventHandlers[] nodes;
 
   ///
   static ActionInput ignoreActions() {
-    return (InputEventAction event) => {
+    return (const InputEventAction event) => {
       assert(event.action.length);
     }();
   }
 
   ///
   static UnhandledInput ignoreUnhandledInputs() {
-    return (InputEvent event) => {
+    return (const InputEvent event) => {
       assert(event.device >= 0);
       return false;
     }();
@@ -53,11 +57,37 @@ class Input {
 
   ///
   void update() {
+    // Keyboard keys with modifiers
     foreach (key; KeyboardKey.min .. KeyboardKey.max) {
-      if (IsKeyDown(key) || IsKeyReleased(key)) propagate(new InputEventKeyboard(key));
+      if (window.isKeyDown(key) || (window.isKeyReleased(key) && window.wasKeyDown(key))) {
+        int keyModifiers = 0;
+        if (window.isKeyDown(KeyboardKey.leftShift))
+          keyModifiers |= Modifiers.SHIFT | Modifiers.LEFT_SHIFT;
+        if (window.isKeyDown(KeyboardKey.leftControl))
+          keyModifiers |= Modifiers.CONTROL | Modifiers.LEFT_CONTROL;
+        if (window.isKeyDown(KeyboardKey.leftAlt))
+          keyModifiers |= Modifiers.ALT | Modifiers.LEFT_ALT;
+        if (window.isKeyDown(KeyboardKey.leftSuper))
+          keyModifiers |= Modifiers.SUPER | Modifiers.LEFT_SUPER;
+
+        if (window.isKeyDown(KeyboardKey.rightShift))
+          keyModifiers |= Modifiers.SHIFT | Modifiers.RIGHT_SHIFT;
+        if (window.isKeyDown(KeyboardKey.rightControl))
+          keyModifiers |= Modifiers.CONTROL | Modifiers.RIGHT_CONTROL;
+        if (window.isKeyDown(KeyboardKey.rightAlt))
+          keyModifiers |= Modifiers.ALT | Modifiers.RIGHT_ALT;
+        if (window.isKeyDown(KeyboardKey.rightSuper))
+          keyModifiers |= Modifiers.SUPER | Modifiers.RIGHT_SUPER;
+
+        propagate(new InputEventKeyboard(
+          key, window.isKeyDown(key), window.isKeyDown(key) && window.wasKeyDown(key), keyModifiers
+        ));
+      }
     }
 
-    if (hasMouseInputChanged()) propagate(new InputEventMouse());
+    if (window.hasMouseInputChanged()) propagate(new InputEventMouse(
+      window.mousePosition, window.lastMousePosition, window.mouseButtons, window.lastMouseButtons
+    ));
   }
 
   ///
@@ -70,9 +100,8 @@ class Input {
 
     foreach (handlers; nodes) {
       if (actionEvents.length) {
-        auto actionHandler = handlers[0];
-        import std.algorithm.iteration : each;
-        actionEvents.each!(actionEvent => actionHandler(actionEvent));
+        ActionInput actionHandler = handlers[0];
+        foreach (actionEvent; actionEvents) actionHandler(actionEvent);
       }
 
       auto unhandledInputHandler = handlers[1];

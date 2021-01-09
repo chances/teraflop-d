@@ -120,7 +120,7 @@ abstract class Game {
       }
 
       auto elapsed = stopwatch.peek();
-      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
+      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead? (https://www.glfw.org/docs/latest/input_guide.html#time)
       auto deltaSeconds = time.deltaSeconds;
 
       const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
