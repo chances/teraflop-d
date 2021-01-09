@@ -96,14 +96,21 @@ abstract class ScriptableComponent : Actor!string {
   /// entryPoint=Name of the entry point function to retreive from the module
   /// imports=Globals, memories, tables, and functions to expose to the module
   this(Module entry, string entryPoint, Extern[] imports = []) {
-    import std.algorithm : countUntil;
+    import std.algorithm : countUntil, joiner, map;
     import std.exception : enforce;
     import std.string : format;
 
-    enforce(entry.valid, "Entry module is not compiled.");
+    enforce(entry.valid, "Entry module is not or could not be compiled.");
     entryModule = entry;
     instance = entryModule.instantiate(imports);
-    enforce(instance.valid, "Could not instantiate entry module.\nPerhaps there are mismatched imports?");
+    if (!instance.valid) {
+      enforce(0, format!("Could not instantiate module with entry point `%s`!" ~
+        "\n\tPerhaps there are mismatched imports?" ~
+        "\n\tExpected imports:\n\t%s")(
+          entryPoint,
+          imports.map!(i => format!"\n\t%s"(i.name)).joiner
+      ));
+    }
     exports = instance.exports;
 
     const entryPointError = format!"Could not retreive '%s' entry point function."(entryPoint);
