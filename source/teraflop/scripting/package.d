@@ -118,4 +118,9 @@ abstract class ScriptableComponent : Actor!string {
     this.entryPoint = Function.from(cast() exports[entryPointIndex]);
     enforce(this.entryPoint.valid, entryPointError);
   }
+
+  /// Wheter the `entryPoint` has loaded and is ready for execution.
+  bool ready() @property const {
+    return entryPoint.valid;
+  }
 }
