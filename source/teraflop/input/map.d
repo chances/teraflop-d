@@ -1,3 +1,7 @@
+/// Map user inputs to named actions.
+///
+/// Inspired by Godot's <a href="https://docs.godotengine.org/en/3.2/classes/class_inputmap.html">`InputMap`</a> and <a href="https://github.com/PradeepKumarRajamanickam/bevy_input_map/blob/39443a1a1bc1e59959f31d92543a065575c03a7e/example/binding_in_code.rs#L21">bevy_input_map</a>.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
@@ -7,11 +11,8 @@ import teraflop.input.event;
 import teraflop.input.keyboard;
 import teraflop.math : vec2d;
 
-// Inspired by Godot's input map and,
-// https://github.com/PradeepKumarRajamanickam/bevy_input_map/blob/39443a1a1bc1e59959f31d92543a065575c03a7e/example/binding_in_code.rs#L21
-
-///
-class InputMap {
+/// Map user inputs to named actions.
+final class InputMap {
   ///
   InputMapBinding[string] bindings;
 
@@ -22,22 +23,28 @@ class InputMap {
   }
 }
 
-///
+/// Axis of motion for analog inputs, i.e. mouse motion, mouse wheel movement, and joypad sticks.
 enum Axis {
+  ///
   static_ = 1,
+  ///
   any = 2,
+  ///
   xNegative = 4,
+  ///
   xPositive = 8,
+  ///
   yNegative = 16,
+  ///
   yPositive = 32
 }
 
 /// A formula to influence the strength of a held input given the current strength, `x`, and the
-/// last strength value
+/// last strength value.
 alias StrengthCurve = float delegate(float x, float last = 0.0);
-/// Doubles the current strength value
+/// Doubles the current strength value.
 static StrengthCurve double_ = (float x, float last = 0.0) => x + x;
-/// Increases the strength by continuious accumulation
+/// Increases the strength by continuious accumulation, i.e. linearly.
 static StrengthCurve accumulation = (float x, float last = 0.0) => x + last;
 
 /// An `InputEventAction` builder.
@@ -45,12 +52,9 @@ static StrengthCurve accumulation = (float x, float last = 0.0) => x + last;
 class InputMapBinding {
   private BindingState[] states = new BindingState[0];
   /// A minimum threshold to avoid small input noise and reduce sensitivity.
-  ///
-  /// Useful with analog inputs, i.e. mouse motion and joypad sticks
+  /// Useful with analog inputs, i.e. mouse motion, mouse wheel movement, and joypad sticks.
   float deadZone = 0.0f;
-  /// A curve formula to influence the strength of held inputs
-  ///
-  /// Defaults to constant strength
+  /// A curve formula to influence the strength of held inputs. Defaults to constant strength.
   StrengthCurve strengthCurve = null;
 
   ///

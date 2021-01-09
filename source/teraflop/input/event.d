@@ -9,7 +9,7 @@ import teraflop.input.keyboard;
 alias ActionInput = void delegate(const InputEventAction event);
 alias UnhandledInput = bool delegate(const InputEvent event);
 
-///
+/// A node in the input event tree.
 abstract class InputNode {
   ///
   void actionInput(const InputEventAction event) {
@@ -23,10 +23,13 @@ abstract class InputNode {
   }
 }
 
-///
+/// The user input device from which an `InputEvent` originated.
 enum InputDevice {
+  ///
   keyboard = 0,
+  ///
   mouse,
+  ///
   joypad
 }
 
@@ -76,7 +79,7 @@ abstract class InputEvent {
 
 // TODO: Joypad input enums: https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/types.d#L229-L283
 
-///
+/// Keyboard input event.
 class InputEventKeyboard : InputEvent {
   /// Whether the key was just pressed.
   /// If `false`, the key is being held *or* was just released
@@ -100,9 +103,13 @@ class InputEventKeyboard : InputEvent {
 
 ///
 enum MouseButton {
+  ///
   NONE = 1,
+  ///
   LEFT = 2,
+  ///
   RIGHT = 4,
+  ///
   MIDDLE = 8
 }
 
@@ -118,7 +125,7 @@ package (teraflop) int glfw(MouseButton button) @nogc nothrow {
   }
 }
 
-/// Mouse button and/or motion event
+/// Mouse button and/or motion event.
 class InputEventMouse : InputEvent {
   /// One of or a bitwise combination of `MouseButton`s that are down.
   int buttons = MouseButton.NONE;
