@@ -44,7 +44,7 @@ export enum VersionMeta {
  * | ----------- | ----------- | ----------- | ----------- |
  * | `0000 0000` | `0000 0000` | `0000 0000` | `0000 0000` |
  */
-export function makeVersion(major: u8, minor: u8, patch: u8, meta: i32 = VersionMeta.Release): i32 {
+export function makeVersion(major: u8, minor: u8 = 0, patch: u8 = 0, meta: u8 = VersionMeta.Release as u8): i32 {
   assert(major >= 0 && (major as u8) <= u8.MAX_VALUE, "Major version component is out of bounds")
   assert(minor >= 0 && (minor as u8) <= u8.MAX_VALUE, "Minor version component is out of bounds")
   assert(patch >= 0 && (patch as u8) <= u8.MAX_VALUE, "Patch version component is out of bounds")

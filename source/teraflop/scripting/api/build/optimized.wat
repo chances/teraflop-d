@@ -2665,15 +2665,23 @@
   call $~lib/rt/pure/decrement
  )
  (func $assembly/lib/plugin/makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
-  block $1of1
-   block $0of1
-    block $outOfRange
-     global.get $~argumentsLength
-     i32.const 3
-     i32.sub
-     br_table $0of1 $1of1 $outOfRange
+  block $3of3
+   block $2of3
+    block $1of3
+     block $0of3
+      block $outOfRange
+       global.get $~argumentsLength
+       i32.const 1
+       i32.sub
+       br_table $0of3 $1of3 $2of3 $3of3 $outOfRange
+      end
+      unreachable
+     end
+     i32.const 0
+     local.set $1
     end
-    unreachable
+    i32.const 0
+    local.set $2
    end
    i32.const 0
    local.set $3
@@ -2721,13 +2729,7 @@
   i32.const 255
   i32.and
   i32.const 255
-  i32.le_u
-  i32.const 0
-  local.get $3
-  i32.const 0
-  i32.ge_s
-  select
-  i32.eqz
+  i32.gt_u
   if
    i32.const 1648
    i32.const 1360
@@ -2737,6 +2739,8 @@
    unreachable
   end
   local.get $3
+  i32.const 255
+  i32.and
   local.get $0
   i32.const 255
   i32.and

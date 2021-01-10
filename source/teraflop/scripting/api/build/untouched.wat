@@ -3166,8 +3166,10 @@
    unreachable
   end
   local.get $3
+  i32.const 255
+  i32.and
   i32.const 0
-  i32.ge_s
+  i32.ge_u
   if (result i32)
    local.get $3
    i32.const 255
@@ -3204,6 +3206,8 @@
   i32.shl
   i32.or
   local.get $3
+  i32.const 255
+  i32.and
   i32.or
  )
  (func $assembly/lib/math/vector/Vector2<f32>#constructor (param $0 i32) (param $1 f32) (param $2 f32) (result i32)
@@ -5426,15 +5430,23 @@
   unreachable
  )
  (func $assembly/lib/plugin/makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
-  block $1of1
-   block $0of1
-    block $outOfRange
-     global.get $~argumentsLength
-     i32.const 3
-     i32.sub
-     br_table $0of1 $1of1 $outOfRange
+  block $3of3
+   block $2of3
+    block $1of3
+     block $0of3
+      block $outOfRange
+       global.get $~argumentsLength
+       i32.const 1
+       i32.sub
+       br_table $0of3 $1of3 $2of3 $3of3 $outOfRange
+      end
+      unreachable
+     end
+     i32.const 0
+     local.set $1
     end
-    unreachable
+    i32.const 0
+    local.set $2
    end
    global.get $assembly/lib/plugin/VersionMeta.Release
    local.set $3
