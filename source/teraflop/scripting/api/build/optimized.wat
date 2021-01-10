@@ -1,19 +1,20 @@
 (module
  (type $i32_=>_i32 (func (param i32) (result i32)))
  (type $i32_i32_=>_i32 (func (param i32 i32) (result i32)))
- (type $i32_f64_=>_none (func (param i32 f64)))
- (type $i32_=>_f64 (func (param i32) (result f64)))
  (type $i32_=>_none (func (param i32)))
  (type $i32_i32_=>_none (func (param i32 i32)))
+ (type $i32_f32_=>_none (func (param i32 f32)))
+ (type $i32_=>_f32 (func (param i32) (result f32)))
  (type $i32_i32_i32_=>_none (func (param i32 i32 i32)))
- (type $i32_f64_f64_f64_f64_=>_i32 (func (param i32 f64 f64 f64 f64) (result i32)))
+ (type $i32_f32_f32_f32_f32_=>_i32 (func (param i32 f32 f32 f32 f32) (result i32)))
  (type $i32_i32_i32_=>_i32 (func (param i32 i32 i32) (result i32)))
  (type $none_=>_none (func))
  (type $i32_i32_i32_i32_=>_none (func (param i32 i32 i32 i32)))
  (type $i32_i32_i32_i32_=>_i32 (func (param i32 i32 i32 i32) (result i32)))
  (type $i32_i32_i32_f32_=>_i32 (func (param i32 i32 i32 f32) (result i32)))
- (type $i32_f64_f64_=>_i32 (func (param i32 f64 f64) (result i32)))
- (type $i32_f64_f64_f64_=>_i32 (func (param i32 f64 f64 f64) (result i32)))
+ (type $i32_f32_f32_=>_i32 (func (param i32 f32 f32) (result i32)))
+ (type $i32_f32_f32_f32_=>_i32 (func (param i32 f32 f32 f32) (result i32)))
+ (type $i32_i32_=>_f32 (func (param i32 i32) (result f32)))
  (import "env" "abort" (func $~lib/builtins/abort (param i32 i32 i32 i32)))
  (import "plugin" "register" (func $assembly/lib/plugin/register (param i32 i32) (result i32)))
  (memory $0 1)
@@ -30,7 +31,22 @@
  (data (i32.const 1900) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00L\00\00\00G\00r\00e\00e\00n\00 \00c\00o\00l\00o\00r\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s")
  (data (i32.const 1996) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00J\00\00\00B\00l\00u\00e\00 \00c\00o\00l\00o\00r\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s")
  (data (i32.const 2092) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00L\00\00\00A\00l\00p\00h\00a\00 \00c\00o\00l\00o\00r\00 \00c\00o\00m\00p\00o\00n\00e\00n\00t\00 \00i\00s\00 \00o\00u\00t\00 \00o\00f\00 \00b\00o\00u\00n\00d\00s")
- (data (i32.const 2192) "\03\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 ")
+ (data (i32.const 2188) "|\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00b\00\00\00E\00x\00p\00e\00c\00t\00e\00d\00 \00`\00$\00{\00n\00a\00m\00e\00o\00f\00<\00T\00>\00(\00)\00}\00`\00 \00a\00r\00r\00a\00y\00 \00o\00f\00 \00l\00e\00n\00g\00t\00h\00 \00$\00{\00s\00i\00z\00e\00}")
+ (data (i32.const 2316) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00$\00\00\00I\00n\00d\00e\00x\00 \00o\00u\00t\00 \00o\00f\00 \00r\00a\00n\00g\00e")
+ (data (i32.const 2380) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00F\00\00\00~\00l\00i\00b\00/\00@\00w\00a\00p\00c\00/\00a\00s\00-\00m\00s\00g\00p\00a\00c\00k\00/\00d\00a\00t\00a\00r\00e\00a\00d\00e\00r\00.\00t\00s")
+ (data (i32.const 2476) ",\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\1c\00\00\00I\00n\00v\00a\00l\00i\00d\00 \00l\00e\00n\00g\00t\00h")
+ (data (i32.const 2524) "|\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00d\00\00\00t\00o\00S\00t\00r\00i\00n\00g\00(\00)\00 \00r\00a\00d\00i\00x\00 \00a\00r\00g\00u\00m\00e\00n\00t\00 \00m\00u\00s\00t\00 \00b\00e\00 \00b\00e\00t\00w\00e\00e\00n\00 \002\00 \00a\00n\00d\00 \003\006")
+ (data (i32.const 2652) "<\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00&\00\00\00~\00l\00i\00b\00/\00u\00t\00i\00l\00/\00n\00u\00m\00b\00e\00r\00.\00t\00s")
+ (data (i32.const 2716) "\1c\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\02\00\00\000")
+ (data (i32.const 2748) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00H\00\00\000\001\002\003\004\005\006\007\008\009\00a\00b\00c\00d\00e\00f\00g\00h\00i\00j\00k\00l\00m\00n\00o\00p\00q\00r\00s\00t\00u\00v\00w\00x\00y\00z")
+ (data (i32.const 2844) "\1c\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\08\00\00\00n\00u\00l\00l")
+ (data (i32.const 2876) "\1c\00\00\00\01\00\00\00\00\00\00\00\01")
+ (data (i32.const 2908) "\\\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00@\00\00\00~\00l\00i\00b\00/\00@\00w\00a\00p\00c\00/\00a\00s\00-\00m\00s\00g\00p\00a\00c\00k\00/\00d\00e\00c\00o\00d\00e\00r\00.\00t\00s")
+ (data (i32.const 3004) ",\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\1a\00\00\00~\00l\00i\00b\00/\00a\00r\00r\00a\00y\00.\00t\00s")
+ (data (i32.const 3052) "\9c\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\80\00\00\00C\00o\00u\00l\00d\00 \00n\00o\00t\00 \00d\00e\00c\00o\00d\00e\00 \00`\00$\00{\00n\00a\00m\00e\00o\00f\00<\00T\00>\00(\00)\00}\00`\00 \00v\00e\00c\00t\00o\00r\00 \00e\00l\00e\00m\00e\00n\00t\00 \00a\00t\00 \00i\00n\00d\00e\00x\00 \00$\00{\00i\00}\00\n\00\t")
+ (data (i32.const 3212) "l\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00T\00\00\00O\00n\00l\00y\00 \00`\00i\003\002\00`\00 \00a\00n\00d\00 \00`\00f\003\002\00`\00 \00v\00e\00c\00t\00o\00r\00s\00 \00a\00r\00e\00 \00s\00u\00p\00p\00o\00r\00t\00e\00d")
+ (data (i32.const 3324) "\9c\00\00\00\01\00\00\00\00\00\00\00\01\00\00\00\80\00\00\00C\00o\00u\00l\00d\00 \00n\00o\00t\00 \00e\00n\00c\00o\00d\00e\00 \00`\00$\00{\00n\00a\00m\00e\00o\00f\00<\00T\00>\00(\00)\00}\00`\00 \00v\00e\00c\00t\00o\00r\00 \00e\00l\00e\00m\00e\00n\00t\00 \00a\00t\00 \00i\00n\00d\00e\00x\00 \00$\00{\00i\00}\00\n\00\t")
+ (data (i32.const 3488) "\0d\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\04\00\00\00 \00\00\00\05\00\00\00 \00\00\00\06\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00 \00\00\00\00\00\00\00\"\19\00\00\00\00\00\00 \00\00\00\00\00\00\00\"\t")
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $assembly/lib/plugin/VersionMeta.Release i32 (i32.const 0))
  (global $assembly/lib/plugin/VersionMeta.ReleaseCandidate i32 (i32.const 1))
@@ -39,8 +55,12 @@
  (global $assembly/lib/plugin/VersionMeta.Alpha i32 (i32.const 4))
  (global $assembly/lib/plugin/VersionMeta.PreAlpha i32 (i32.const 5))
  (global $assembly/lib/plugin/VersionMeta.MAX i32 (i32.const 255))
- (global $~lib/rt/__rtti_base i32 (i32.const 2192))
+ (global $~lib/rt/__rtti_base i32 (i32.const 3488))
  (global $~argumentsLength (mut i32) (i32.const 0))
+ (global $assembly/lib/math/vector/Vector2<f32> i32 (i32.const 6))
+ (global $assembly/lib/math/vector/Vector3<f32> i32 (i32.const 5))
+ (global $assembly/lib/math/vector/Vector4<f32> i32 (i32.const 4))
+ (global $assembly/lib/math/vector/Color i32 (i32.const 3))
  (export "memory" (memory $0))
  (export "__new" (func $~lib/rt/pure/__new))
  (export "__renew" (func $~lib/rt/pure/__renew))
@@ -56,44 +76,52 @@
  (export "plugin.VersionMeta.PreAlpha" (global $assembly/lib/plugin/VersionMeta.PreAlpha))
  (export "plugin.VersionMeta.MAX" (global $assembly/lib/plugin/VersionMeta.MAX))
  (export "plugin.makeVersion" (func $assembly/lib/plugin/makeVersion@varargs))
- (export "math.vectors.Vector2#get:x" (func $assembly/lib/math/vector/Vector2#get:x))
- (export "math.vectors.Vector2#set:x" (func $assembly/lib/math/vector/Vector2#set:x))
- (export "math.vectors.Vector2#get:y" (func $assembly/lib/math/vector/Vector2#get:y))
- (export "math.vectors.Vector2#set:y" (func $assembly/lib/math/vector/Vector2#set:y))
- (export "math.vectors.Vector2#constructor" (func $assembly/lib/math/vector/Vector2#constructor))
- (export "math.vectors.Vector3#get:x" (func $assembly/lib/math/vector/Vector2#get:x))
- (export "math.vectors.Vector3#set:x" (func $assembly/lib/math/vector/Vector2#set:x))
- (export "math.vectors.Vector3#get:y" (func $assembly/lib/math/vector/Vector2#get:y))
- (export "math.vectors.Vector3#set:y" (func $assembly/lib/math/vector/Vector2#set:y))
- (export "math.vectors.Vector3#constructor" (func $assembly/lib/math/vector/Vector3#constructor))
- (export "math.vectors.Vector3#get:z" (func $assembly/lib/math/vector/Vector3#get:z))
- (export "math.vectors.Vector3#set:z" (func $assembly/lib/math/vector/Vector3#set:z))
- (export "math.vectors.Vector4#get:x" (func $assembly/lib/math/vector/Vector2#get:x))
- (export "math.vectors.Vector4#set:x" (func $assembly/lib/math/vector/Vector2#set:x))
- (export "math.vectors.Vector4#get:y" (func $assembly/lib/math/vector/Vector2#get:y))
- (export "math.vectors.Vector4#set:y" (func $assembly/lib/math/vector/Vector2#set:y))
- (export "math.vectors.Vector4#constructor" (func $assembly/lib/math/vector/Vector4#constructor))
- (export "math.vectors.Vector4#get:z" (func $assembly/lib/math/vector/Vector3#get:z))
- (export "math.vectors.Vector4#set:z" (func $assembly/lib/math/vector/Vector3#set:z))
- (export "math.vectors.Vector4#get:w" (func $assembly/lib/math/vector/Vector4#get:w))
- (export "math.vectors.Vector4#set:w" (func $assembly/lib/math/vector/Vector4#set:w))
- (export "math.vectors.Color#get:x" (func $assembly/lib/math/vector/Vector2#get:x))
- (export "math.vectors.Color#set:x" (func $assembly/lib/math/vector/Vector2#set:x))
- (export "math.vectors.Color#get:y" (func $assembly/lib/math/vector/Vector2#get:y))
- (export "math.vectors.Color#set:y" (func $assembly/lib/math/vector/Vector2#set:y))
+ (export "math.vectors.Vector2<f32>" (global $assembly/lib/math/vector/Vector2<f32>))
+ (export "math.vectors.Vector2<f32>#get:x" (func $assembly/lib/math/vector/Vector2<f32>#get:x))
+ (export "math.vectors.Vector2<f32>#set:x" (func $assembly/lib/math/vector/Vector2<f32>#set:x))
+ (export "math.vectors.Vector2<f32>#get:y" (func $assembly/lib/math/vector/Vector2<f32>#get:y))
+ (export "math.vectors.Vector2<f32>#set:y" (func $assembly/lib/math/vector/Vector2<f32>#set:y))
+ (export "math.vectors.Vector2<f32>#constructor" (func $assembly/lib/math/vector/Vector2<f32>#constructor))
+ (export "math.vectors.Vector3<f32>" (global $assembly/lib/math/vector/Vector3<f32>))
+ (export "math.vectors.Vector3<f32>#get:x" (func $assembly/lib/math/vector/Vector2<f32>#get:x))
+ (export "math.vectors.Vector3<f32>#set:x" (func $assembly/lib/math/vector/Vector2<f32>#set:x))
+ (export "math.vectors.Vector3<f32>#get:y" (func $assembly/lib/math/vector/Vector2<f32>#get:y))
+ (export "math.vectors.Vector3<f32>#set:y" (func $assembly/lib/math/vector/Vector2<f32>#set:y))
+ (export "math.vectors.Vector3<f32>#constructor" (func $assembly/lib/math/vector/Vector3<f32>#constructor))
+ (export "math.vectors.Vector3<f32>#get:z" (func $assembly/lib/math/vector/Vector3<f32>#get:z))
+ (export "math.vectors.Vector3<f32>#set:z" (func $assembly/lib/math/vector/Vector3<f32>#set:z))
+ (export "math.vectors.Vector4<f32>" (global $assembly/lib/math/vector/Vector4<f32>))
+ (export "math.vectors.Vector4<f32>#decode" (func $assembly/lib/math/vector/Vector4<f32>#decode))
+ (export "math.vectors.Vector4<f32>#encode" (func $assembly/lib/math/vector/Vector4<f32>#encode))
+ (export "math.vectors.Vector4<f32>#get:x" (func $assembly/lib/math/vector/Vector2<f32>#get:x))
+ (export "math.vectors.Vector4<f32>#set:x" (func $assembly/lib/math/vector/Vector2<f32>#set:x))
+ (export "math.vectors.Vector4<f32>#get:y" (func $assembly/lib/math/vector/Vector2<f32>#get:y))
+ (export "math.vectors.Vector4<f32>#set:y" (func $assembly/lib/math/vector/Vector2<f32>#set:y))
+ (export "math.vectors.Vector4<f32>#constructor" (func $assembly/lib/math/vector/Vector4<f32>#constructor))
+ (export "math.vectors.Vector4<f32>#get:z" (func $assembly/lib/math/vector/Vector3<f32>#get:z))
+ (export "math.vectors.Vector4<f32>#set:z" (func $assembly/lib/math/vector/Vector3<f32>#set:z))
+ (export "math.vectors.Vector4<f32>#get:w" (func $assembly/lib/math/vector/Vector4<f32>#get:w))
+ (export "math.vectors.Vector4<f32>#set:w" (func $assembly/lib/math/vector/Vector4<f32>#set:w))
+ (export "math.vectors.Color" (global $assembly/lib/math/vector/Color))
+ (export "math.vectors.Color#decode" (func $assembly/lib/math/vector/Vector4<f32>#decode))
+ (export "math.vectors.Color#encode" (func $assembly/lib/math/vector/Vector4<f32>#encode))
+ (export "math.vectors.Color#get:x" (func $assembly/lib/math/vector/Vector2<f32>#get:x))
+ (export "math.vectors.Color#set:x" (func $assembly/lib/math/vector/Vector2<f32>#set:x))
+ (export "math.vectors.Color#get:y" (func $assembly/lib/math/vector/Vector2<f32>#get:y))
+ (export "math.vectors.Color#set:y" (func $assembly/lib/math/vector/Vector2<f32>#set:y))
  (export "math.vectors.Color#constructor" (func $assembly/lib/math/vector/Color#constructor@varargs))
- (export "math.vectors.Color#get:z" (func $assembly/lib/math/vector/Vector3#get:z))
- (export "math.vectors.Color#set:z" (func $assembly/lib/math/vector/Vector3#set:z))
- (export "math.vectors.Color#get:w" (func $assembly/lib/math/vector/Vector4#get:w))
- (export "math.vectors.Color#set:w" (func $assembly/lib/math/vector/Vector4#set:w))
- (export "math.vectors.Color#get:r" (func $assembly/lib/math/vector/Vector2#get:x))
- (export "math.vectors.Color#set:r" (func $assembly/lib/math/vector/Vector2#set:x))
- (export "math.vectors.Color#get:g" (func $assembly/lib/math/vector/Vector2#get:y))
- (export "math.vectors.Color#set:g" (func $assembly/lib/math/vector/Vector2#set:y))
- (export "math.vectors.Color#get:b" (func $assembly/lib/math/vector/Vector3#get:z))
- (export "math.vectors.Color#set:b" (func $assembly/lib/math/vector/Vector3#set:z))
- (export "math.vectors.Color#get:a" (func $assembly/lib/math/vector/Vector4#get:w))
- (export "math.vectors.Color#set:a" (func $assembly/lib/math/vector/Vector4#set:w))
+ (export "math.vectors.Color#get:z" (func $assembly/lib/math/vector/Vector3<f32>#get:z))
+ (export "math.vectors.Color#set:z" (func $assembly/lib/math/vector/Vector3<f32>#set:z))
+ (export "math.vectors.Color#get:w" (func $assembly/lib/math/vector/Vector4<f32>#get:w))
+ (export "math.vectors.Color#set:w" (func $assembly/lib/math/vector/Vector4<f32>#set:w))
+ (export "math.vectors.Color#get:r" (func $assembly/lib/math/vector/Vector2<f32>#get:x))
+ (export "math.vectors.Color#set:r" (func $assembly/lib/math/vector/Vector2<f32>#set:x))
+ (export "math.vectors.Color#get:g" (func $assembly/lib/math/vector/Vector2<f32>#get:y))
+ (export "math.vectors.Color#set:g" (func $assembly/lib/math/vector/Vector2<f32>#set:y))
+ (export "math.vectors.Color#get:b" (func $assembly/lib/math/vector/Vector3<f32>#get:z))
+ (export "math.vectors.Color#set:b" (func $assembly/lib/math/vector/Vector3<f32>#set:z))
+ (export "math.vectors.Color#get:a" (func $assembly/lib/math/vector/Vector4<f32>#get:w))
+ (export "math.vectors.Color#set:a" (func $assembly/lib/math/vector/Vector4<f32>#set:w))
  (export "math.vectors.Color.from" (func $assembly/lib/math/vector/Color.from))
  (export "math.vectors.Color.rgb" (func $assembly/lib/math/vector/Color.rgb))
  (export "math.vectors.Color.rgba" (func $assembly/lib/math/vector/Color.rgba))
@@ -665,10 +693,10 @@
   if
    unreachable
   end
-  i32.const 2224
+  i32.const 3600
   i32.const 0
   i32.store
-  i32.const 3792
+  i32.const 5168
   i32.const 0
   i32.store
   loop $for-loop|0
@@ -679,7 +707,7 @@
     local.get $1
     i32.const 2
     i32.shl
-    i32.const 2224
+    i32.const 3600
     i32.add
     i32.const 0
     i32.store offset=4
@@ -697,7 +725,7 @@
       i32.add
       i32.const 2
       i32.shl
-      i32.const 2224
+      i32.const 3600
       i32.add
       i32.const 0
       i32.store offset=96
@@ -715,13 +743,13 @@
     br $for-loop|0
    end
   end
-  i32.const 2224
-  i32.const 3796
+  i32.const 3600
+  i32.const 5172
   memory.size
   i32.const 16
   i32.shl
   call $~lib/rt/tlsf/addMemory
-  i32.const 2224
+  i32.const 3600
   global.set $~lib/rt/tlsf/ROOT
  )
  (func $~lib/rt/tlsf/prepareSize (param $0 i32) (result i32)
@@ -1063,18 +1091,6 @@
   call $~lib/rt/tlsf/prepareBlock
   local.get $1
  )
- (func $~lib/rt/tlsf/__alloc (param $0 i32) (result i32)
-  global.get $~lib/rt/tlsf/ROOT
-  i32.eqz
-  if
-   call $~lib/rt/tlsf/initialize
-  end
-  global.get $~lib/rt/tlsf/ROOT
-  local.get $0
-  call $~lib/rt/tlsf/allocateBlock
-  i32.const 4
-  i32.add
- )
  (func $~lib/rt/pure/__new (param $0 i32) (param $1 i32) (result i32)
   (local $2 i32)
   (local $3 i32)
@@ -1092,7 +1108,17 @@
   local.get $0
   i32.const 16
   i32.add
-  call $~lib/rt/tlsf/__alloc
+  local.set $2
+  global.get $~lib/rt/tlsf/ROOT
+  i32.eqz
+  if
+   call $~lib/rt/tlsf/initialize
+  end
+  global.get $~lib/rt/tlsf/ROOT
+  local.get $2
+  call $~lib/rt/tlsf/allocateBlock
+  i32.const 4
+  i32.add
   local.tee $3
   i32.const 4
   i32.sub
@@ -1345,7 +1371,7 @@
   i32.and
   call $~lib/memory/memory.copy
   local.get $1
-  i32.const 2220
+  i32.const 3596
   i32.ge_u
   if
    local.get $0
@@ -1387,7 +1413,7 @@
   i32.add
   local.set $2
   local.get $0
-  i32.const 2220
+  i32.const 3596
   i32.lt_u
   if
    global.get $~lib/rt/tlsf/ROOT
@@ -1482,7 +1508,7 @@
   (local $1 i32)
   (local $2 i32)
   local.get $0
-  i32.const 2220
+  i32.const 3596
   i32.gt_u
   if
    local.get $0
@@ -1529,7 +1555,7 @@
  )
  (func $~lib/rt/pure/__release (param $0 i32)
   local.get $0
-  i32.const 2220
+  i32.const 3596
   i32.gt_u
   if
    local.get $0
@@ -1538,122 +1564,90 @@
    call $~lib/rt/pure/decrement
   end
  )
- (func $assembly/lib/math/vector/Vector2#constructor (param $0 i32) (param $1 f64) (param $2 f64) (result i32)
+ (func $assembly/lib/math/vector/Vector2<f32>#constructor (param $0 i32) (param $1 f32) (param $2 f32) (result i32)
+  local.get $0
+  i32.eqz
+  if
+   i32.const 8
+   i32.const 6
+   call $~lib/rt/pure/__new
+   call $~lib/rt/pure/__retain
+   local.set $0
+  end
+  local.get $0
+  f32.const 0
+  f32.store
+  local.get $0
+  f32.const 0
+  f32.store offset=4
+  local.get $0
+  local.get $1
+  f32.store
+  local.get $0
+  local.get $2
+  f32.store offset=4
+  local.get $0
+ )
+ (func $assembly/lib/math/vector/Vector3<f32>#constructor (param $0 i32) (param $1 f32) (param $2 f32) (param $3 f32) (result i32)
+  local.get $0
+  i32.eqz
+  if
+   i32.const 12
+   i32.const 5
+   call $~lib/rt/pure/__new
+   call $~lib/rt/pure/__retain
+   local.set $0
+  end
+  local.get $0
+  f32.const 0
+  f32.store offset=8
+  local.get $0
+  local.get $1
+  local.get $2
+  call $assembly/lib/math/vector/Vector2<f32>#constructor
+  local.tee $0
+  local.get $3
+  f32.store offset=8
+  local.get $0
+ )
+ (func $assembly/lib/math/vector/Vector4<f32>#constructor (param $0 i32) (param $1 f32) (param $2 f32) (param $3 f32) (param $4 f32) (result i32)
   local.get $0
   i32.eqz
   if
    i32.const 16
-   call $~lib/rt/tlsf/__alloc
+   i32.const 4
+   call $~lib/rt/pure/__new
    call $~lib/rt/pure/__retain
    local.set $0
   end
   local.get $0
-  f64.const 0
-  f64.store
-  local.get $0
-  f64.const 0
-  f64.store offset=8
-  local.get $0
-  local.get $1
-  f64.store
-  local.get $0
-  local.get $2
-  f64.store offset=8
-  local.get $0
- )
- (func $assembly/lib/math/vector/Vector2#get:x (param $0 i32) (result f64)
-  local.get $0
-  f64.load
- )
- (func $assembly/lib/math/vector/Vector2#set:x (param $0 i32) (param $1 f64)
-  local.get $0
-  local.get $1
-  f64.store
- )
- (func $assembly/lib/math/vector/Vector2#get:y (param $0 i32) (result f64)
-  local.get $0
-  f64.load offset=8
- )
- (func $assembly/lib/math/vector/Vector2#set:y (param $0 i32) (param $1 f64)
-  local.get $0
-  local.get $1
-  f64.store offset=8
- )
- (func $assembly/lib/math/vector/Vector3#constructor (param $0 i32) (param $1 f64) (param $2 f64) (param $3 f64) (result i32)
-  local.get $0
-  i32.eqz
-  if
-   i32.const 24
-   call $~lib/rt/tlsf/__alloc
-   call $~lib/rt/pure/__retain
-   local.set $0
-  end
-  local.get $0
-  f64.const 0
-  f64.store offset=16
-  local.get $0
-  local.get $1
-  local.get $2
-  call $assembly/lib/math/vector/Vector2#constructor
-  local.tee $0
-  local.get $3
-  f64.store offset=16
-  local.get $0
- )
- (func $assembly/lib/math/vector/Vector3#get:z (param $0 i32) (result f64)
-  local.get $0
-  f64.load offset=16
- )
- (func $assembly/lib/math/vector/Vector3#set:z (param $0 i32) (param $1 f64)
-  local.get $0
-  local.get $1
-  f64.store offset=16
- )
- (func $assembly/lib/math/vector/Vector4#constructor (param $0 i32) (param $1 f64) (param $2 f64) (param $3 f64) (param $4 f64) (result i32)
-  local.get $0
-  i32.eqz
-  if
-   i32.const 32
-   call $~lib/rt/tlsf/__alloc
-   call $~lib/rt/pure/__retain
-   local.set $0
-  end
-  local.get $0
-  f64.const 0
-  f64.store offset=24
+  f32.const 0
+  f32.store offset=12
   local.get $0
   local.get $1
   local.get $2
   local.get $3
-  call $assembly/lib/math/vector/Vector3#constructor
+  call $assembly/lib/math/vector/Vector3<f32>#constructor
   local.tee $0
   local.get $4
-  f64.store offset=24
+  f32.store offset=12
   local.get $0
  )
- (func $assembly/lib/math/vector/Vector4#get:w (param $0 i32) (result f64)
-  local.get $0
-  f64.load offset=24
- )
- (func $assembly/lib/math/vector/Vector4#set:w (param $0 i32) (param $1 f64)
-  local.get $0
-  local.get $1
-  f64.store offset=24
- )
- (func $assembly/lib/math/vector/Color#constructor (param $0 i32) (param $1 f64) (param $2 f64) (param $3 f64) (param $4 f64) (result i32)
+ (func $assembly/lib/math/vector/Color#constructor (param $0 i32) (param $1 f32) (param $2 f32) (param $3 f32) (param $4 f32) (result i32)
   local.get $0
   if (result i32)
    local.get $0
   else
-   i32.const 32
-   call $~lib/rt/tlsf/__alloc
+   i32.const 16
+   i32.const 3
+   call $~lib/rt/pure/__new
    call $~lib/rt/pure/__retain
   end
   local.get $1
   local.get $2
   local.get $3
   local.get $4
-  call $assembly/lib/math/vector/Vector4#constructor
+  call $assembly/lib/math/vector/Vector4<f32>#constructor
  )
  (func $assembly/lib/math/vector/Color.from (param $0 i32) (result i32)
   i32.const 0
@@ -1665,29 +1659,29 @@
   i32.and
   i32.const 6
   i32.shr_u
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $0
   i32.const 16711680
   i32.and
   i32.const 4
   i32.shr_u
-  f64.convert_i32_s
-  f64.const 255
-  f64.div
+  f32.convert_i32_s
+  f32.const 255
+  f32.div
   local.get $0
   i32.const 65280
   i32.and
   i32.const 2
   i32.shr_u
-  f64.convert_i32_s
-  f64.const 255
-  f64.div
+  f32.convert_i32_s
+  f32.const 255
+  f32.div
   local.get $0
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   call $assembly/lib/math/vector/Color#constructor
  )
  (func $assembly/lib/math/vector/Color.rgb (param $0 i32) (param $1 i32) (param $2 i32) (result i32)
@@ -1699,7 +1693,7 @@
   if
    i32.const 1744
    i32.const 1840
-   i32.const 71
+   i32.const 142
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -1712,7 +1706,7 @@
   if
    i32.const 1920
    i32.const 1840
-   i32.const 72
+   i32.const 143
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -1725,25 +1719,25 @@
   if
    i32.const 2016
    i32.const 1840
-   i32.const 73
+   i32.const 144
    i32.const 5
    call $~lib/builtins/abort
    unreachable
   end
   i32.const 0
   local.get $0
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $1
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $2
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
-  f64.const 1
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
+  f32.const 1
   call $assembly/lib/math/vector/Color#constructor
  )
  (func $assembly/lib/math/vector/Color.rgba (param $0 i32) (param $1 i32) (param $2 i32) (param $3 f32) (result i32)
@@ -1755,7 +1749,7 @@
   if
    i32.const 1744
    i32.const 1840
-   i32.const 82
+   i32.const 153
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -1768,7 +1762,7 @@
   if
    i32.const 1920
    i32.const 1840
-   i32.const 83
+   i32.const 154
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -1781,7 +1775,7 @@
   if
    i32.const 2016
    i32.const 1840
-   i32.const 84
+   i32.const 155
    i32.const 5
    call $~lib/builtins/abort
    unreachable
@@ -1798,27 +1792,779 @@
   if
    i32.const 2112
    i32.const 1840
-   i32.const 85
+   i32.const 156
    i32.const 5
    call $~lib/builtins/abort
    unreachable
   end
   i32.const 0
   local.get $0
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $1
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $2
-  f64.convert_i32_u
-  f64.const 255
-  f64.div
+  f32.convert_i32_u
+  f32.const 255
+  f32.div
   local.get $3
-  f64.promote_f32
   call $assembly/lib/math/vector/Color#constructor
+ )
+ (func $~lib/string/String.__concat (param $0 i32) (param $1 i32) (result i32)
+  (local $2 i32)
+  (local $3 i32)
+  (local $4 i32)
+  (local $5 i32)
+  (local $6 i32)
+  local.get $0
+  call $~lib/rt/pure/__retain
+  local.tee $2
+  i32.const 2864
+  local.get $2
+  select
+  local.set $3
+  block $__inlined_func$~lib/string/String#concat
+   local.get $1
+   call $~lib/rt/pure/__retain
+   local.tee $5
+   call $~lib/rt/pure/__retain
+   local.tee $1
+   i32.eqz
+   if
+    local.get $1
+    i32.const 2864
+    i32.ne
+    if
+     local.get $1
+     call $~lib/rt/pure/__release
+    end
+    i32.const 2864
+    local.set $1
+   end
+   local.get $1
+   i32.const 20
+   i32.sub
+   i32.load offset=16
+   i32.const 1
+   i32.shr_u
+   i32.const 1
+   i32.shl
+   local.tee $6
+   local.get $3
+   i32.const 20
+   i32.sub
+   i32.load offset=16
+   i32.const 1
+   i32.shr_u
+   i32.const 1
+   i32.shl
+   local.tee $4
+   i32.add
+   local.tee $0
+   i32.eqz
+   if
+    i32.const 2896
+    local.set $0
+    br $__inlined_func$~lib/string/String#concat
+   end
+   local.get $0
+   i32.const 1
+   call $~lib/rt/pure/__new
+   call $~lib/rt/pure/__retain
+   local.tee $0
+   local.get $3
+   local.get $4
+   call $~lib/memory/memory.copy
+   local.get $0
+   local.get $4
+   i32.add
+   local.get $1
+   local.get $6
+   call $~lib/memory/memory.copy
+  end
+  local.get $1
+  call $~lib/rt/pure/__release
+  local.get $2
+  call $~lib/rt/pure/__release
+  local.get $5
+  call $~lib/rt/pure/__release
+  local.get $0
+ )
+ (func $~lib/@wapc/as-msgpack/decoder/Decoder#readArraySize (param $0 i32) (result i32)
+  (local $1 i32)
+  (local $2 i32)
+  (local $3 i32)
+  local.get $0
+  i32.load
+  local.tee $2
+  i32.load offset=8
+  local.get $2
+  i32.load offset=12
+  i32.ge_s
+  if
+   i32.const 2336
+   i32.const 2400
+   i32.const 100
+   i32.const 7
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $2
+  i32.load offset=4
+  local.get $2
+  i32.load offset=8
+  i32.add
+  i32.load8_u
+  local.set $1
+  local.get $2
+  local.get $2
+  i32.load offset=8
+  i32.const 1
+  i32.add
+  i32.store offset=8
+  local.get $1
+  i32.const 240
+  i32.and
+  i32.const 144
+  i32.eq
+  if
+   local.get $1
+   i32.const 15
+   i32.and
+   return
+  else
+   local.get $1
+   i32.const 255
+   i32.and
+   i32.const 220
+   i32.eq
+   if
+    local.get $0
+    i32.load
+    local.tee $0
+    i32.load offset=12
+    local.get $0
+    i32.load offset=8
+    i32.const 2
+    i32.add
+    i32.lt_s
+    if
+     i32.const 2336
+     i32.const 2400
+     i32.const 108
+     i32.const 7
+     call $~lib/builtins/abort
+     unreachable
+    end
+    local.get $0
+    i32.load offset=4
+    local.get $0
+    i32.load offset=8
+    i32.add
+    i32.load16_u
+    local.set $1
+    local.get $0
+    local.get $0
+    i32.load offset=8
+    i32.const 2
+    i32.add
+    i32.store offset=8
+    local.get $1
+    i32.const 8
+    i32.shl
+    local.get $1
+    i32.const 8
+    i32.shr_u
+    i32.or
+    i32.const 65535
+    i32.and
+    return
+   else
+    local.get $1
+    i32.const 255
+    i32.and
+    i32.const 221
+    i32.eq
+    if
+     local.get $0
+     i32.load
+     local.tee $0
+     i32.load offset=12
+     local.get $0
+     i32.load offset=8
+     i32.const 4
+     i32.add
+     i32.lt_s
+     if
+      i32.const 2336
+      i32.const 2400
+      i32.const 116
+      i32.const 7
+      call $~lib/builtins/abort
+      unreachable
+     end
+     local.get $0
+     i32.load offset=4
+     local.get $0
+     i32.load offset=8
+     i32.add
+     i32.load
+     local.set $1
+     local.get $0
+     local.get $0
+     i32.load offset=8
+     i32.const 4
+     i32.add
+     i32.store offset=8
+     local.get $1
+     i32.const -16711936
+     i32.and
+     i32.const 8
+     i32.rotl
+     local.get $1
+     i32.const 16711935
+     i32.and
+     i32.const 8
+     i32.rotr
+     i32.or
+     return
+    else
+     local.get $1
+     i32.const 255
+     i32.and
+     i32.const 192
+     i32.eq
+     if
+      i32.const 0
+      return
+     end
+    end
+   end
+  end
+  i32.const 2496
+  block $__inlined_func$~lib/util/number/utoa32 (result i32)
+   i32.const 2736
+   local.get $1
+   i32.const 255
+   i32.and
+   local.tee $0
+   i32.eqz
+   br_if $__inlined_func$~lib/util/number/utoa32
+   drop
+   local.get $0
+   i32.const 10
+   i32.ge_u
+   i32.const 1
+   i32.add
+   local.get $0
+   i32.const 10000
+   i32.ge_u
+   i32.const 3
+   i32.add
+   local.get $0
+   i32.const 1000
+   i32.ge_u
+   i32.add
+   local.get $0
+   i32.const 100
+   i32.lt_u
+   select
+   local.get $0
+   i32.const 1000000
+   i32.ge_u
+   i32.const 6
+   i32.add
+   local.get $0
+   i32.const 1000000000
+   i32.ge_u
+   i32.const 8
+   i32.add
+   local.get $0
+   i32.const 100000000
+   i32.ge_u
+   i32.add
+   local.get $0
+   i32.const 10000000
+   i32.lt_u
+   select
+   local.get $0
+   i32.const 100000
+   i32.lt_u
+   select
+   local.tee $1
+   i32.const 1
+   i32.shl
+   i32.const 1
+   call $~lib/rt/pure/__new
+   local.tee $2
+   local.set $3
+   loop $do-continue|0
+    local.get $3
+    local.get $1
+    i32.const 1
+    i32.sub
+    local.tee $1
+    i32.const 1
+    i32.shl
+    i32.add
+    local.get $0
+    i32.const 10
+    i32.rem_u
+    i32.const 48
+    i32.add
+    i32.store16
+    local.get $0
+    i32.const 10
+    i32.div_u
+    local.tee $0
+    br_if $do-continue|0
+   end
+   local.get $2
+   call $~lib/rt/pure/__retain
+  end
+  call $~lib/string/String.__concat
+  i32.const 2928
+  i32.const 212
+  i32.const 5
+  call $~lib/builtins/abort
+  unreachable
+ )
+ (func $~lib/memory/memory.fill (param $0 i32)
+  (local $1 i32)
+  (local $2 i32)
+  block $~lib/util/memory/memset|inlined.0
+   local.get $0
+   i32.const 0
+   i32.store8
+   local.get $0
+   i32.const 12
+   i32.add
+   i32.const 0
+   i32.store8 offset=3
+   local.get $0
+   i32.const 0
+   i32.store8 offset=1
+   local.get $0
+   i32.const 0
+   i32.store8 offset=2
+   local.get $0
+   i32.const 0
+   i32.store8 offset=14
+   local.get $0
+   i32.const 0
+   i32.store8 offset=13
+   local.get $0
+   i32.const 0
+   i32.store8 offset=3
+   local.get $0
+   i32.const 0
+   i32.store8 offset=12
+   local.get $0
+   i32.const 0
+   local.get $0
+   i32.sub
+   i32.const 3
+   i32.and
+   local.tee $1
+   i32.add
+   local.tee $0
+   i32.const 0
+   i32.store
+   local.get $0
+   i32.const 16
+   local.get $1
+   i32.sub
+   i32.const -4
+   i32.and
+   local.tee $2
+   i32.add
+   i32.const 28
+   i32.sub
+   local.tee $1
+   i32.const 0
+   i32.store offset=24
+   local.get $2
+   i32.const 8
+   i32.le_u
+   br_if $~lib/util/memory/memset|inlined.0
+   local.get $0
+   i32.const 0
+   i32.store offset=4
+   local.get $0
+   i32.const 0
+   i32.store offset=8
+   local.get $1
+   i32.const 0
+   i32.store offset=16
+   local.get $1
+   i32.const 0
+   i32.store offset=20
+   local.get $2
+   i32.const 24
+   i32.le_u
+   br_if $~lib/util/memory/memset|inlined.0
+   local.get $0
+   i32.const 0
+   i32.store offset=12
+   local.get $0
+   i32.const 0
+   i32.store offset=16
+   local.get $0
+   i32.const 0
+   i32.store offset=20
+   local.get $0
+   i32.const 0
+   i32.store offset=24
+   local.get $1
+   i32.const 0
+   i32.store
+   local.get $1
+   i32.const 0
+   i32.store offset=4
+   local.get $1
+   i32.const 0
+   i32.store offset=8
+   local.get $1
+   i32.const 0
+   i32.store offset=12
+   local.get $0
+   local.get $0
+   i32.const 4
+   i32.and
+   i32.const 24
+   i32.add
+   local.tee $1
+   i32.add
+   local.set $0
+   local.get $2
+   local.get $1
+   i32.sub
+   local.set $1
+   loop $while-continue|0
+    local.get $1
+    i32.const 32
+    i32.ge_u
+    if
+     local.get $0
+     i64.const 0
+     i64.store
+     local.get $0
+     i64.const 0
+     i64.store offset=8
+     local.get $0
+     i64.const 0
+     i64.store offset=16
+     local.get $0
+     i64.const 0
+     i64.store offset=24
+     local.get $1
+     i32.const 32
+     i32.sub
+     local.set $1
+     local.get $0
+     i32.const 32
+     i32.add
+     local.set $0
+     br $while-continue|0
+    end
+   end
+  end
+ )
+ (func $assembly/lib/math/vector/decodeVector<f32> (param $0 i32) (result i32)
+  (local $1 i32)
+  (local $2 i32)
+  (local $3 i32)
+  block $__inlined_func$~lib/@wapc/as-msgpack/decoder/Decoder#isNextNil (result i32)
+   local.get $0
+   call $~lib/rt/pure/__retain
+   local.tee $1
+   local.set $2
+   local.get $1
+   i32.load
+   local.tee $0
+   i32.load offset=8
+   local.get $0
+   i32.load offset=12
+   i32.gt_s
+   if
+    i32.const 2336
+    i32.const 2400
+    i32.const 48
+    i32.const 7
+    call $~lib/builtins/abort
+    unreachable
+   end
+   local.get $0
+   i32.load offset=4
+   local.get $0
+   i32.load offset=8
+   i32.add
+   i32.load8_u
+   i32.const 192
+   i32.eq
+   if
+    local.get $2
+    i32.load
+    local.tee $0
+    i32.load offset=8
+    i32.const 1
+    i32.add
+    local.get $0
+    i32.load offset=12
+    i32.gt_s
+    if
+     i32.const 2336
+     i32.const 2400
+     i32.const 54
+     i32.const 7
+     call $~lib/builtins/abort
+     unreachable
+    end
+    local.get $0
+    local.get $0
+    i32.load offset=8
+    i32.const 1
+    i32.add
+    i32.store offset=8
+    i32.const 1
+    br $__inlined_func$~lib/@wapc/as-msgpack/decoder/Decoder#isNextNil
+   end
+   i32.const 0
+  end
+  if
+   i32.const 2208
+   i32.const 1840
+   i32.const 14
+   i32.const 3
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $1
+  call $~lib/@wapc/as-msgpack/decoder/Decoder#readArraySize
+  local.tee $0
+  i32.eqz
+  if
+   i32.const 2208
+   i32.const 1840
+   i32.const 15
+   i32.const 24
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $0
+  i32.const 2
+  i32.ne
+  if
+   i32.const 2208
+   i32.const 1840
+   i32.const 16
+   i32.const 3
+   call $~lib/builtins/abort
+   unreachable
+  end
+  i32.const 16
+  i32.const 10
+  call $~lib/rt/pure/__new
+  call $~lib/rt/pure/__retain
+  local.tee $2
+  i32.const 0
+  i32.store
+  local.get $2
+  i32.const 0
+  i32.store offset=4
+  local.get $2
+  i32.const 0
+  i32.store offset=8
+  local.get $2
+  i32.const 0
+  i32.store offset=12
+  i32.const 16
+  i32.const 0
+  call $~lib/rt/pure/__new
+  local.tee $0
+  call $~lib/memory/memory.fill
+  local.get $0
+  local.set $1
+  local.get $0
+  local.get $2
+  i32.load
+  local.tee $3
+  i32.ne
+  if
+   local.get $1
+   call $~lib/rt/pure/__retain
+   local.set $1
+   local.get $3
+   call $~lib/rt/pure/__release
+  end
+  local.get $2
+  local.get $1
+  i32.store
+  local.get $2
+  local.get $0
+  i32.store offset=4
+  local.get $2
+  i32.const 16
+  i32.store offset=8
+  local.get $2
+  i32.const 4
+  i32.store offset=12
+  i32.const 3072
+  i32.const 3232
+  call $~lib/string/String.__concat
+  i32.const 1840
+  i32.const 21
+  i32.const 10
+  call $~lib/builtins/abort
+  unreachable
+ )
+ (func $~lib/array/Array<f32>#__get (param $0 i32) (param $1 i32) (result f32)
+  local.get $1
+  local.get $0
+  i32.load offset=12
+  i32.ge_u
+  if
+   i32.const 2336
+   i32.const 3024
+   i32.const 104
+   i32.const 42
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $0
+  i32.load offset=4
+  local.get $1
+  i32.const 2
+  i32.shl
+  i32.add
+  f32.load
+ )
+ (func $assembly/lib/math/vector/Vector4<f32>#decode (param $0 i32) (param $1 i32)
+  (local $2 i32)
+  local.get $0
+  local.get $1
+  call $~lib/rt/pure/__retain
+  local.tee $2
+  call $assembly/lib/math/vector/decodeVector<f32>
+  local.tee $1
+  i32.const 0
+  call $~lib/array/Array<f32>#__get
+  f32.store
+  local.get $0
+  local.get $1
+  i32.const 1
+  call $~lib/array/Array<f32>#__get
+  f32.store offset=4
+  local.get $0
+  local.get $1
+  i32.const 2
+  call $~lib/array/Array<f32>#__get
+  f32.store offset=8
+  local.get $0
+  local.get $1
+  i32.const 3
+  call $~lib/array/Array<f32>#__get
+  f32.store offset=12
+  local.get $1
+  call $~lib/rt/pure/__release
+  local.get $2
+  call $~lib/rt/pure/__release
+ )
+ (func $assembly/lib/math/vector/Vector4<f32>#encode (param $0 i32) (param $1 i32)
+  (local $2 i32)
+  (local $3 i32)
+  local.get $1
+  call $~lib/rt/pure/__retain
+  i32.const 16
+  i32.const 10
+  call $~lib/rt/pure/__new
+  local.tee $1
+  i32.const 16
+  i32.const 0
+  call $~lib/rt/pure/__new
+  local.tee $2
+  call $~lib/rt/pure/__retain
+  i32.store
+  local.get $1
+  local.get $2
+  i32.store offset=4
+  local.get $1
+  i32.const 16
+  i32.store offset=8
+  local.get $1
+  i32.const 4
+  i32.store offset=12
+  local.get $1
+  call $~lib/rt/pure/__retain
+  local.tee $2
+  i32.load offset=4
+  local.tee $1
+  local.get $0
+  f32.load
+  f32.store
+  local.get $1
+  local.get $0
+  f32.load offset=4
+  f32.store offset=4
+  local.get $1
+  local.get $0
+  f32.load offset=8
+  f32.store offset=8
+  local.get $1
+  local.get $0
+  f32.load offset=12
+  f32.store offset=12
+  local.get $2
+  call $~lib/rt/pure/__retain
+  local.set $0
+  call $~lib/rt/pure/__retain
+  local.get $0
+  i32.load offset=12
+  drop
+  i32.const 8
+  i32.sub
+  i32.load
+  drop
+  unreachable
+ )
+ (func $assembly/lib/math/vector/Vector2<f32>#get:x (param $0 i32) (result f32)
+  local.get $0
+  f32.load
+ )
+ (func $assembly/lib/math/vector/Vector2<f32>#set:x (param $0 i32) (param $1 f32)
+  local.get $0
+  local.get $1
+  f32.store
+ )
+ (func $assembly/lib/math/vector/Vector2<f32>#get:y (param $0 i32) (result f32)
+  local.get $0
+  f32.load offset=4
+ )
+ (func $assembly/lib/math/vector/Vector2<f32>#set:y (param $0 i32) (param $1 f32)
+  local.get $0
+  local.get $1
+  f32.store offset=4
+ )
+ (func $assembly/lib/math/vector/Vector3<f32>#get:z (param $0 i32) (result f32)
+  local.get $0
+  f32.load offset=8
+ )
+ (func $assembly/lib/math/vector/Vector3<f32>#set:z (param $0 i32) (param $1 f32)
+  local.get $0
+  local.get $1
+  f32.store offset=8
+ )
+ (func $assembly/lib/math/vector/Vector4<f32>#get:w (param $0 i32) (result f32)
+  local.get $0
+  f32.load offset=12
+ )
+ (func $assembly/lib/math/vector/Vector4<f32>#set:w (param $0 i32) (param $1 f32)
+  local.get $0
+  local.get $1
+  f32.store offset=12
  )
  (func $~lib/rt/pure/decrement (param $0 i32)
   (local $1 i32)
@@ -1846,31 +2592,29 @@
   i32.eq
   if
    block $__inlined_func$~lib/rt/__visit_members
-    block $invalid
-     block $~lib/arraybuffer/ArrayBufferView
-      local.get $0
-      i32.const 12
-      i32.add
-      i32.load
-      br_table $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $~lib/arraybuffer/ArrayBufferView $invalid
+    block $folding-inner2
+     block $folding-inner1
+      block $invalid
+       local.get $0
+       i32.const 12
+       i32.add
+       i32.load
+       br_table $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $folding-inner1 $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $__inlined_func$~lib/rt/__visit_members $folding-inner1 $folding-inner1 $folding-inner2 $__inlined_func$~lib/rt/__visit_members $folding-inner2 $invalid
+      end
+      unreachable
      end
      local.get $0
      i32.load offset=20
      local.tee $1
      if
       local.get $1
-      i32.const 2220
-      i32.ge_u
-      if
-       local.get $1
-       i32.const 20
-       i32.sub
-       call $~lib/rt/pure/decrement
-      end
+      call $~lib/rt/pure/__visit
      end
      br $__inlined_func$~lib/rt/__visit_members
     end
-    unreachable
+    local.get $0
+    i32.load offset=20
+    call $~lib/rt/pure/__visit
    end
    local.get $2
    i32.const -2147483648
@@ -1908,6 +2652,18 @@
    i32.store offset=4
   end
  )
+ (func $~lib/rt/pure/__visit (param $0 i32)
+  local.get $0
+  i32.const 3596
+  i32.lt_u
+  if
+   return
+  end
+  local.get $0
+  i32.const 20
+  i32.sub
+  call $~lib/rt/pure/decrement
+ )
  (func $assembly/lib/plugin/makeVersion@varargs (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (result i32)
   block $1of1
    block $0of1
@@ -1930,7 +2686,7 @@
   if
    i32.const 1248
    i32.const 1360
-   i32.const 36
+   i32.const 48
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1943,7 +2699,7 @@
   if
    i32.const 1424
    i32.const 1360
-   i32.const 37
+   i32.const 49
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1956,7 +2712,7 @@
   if
    i32.const 1536
    i32.const 1360
-   i32.const 38
+   i32.const 50
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1975,7 +2731,7 @@
   if
    i32.const 1648
    i32.const 1360
-   i32.const 39
+   i32.const 51
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -2000,7 +2756,7 @@
   i32.or
   i32.or
  )
- (func $assembly/lib/math/vector/Color#constructor@varargs (param $0 i32) (param $1 f64) (param $2 f64) (param $3 f64) (param $4 f64) (result i32)
+ (func $assembly/lib/math/vector/Color#constructor@varargs (param $0 i32) (param $1 f32) (param $2 f32) (param $3 f32) (param $4 f32) (result i32)
   block $1of1
    block $0of1
     block $outOfRange
@@ -2011,7 +2767,7 @@
     end
     unreachable
    end
-   f64.const 1
+   f32.const 1
    local.set $4
   end
   local.get $0

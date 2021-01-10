@@ -1,5 +1,17 @@
 // Plugin interface
 
+export interface Plugin {
+  name: string,
+  version: Version
+}
+
+export interface Version {
+  major: u8,
+  minor: u8,
+  patch: u8,
+  meta: u8
+}
+
 // Host-defined interface
 // https://www.assemblyscript.org/exports-and-imports.html#imports
 /**

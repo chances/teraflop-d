@@ -13,7 +13,6 @@
   },
   "include": [
     "./index.ts",
-    "./assembly/lib/**/*.ts",
     "./lib/**/*.ts"
   ],
   "typedocOptions": {

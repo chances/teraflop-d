@@ -1,6 +1,3 @@
-import 'assemblyscript/std/portable'
-export { register, makeVersion, VersionMeta } from '../assembly/lib/plugin'
-
 export interface Plugin {
   name: string,
   version: Version
