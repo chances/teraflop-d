@@ -78,6 +78,23 @@ abstract class Actor(Msg) : NamedComponent {
 // TODO: Test the Actor class
 // unittest {}
 
+/// A Component that is scriptable and exposes an interface to WebAssembly.
+/// See_Also:
+/// $(UL
+///   $(LI `ScriptableComponent`)
+/// )
+// / <h3>Implementations</h3>
+// / $(UL
+// /   $(LI `teraflop.components.Transform`)
+// /   $(LI `teraflop.graphics.Material`)
+// /   $(LI `teraflop.graphics.Mesh`)
+// /   $(LI `teraflop.graphics.Shader`)
+// /   $(LI `teraflop.graphics.Texture`)
+// / )
+interface IScriptable(Msg) {
+  ScriptableComponent!Msg script() @property const;
+}
+
 ///
 auto externNameMatches = (const Extern a, string b) => a.name == b;
 

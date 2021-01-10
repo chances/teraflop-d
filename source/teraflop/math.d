@@ -10,6 +10,27 @@ module teraflop.math;
 public import gfm.math;
 import std.typecons : Flag, Yes;
 
+///
+alias vec2iArr = int[2];
+///
+alias vec2fArr = float[2];
+///
+alias vec2dArr = double[2];
+///
+alias vec3iArr = int[3];
+///
+alias vec3fArr = float[3];
+///
+alias vec3dArr = double[3];
+///
+alias vec4iArr = int[4];
+///
+alias vec4fArr = float[4];
+///
+alias vec4dArr = double[4];
+///
+alias mat4fArr = float[4*4];
+
 private const float ONE_DEGREE_IN_RADIANS = 0.01745329252;
 
 /// Convert and angle from radians to degrees.
