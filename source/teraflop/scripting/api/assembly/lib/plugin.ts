@@ -60,15 +60,22 @@ export declare function register(name: string, version: i32): bool
  * @see {@link addCommandHandler}
  */
 export type CommandHandler = (data: ArrayBuffer) => Message
-interface Command { name: string, handler: CommandHandler }
-let commands: Command[]
+class Command {
+  name: string
+  handler: CommandHandler
+  constructor(name: string, handler: CommandHandler) {
+    this.name = name
+    this.handler = handler
+  }
+}
+let commands = new Array<Command>()
 /**
  * Add a handler from which to respond to named commands issued by the host game.
  * @param commandName
  * @param handler
  */
 export function addCommandHandler(commandName: string, handler: CommandHandler): void {
-  commands.push({ name: commandName, handler })
+  commands.push(new Command(commandName, handler))
 }
 
 /** Entry point for commands from the host game. */
