@@ -1,12 +1,4 @@
-import {
-  Decoder,
-  Writer,
-  Encoder,
-  Sizer,
-  Codec,
-  toArrayBuffer,
-  Value,
-} from "@wapc/as-msgpack"
+import { Codec, Decoder, Writer } from "@wapc/as-msgpack"
 import * as interop from '../interop'
 
 function decodeVector<T>(size: u8, decoder: Decoder): T[] {
@@ -47,7 +39,11 @@ export class Vector2<T> implements Codec {
     this.y = y
   }
 
-  // TODO: static decode<T>(decoder: Decoder): Vector2<T>;
+  static decode<T>(buffer: ArrayBuffer): Vector2<T> {
+    const decoder = new Decoder(buffer)
+    const vector = decodeVector<T>(2, decoder)
+    return new Vector2<T>(vector[0], vector[1])
+  }
   decode(decoder: Decoder): void {
     const vector = decodeVector<T>(2, decoder)
     this.x = vector[0]
@@ -66,6 +62,11 @@ export class Vector3<T> extends Vector2<T> {
     this.z = z
   }
 
+  static decode<T>(buffer: ArrayBuffer): Vector3<T> {
+    const decoder = new Decoder(buffer)
+    const vector = decodeVector<T>(3, decoder)
+    return new Vector3<T>(vector[0], vector[1], vector[2])
+  }
   decode(decoder: Decoder): void {
     const vector = decodeVector<T>(3, decoder)
     this.x = vector[0]
@@ -85,6 +86,11 @@ export class Vector4<T> extends Vector3<T> {
     this.w = w
   }
 
+  static decode<T>(buffer: ArrayBuffer): Vector4<T> {
+    const decoder = new Decoder(buffer)
+    const vector = decodeVector<T>(4, decoder)
+    return new Vector4<T>(vector[0], vector[1], vector[2], vector[3])
+  }
   decode(decoder: Decoder): void {
     const vector = decodeVector<T>(4, decoder)
     this.x = vector[0]
