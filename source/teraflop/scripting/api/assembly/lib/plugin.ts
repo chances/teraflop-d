@@ -1,4 +1,5 @@
-// Plugin interface
+import { toArrayBuffer } from '@wapc/as-msgpack'
+import { ErrorType, Message } from './message'
 
 export interface Plugin {
   name: string,
@@ -11,15 +12,6 @@ export interface Version {
   patch: u8,
   meta: u8
 }
-
-// Host-defined interface
-// https://www.assemblyscript.org/exports-and-imports.html#imports
-/**
- * Register a plugin with the game's registrar.
- * @param version The plugin's [Semantic Version](https://semver.org) packed into a 32-bit bitfield.
- * @see {@link makeVersion}
- */
-export declare function register(name: string, version: i32): bool
 
 export enum VersionMeta {
   Release = 0,
@@ -52,3 +44,40 @@ export function makeVersion(major: u8, minor: u8 = 0, patch: u8 = 0, meta: u8 = 
 
   return ((major as i32) << 24) | ((minor as i32) << 16) | ((patch as i32) << 8) | (meta as i32)
 }
+
+// Host-defined interface
+// https://www.assemblyscript.org/exports-and-imports.html#imports
+/**
+ * Register a plugin with the game's registrar.
+ * @param version The plugin's [Semantic Version](https://semver.org) packed into a 32-bit bitfield.
+ * @see {@link makeVersion}
+ */
+export declare function register(name: string, version: i32): bool
+
+// https://github.com/chances/grocery/blob/f2e1c916c097d5b1908ffedc24d3ee4140328f9f/source/game/models/game.d#L46
+/**
+ * A handler from which to respond to named commands issued by the host game.
+ * @see {@link addCommandHandler}
+ */
+export type CommandHandler = (data: ArrayBuffer) => Message
+interface Command { name: string, handler: CommandHandler }
+let commands: Command[]
+/**
+ * Add a handler from which to respond to named commands issued by the host game.
+ * @param commandName
+ * @param handler
+ */
+export function addCommandHandler(commandName: string, handler: CommandHandler): void {
+  commands.push({ name: commandName, handler })
+}
+
+/** Entry point for commands from the host game. */
+export function executeCommand(command: string, data: ArrayBuffer): ArrayBuffer {
+  const commandIndex = commands.findIndex(c => c.name == command)
+  if (commandIndex < 0)
+    return toArrayBuffer(Message.makeError(ErrorType.commandNotFound, `command '${command}' not found`))
+  return toArrayBuffer(commands[commandIndex].handler(data))
+}
+
+/** Post a named command to the host game. */
+export declare function postCommand(command: string, data: ArrayBuffer | null): ArrayBuffer
