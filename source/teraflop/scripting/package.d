@@ -51,22 +51,20 @@ abstract class Actor(Msg) : NamedComponent {
 
   /// Push a new `Msg` to this Actor's mailbox queue.
   package (teraflop) void postMessage(Msg message) {
-    synchronized {
-      assert(mailbox.insertBack!Msg(message) == 1);
-    }
+    synchronized assert(mailbox.insertBack!Msg(message) == 1);
     onMessageSignal.trigger();
   }
 
   /// Start processing this Actor's mailbox in its thread's event loop.
   package (teraflop) void start() {
-    import std.range : popFrontN, walkLength;
+    import std.range : walkLength;
 
     onMessageSignal.run({
       auto messages = mailbox[];
       if (walkLength(messages) == 0) return;
 
       auto message = mailbox.front;
-      mailbox.popFirstOf(messages);
+      synchronized mailbox.popFirstOf(messages);
       onMessage(message);
     });
   }
@@ -84,8 +82,15 @@ abstract class Actor(Msg) : NamedComponent {
 auto externNameMatches = (const Extern a, string b) => a.name == b;
 
 /// An abstract class with helpers to create WebAssembly bindings.
-/// See_Also: <a href="https://chances.github.io/wasmer-d">`wasmer` API Documentation</a>
-abstract class ScriptableComponent : Actor!string {
+/// See_Also:
+/// $(UL
+///   $(LI <a href="https://chances.github.io/wasmer-d">`wasmer` API Documentation</a>)
+///   $(LI <a href="https://msgpack.org">MessagePack</a> specification)
+///   $(LI <a href="http://msgpack.github.io/msgpack-d">`msgpack-d` API Documentation</a>)
+/// )
+abstract class ScriptableComponent(Msg) : Actor!Msg {
+  static import msgpack;
+
   protected Module entryModule;
   protected Instance instance;
   protected const(Extern)[] exports;
@@ -122,5 +127,19 @@ abstract class ScriptableComponent : Actor!string {
   /// Wheter the `entryPoint` has loaded and is ready for execution.
   bool ready() @property const {
     return entryPoint.valid;
+  }
+
+  /// Serialize a `Msg` in the <a href="https://msgpack.org">MessagePack</a> format.
+  ///
+  /// Throws: Stack Overflow when cyclic references occur in `data`.
+  ubyte[] pack(in Msg data) {
+    return msgpack.pack!true(data);
+  }
+
+  /// Deserialize a `Msg` in the <a href="https://msgpack.org">MessagePack</a> format.
+  Msg unpack(in ubyte[] buffer) {
+    auto result = Msg.init;
+    msgpack.unpack(buffer, result);
+    return result;
   }
 }

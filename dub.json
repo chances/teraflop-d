@@ -32,6 +32,7 @@
       "path": "../gfx-d"
     },
     "libasync": "~>0.8.6",
+    "msgpack-d": "~>1.0.3",
     "wasmer": "0.2.0"
   },
   "subConfigurations": {
