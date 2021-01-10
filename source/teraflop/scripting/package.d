@@ -101,25 +101,25 @@ struct ErrorMessage {
 }
 
 ///
-struct Message(Msg) {
+struct Message {
   ///
   ErrorMessage* error = null;
-  ///
-  Msg* value = null;
+  /// Body of this Message encoded in the <a href="https://msgpack.org">MessagePack</a> format.
+  ubyte[] value = null;
 
   ///
-  static Message!Msg fromError(Msg)(ref ErrorMessage error) {
-    return Message!Msg(&error);
+  static Message fromError(Msg)(ref ErrorMessage error) {
+    return Message(&error);
   }
 
   ///
-  static Message!Msg fromError(Msg)(Error code, string message) {
-    return Message!Msg.fromError(ErrorMessage(code, message));
+  static Message fromError(Msg)(Error code, string message) {
+    return Message.fromError(ErrorMessage(code, message));
   }
 
   ///
-  static Message!Msg fromValue(Msg)(ref Msg value) {
-    return Message!Msg(null, &value);
+  static Message fromValue(Msg)(ubyte[] value) {
+    return Message(null, value);
   }
 }
 
@@ -182,7 +182,7 @@ abstract class ScriptableComponent(Msg) : Actor!Msg {
 
     const entryPointError = format!"Could not retreive '%s' entry point function."(entryPoint);
     const entryPointIndex = enforce(exports.countUntil!(externNameMatches)(entryPoint) >= 0, entryPointError);
-    this.entryPoint = Function.from(cast() exports[entryPointIndex]);
+    this.entryPoint = Function.from(exports[entryPointIndex]);
     enforce(this.entryPoint.valid, entryPointError);
   }
 
