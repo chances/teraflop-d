@@ -78,6 +78,51 @@ abstract class Actor(Msg) : NamedComponent {
 // TODO: Test the Actor class
 // unittest {}
 
+///
+enum Error {
+  ///
+  unknown = 0,
+  ///
+  exception,
+  ///
+  msgpack,
+  ///
+  commandNotFound,
+  ///
+  actionNotFound
+}
+
+///
+struct ErrorMessage {
+  /// See_Also: `Error`
+  uint code;
+  ///
+  string message;
+}
+
+///
+struct Message(Msg) {
+  ///
+  ErrorMessage* error = null;
+  ///
+  Msg* value = null;
+
+  ///
+  static Message!Msg fromError(Msg)(ref ErrorMessage error) {
+    return Message!Msg(&error);
+  }
+
+  ///
+  static Message!Msg fromError(Msg)(Error code, string message) {
+    return Message!Msg.fromError(ErrorMessage(code, message));
+  }
+
+  ///
+  static Message!Msg fromValue(Msg)(ref Msg value) {
+    return Message!Msg(null, &value);
+  }
+}
+
 /// A Component that is scriptable and exposes an interface to WebAssembly.
 /// See_Also:
 /// $(UL
