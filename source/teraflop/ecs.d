@@ -15,6 +15,7 @@ import std.meta : templateOr;
 import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
+import teraflop.async : isEvent;
 import teraflop.traits : inheritsFrom, isClass, isInterface, isStruct;
 
 /// Detect whether `T` is the `World` class.
@@ -98,8 +99,17 @@ struct Resources {
     (*resourceChanged)[key] = true;
   }
 
+  /// Remove a Resource.
+  void remove(T)(T resource) {
+    assert(contains!T(), "A Resource must first be added before removal.");
+    const Variant resourceVariant = resource;
+    auto key = resourceVariant.type.toHash;
+    (*resources).remove(key);
+    (*resourceChanged)[key] = true;
+  }
+
   /// Clear each Resource's change detection tracking state.
-  void clearTrackers() {
+  package (teraflop) void clearTrackers() {
     foreach (key; resourceChanged.keys) {
       (*resourceChanged)[key] = false;
     }
@@ -125,10 +135,11 @@ enum bool isEntity(T) = __traits(isSame, Unqual!T, Entity);
 
 /// A world entity consisting of a unique ID and a collection of associated components.
 final class Entity {
-  private Component[string] components_;
   import std.uuid : randomUUID;
+
+  private Component[string] components_;
   /// Unique ID of this entity
-  UUID id;
+  const UUID id;
 
   /// Initialize a new empty entity.
   this() {
@@ -187,7 +198,7 @@ final class Entity {
     import std.array : array;
 
     auto components = getMut!T(name);
-    static if (isStruct!T) {
+    static if (isStruct!T && !isEvent!T) {
       return components.idup;
     } else {
       // Cannot implicitly convert from mutable ⇒ immutable 😢️
@@ -358,10 +369,6 @@ private final class Structure(T) : NamedComponent if (isStruct!T) {
     super(name);
     this.data = data;
   }
-  /// Make an immutable copy of this `Structure`.
-  immutable(Structure) idup() const @property {
-    return new immutable(Structure!T)(data, name);
-  }
 }
 
 unittest {
@@ -385,10 +392,6 @@ final class Tag : NamedComponent {
   /// Initialize a new Tag.
   this(string name) pure {
     super(name);
-  }
-  /// Make an immutable copy of this Tag.
-  immutable(Tag) idup() const @property {
-    return new immutable(Tag)(name);
   }
 }
 
@@ -640,6 +643,7 @@ import std.traits : isCallable, ReturnType;
 ///       $(LI `World`)
 ///       $(LI `Resources`)
 ///       $(LI `teraflop.platform.window.Window` or any of its derivations)
+///       $(LI `teraflop.platform.input.event.InputEvent` or any of its derivations)
 ///       $(LI `Entity`)
 ///       $(LI `Component` or any of its derivations)
 ///       $(LI `System`, or)
@@ -728,8 +732,9 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
 
     debug {
       if (diagnostics.length) {
+        // TODO: Something useful with these diagnostics
         auto message = diagnostics.map!(d => d.toString).join("\n\n");
-        assert(0, format!"Ran system '%s':\n%s"(name, message));
+        // assert(0, format!"Ran system '%s':\n%s"(name, message));
       }
     }
 
@@ -859,7 +864,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
           }
           goto L_systemDoesNotApply;
         } else {
-          static if (isResourceData!Param || isClass!Param) {
+          static if (isEvent!Param || isResourceData!Param || isClass!Param) {
             params[indexOf!Param] = cast(Unqual!Param) world.resources.get!(Unqual!Param);
           } else {
             static assert(0, diagnosticFailure!Param);

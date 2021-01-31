@@ -7,6 +7,7 @@ module teraflop.game;
 
 import gfx.graal;
 import std.conv : to;
+import teraflop.input : InputNode;
 import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
@@ -16,8 +17,10 @@ abstract class Game {
   import gfx.core.rc : Rc;
   import libasync.events : EventLoop, getThreadEventLoop;
   import std.exception : enforce;
+  import std.typecons : Rebindable;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
+  import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
 
@@ -29,6 +32,10 @@ abstract class Game {
 
   private Device device;
   private Window[] windows_;
+  private Input[const Window] input;
+  // https://dlang.org/library/std/typecons/rebindable.html#2
+  private Rebindable!(const InputEvent)[InputDevice] newInput;
+  // private Rebindable!(const InputEvent)[InputDevice] oldInput;
   private Swapchain[const Window] swapChains;
   private bool[const Window] swapchainNeedsRebuild;
   private Queue[const Window] graphicsQueue;
@@ -189,6 +196,12 @@ abstract class Game {
     // Setup main window
     auto mainWindow = new Window(name);
     enforce(mainWindow.valid, "Could not open main game window!");
+    input[mainWindow] = new Input();
+    input[mainWindow].addNode(mainWindow);
+    mainWindow.onUnhandledInput ~= (const InputEvent event) => {
+      newInput[event.device] = event;
+      world.resources.add(event);
+    }();
     windows_ ~= mainWindow;
 
     try {
@@ -244,6 +257,7 @@ abstract class Game {
     systems ~= new TextureUploader(world, new OneTimeCmdBufPool(device, graphicsQueue[mainWindow]));
 
     world.resources.add(mainWindow);
+    world.resources.add(input[mainWindow]);
     initializeWorld(world);
   }
 
@@ -258,10 +272,20 @@ abstract class Game {
       window.update();
       // Wait for minimized windows to restore
       if (window.minimized) continue;
+      // Process window input
+      input[window].update(window);
+
+      // Recreate swapchain, if necessary
       updateSwapChain(window, swapchainNeedsRebuild[window]);
       pipelinePreparer.run();
       recordCommands();
     }
+    // TODO: Prune old input from the World
+    // foreach (input; oldInput.values) {
+    //   if (oldInput[input.device] !is null) world.resources.remove(input);
+    //   oldInput[input.device] = null;
+    // }
+    // foreach (input; newInput.values) oldInput[input.device] = input;
 
     // Raise callbacks on the event loop
     if (!eventLoop.loop(Duration.zero)) {

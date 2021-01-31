@@ -5,40 +5,27 @@
 /// License: 3-Clause BSD License
 module teraflop.input;
 
-import std.typecons : Tuple;
 import teraflop.async.event;
 public import teraflop.input.event;
 public import teraflop.input.keyboard;
 public import teraflop.input.map;
 
-alias InputEventHandlers = Tuple!(ActionInput, UnhandledInput);
-
 ///
-void on(T) (Input input, string action, T handler, bool markInputHandled = false) if (isCallable!T) {
-  import logger : trace;
-  import std.string : format;
-  trace(format!"adding anonymous '%s' action handler"(action));
-  input.nodes ~= InputEventHandlers(
-    event => {
-      if (event.action == action) handler();
-    }(),
-    event => {
-      if (event.isActionEvent && event.asActionEvent.action == action) return markInputHandled;
-      return false;
-    }()
-  );
+struct InputEventHandlers {
+  ///
+  const ActionInput actionHandler;
+  ///
+  const UnhandledInput unhandledHandler;
 }
 
 ///
-struct Input {
+final class Input {
+  import std.typecons : Flag, No;
   import teraflop.platform : Window;
 
   ///
-  const Window window;
-  ///
-  auto map = new InputMap();
-  ///
-  InputEventHandlers[] nodes;
+  const(InputEventHandlers)[] nodes;
+  private auto _map = new InputMap();
 
   ///
   static ActionInput ignoreActions() {
@@ -55,8 +42,36 @@ struct Input {
     }();
   }
 
+  InputMap map() @property const {
+    return cast(InputMap) _map;
+  }
+
   ///
-  void update() {
+  void addNode(InputNode node) {
+    nodes ~= InputEventHandlers(&node.actionInput, &node.unhandledInput);
+  }
+
+  ///
+  void on(T) (
+    string action, T handler, Flag!"markInputHandled" markInputHandled = No.markInputHandled
+  ) if (isCallable!T) {
+    // TODO: Port logger from grocery game or use gfx's logging infra?
+    // import logger : trace;
+    // import std.string : format;
+
+    // trace(format!"adding anonymous '%s' action handler"(action));
+    this.nodes ~= InputEventHandlers(
+      event => {
+        if (event.action == action) handler();
+      }(),
+      event => {
+        if (event.isActionEvent && event.asActionEvent.action == action) return markInputHandled;
+        return false;
+      }()
+    );
+  }
+
+  package (teraflop) void update(const Window window) {
     // Keyboard keys with modifiers
     foreach (key; KeyboardKey.min .. KeyboardKey.max) {
       if (window.isKeyDown(key) || (window.isKeyReleased(key) && window.wasKeyDown(key))) {
@@ -90,22 +105,12 @@ struct Input {
     ));
   }
 
-  ///
-  void addNode(InputNode node) {
-    nodes ~= InputEventHandlers(&node.actionInput, &node.unhandledInput);
-  }
-
   private void propagate(InputEvent event) {
     const actionEvents = toActions(event);
 
     foreach (handlers; nodes) {
-      if (actionEvents.length) {
-        ActionInput actionHandler = handlers[0];
-        foreach (actionEvent; actionEvents) actionHandler(actionEvent);
-      }
-
-      auto unhandledInputHandler = handlers[1];
-      if (unhandledInputHandler(event)) break;
+      if (actionEvents.length) foreach (actionEvent; actionEvents) handlers.actionHandler(actionEvent);
+      if (handlers.unhandledHandler(event)) break;
     }
   }
 
@@ -118,5 +123,19 @@ struct Input {
     }
 
     return actionEvents;
+  }
+}
+
+/// A node in the input event tree.
+abstract class InputNode {
+  ///
+  void actionInput(const InputEventAction event) {
+    assert(event.action.length);
+  }
+
+  ///
+  bool unhandledInput(const InputEvent event) {
+    assert(event.device);
+    return false;
   }
 }

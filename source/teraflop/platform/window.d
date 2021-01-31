@@ -6,7 +6,6 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
-import libasync.notifier : AsyncNotifier;
 import std.exception : enforce;
 import std.string : toStringz;
 import teraflop.input;
@@ -14,7 +13,8 @@ import teraflop.input;
 private uint lastWindowId = 0;
 
 /// A native window.
-class Window {
+class Window : InputNode {
+  import teraflop.async : Event;
   import teraflop.graphics : Color;
   import teraflop.math : Size, vec2d;
   import gfx.core.rc : atomicRcCode;
@@ -32,6 +32,9 @@ class Window {
 
   /// Color this window's framebuffer should be cleared to when rendered.
   auto clearColor = Color.black;
+
+  /// Fired when this window receives an unhandled `InputEvent`.
+  Event!(const InputEvent) onUnhandledInput;
 
   /// Initialize a new Window.
   ///
@@ -149,19 +152,6 @@ class Window {
     return cast(Surface) _surface;
   }
 
-  package (teraflop) void update() {
-    if (glfwWindowShouldClose(window)) {
-      glfwDestroyWindow(window);
-      _valid = false;
-      return;
-    }
-
-    glfwPollEvents();
-    data.update(window);
-
-    // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
-  }
-
   bool isKeyDown(KeyboardKey key) @property const {
     return (key in data.keyPressed) !is null ? data.keyPressed[key] : false;
   }
@@ -183,6 +173,27 @@ class Window {
   }
   int lastMouseButtons() @property const {
     return data.lastMouseButtons;
+  }
+
+  package (teraflop) void update() {
+    if (glfwWindowShouldClose(window)) {
+      glfwDestroyWindow(window);
+      _valid = false;
+      return;
+    }
+
+    glfwPollEvents();
+    data.update(window);
+  }
+
+  override void actionInput(const InputEventAction event) {
+    assert(event.action.length);
+    onUnhandledInput(event);
+  }
+
+  override bool unhandledInput(const InputEvent event) {
+    onUnhandledInput(event);
+    return false;
   }
 
   extern(C) {

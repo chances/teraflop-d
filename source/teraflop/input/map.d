@@ -149,8 +149,7 @@ class InputMapBinding {
     return numApplicableStates > 0;
   }
 
-  ///
-  InputEventAction accumulateIntoAction(InputEvent event, string actionName) {
+  package (teraflop.input) InputEventAction accumulateIntoAction(InputEvent event, string actionName) {
     auto action = new InputEventAction(event.device, actionName);
     import std.algorithm.iteration : filter, fold;
     import std.array : array;

@@ -5,23 +5,10 @@ module teraflop.input.event;
 
 import teraflop.math : vec2d;
 import teraflop.input.keyboard;
+import teraflop.traits;
 
 alias ActionInput = void delegate(const InputEventAction event);
 alias UnhandledInput = bool delegate(const InputEvent event);
-
-/// A node in the input event tree.
-abstract class InputNode {
-  ///
-  void actionInput(const InputEventAction event) {
-    assert(event.action.length);
-  }
-
-  ///
-  bool unhandledInput(const InputEvent event) {
-    assert(event.device);
-    return false;
-  }
-}
 
 /// The user input device from which an `InputEvent` originated.
 enum InputDevice {
@@ -43,19 +30,30 @@ abstract class InputEvent {
     this.device = device;
   }
 
+  // Input events are keyed as Resources given their device
+  // https://dlang.org/spec/hash-map.html#using_classes_as_key
+  override size_t toHash() @safe @nogc const pure {
+    return device;
+  }
+  override bool opEquals(Object o) @safe @nogc const pure {
+    InputEvent other = cast(InputEvent) o;
+    return other && device == other.device;
+  }
+
   bool isKeyboardEvent() @property const {
-    return typeid(this) == typeid(InputEventKeyboard);
+    return typeid(InputEventKeyboard).isBaseOf(this.classinfo);
   }
 
   bool isMouseEvent() @property const {
-    return typeid(this) == typeid(InputEventMouse);
+    return typeid(InputEventMouse).isBaseOf(this.classinfo);
   }
 
   bool isActionEvent() @property const {
-    return typeid(this) == typeid(InputEventAction);
+    return typeid(InputEventAction).isBaseOf(this.classinfo);
   }
 
   InputEventKeyboard asKeyboardEvent() @property const {
+    assert(this.isKeyboardEvent, "Event is not an instance of `KeyboardEvent`");
     if (this.isKeyboardEvent) {
       return cast(InputEventKeyboard) this;
     }
@@ -63,6 +61,7 @@ abstract class InputEvent {
   }
 
   InputEventMouse asMouseEvent() @property const {
+    assert(this.isMouseEvent, "Event is not an instance of `MouseEvent`");
     if (this.isMouseEvent) {
       return cast(InputEventMouse) this;
     }
@@ -70,6 +69,7 @@ abstract class InputEvent {
   }
 
   InputEventAction asActionEvent() @property const {
+    assert(this.isActionEvent, "Event is not an instance of `ActionEvent`");
     if (this.isActionEvent) {
       return cast(InputEventAction) this;
     }
@@ -196,5 +196,15 @@ class InputEventAction : InputEvent {
   this(const InputDevice device, string action) {
     super(device);
     this.action = action;
+  }
+
+  // Action input events are keyed as Resources given their device and action name
+  // https://dlang.org/spec/hash-map.html#using_classes_as_key
+  override size_t toHash() @safe @nogc const pure {
+    return action.hashOf(super.toHash);
+  }
+  override bool opEquals(Object o) @safe @nogc const pure {
+    InputEventAction other = cast(InputEventAction) o;
+    return other && device == other.device && action == other.action;
   }
 }
