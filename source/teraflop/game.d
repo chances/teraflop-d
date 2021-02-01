@@ -35,7 +35,6 @@ abstract class Game {
   private Input[const Window] input;
   // https://dlang.org/library/std/typecons/rebindable.html#2
   private Rebindable!(const InputEvent)[InputDevice] newInput;
-  // private Rebindable!(const InputEvent)[InputDevice] oldInput;
   private Swapchain[const Window] swapChains;
   private bool[const Window] swapchainNeedsRebuild;
   private Queue[const Window] graphicsQueue;
@@ -266,6 +265,7 @@ abstract class Game {
     import core.time : Duration;
     import gfx.graal.presentation : ImageAcquisition;
     import std.string : format;
+    import teraflop.input : InputEventAction, InputEventKeyboard, InputEventMouse;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
@@ -280,12 +280,6 @@ abstract class Game {
       pipelinePreparer.run();
       recordCommands();
     }
-    // TODO: Prune old input from the World
-    // foreach (input; oldInput.values) {
-    //   if (oldInput[input.device] !is null) world.resources.remove(input);
-    //   oldInput[input.device] = null;
-    // }
-    // foreach (input; newInput.values) oldInput[input.device] = input;
 
     // Raise callbacks on the event loop
     if (!eventLoop.loop(Duration.zero)) {
@@ -299,6 +293,23 @@ abstract class Game {
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
+
+    // Prune old input from the World
+    foreach (input; newInput.values) {
+      if (input.isKeyboardEvent) {
+        if (world.resources.contains!InputEventKeyboard)
+          world.resources.remove(input.asKeyboardEvent);
+      }
+      if (input.isMouseEvent) {
+        if (world.resources.contains!InputEventMouse)
+          world.resources.remove(input.asMouseEvent);
+      }
+      if (input.isActionEvent) {
+        if (world.resources.contains!InputEventAction)
+          world.resources.remove(input.asActionEvent);
+      }
+      newInput.remove(input.device);
+    }
   }
 
   private void updateSwapChain(const Window window, bool needsRebuild = false) {
