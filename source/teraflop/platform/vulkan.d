@@ -49,7 +49,7 @@ package (teraflop) bool initVulkan(string appName) {
   return true;
 }
 package (teraflop) void unloadVulkan() {
-  instance.release();
+  assert(!instance.release(), "Vulkan instance is already released!");
 }
 
 private PhysicalDevice selectedPhysicalDevice;
