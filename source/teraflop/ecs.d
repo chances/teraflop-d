@@ -67,34 +67,60 @@ private alias ResourceCollection = Variant[ResourceId];
 private alias ResourceTracker = bool[ResourceId];
 /// A collection of Resource instances identified by their type.
 struct Resources {
+  import teraflop.input : InputEvent;
+
   private ResourceCollection* resources;
   private ResourceTracker* resourceChanged;
 
+  private ResourceId key(T)(T resource) {
+    Variant resourceVariant = resource;
+    auto key = resourceVariant.type.toHash;
+    static if (isClass!T) {
+      key = resourceVariant.type.hashOf(resource.toHash);
+    }
+    return key;
+  }
+
   /// Add a Resource to the collection.
   void add(T)(T resource) {
-    Variant resourceVariant = resource;
-    (*resources)[resourceVariant.type.toHash] = resourceVariant;
+    (*resources)[key(resource)] = resource;
   }
 
   /// Returns `true` if and only if the given Resource type can be found in the collection.
   bool contains(T)() const {
-    import std.algorithm.searching : canFind;
-    return resources.keys.canFind(typeid(T).toHash);
+    import std.algorithm : canFind, map;
+    return resources.values.map!(resource => resource.type).canFind(typeid(T));
   }
 
-  /// Returns a Resource from the collection given its type.
+  /// Returns the first Resource from the collection that is of the given type.
   const(T) get(T)() const {
+    import std.algorithm : filter;
+    import std.array : array;
+
     assert(contains!T(), "Could not find Resource!");
-    auto variant = (*resources)[typeid(T).toHash];
+    auto variants = resources.values.filter!(resource => resource.type == typeid(T)).array;
+    assert(variants.length, "Could not find Resource!");
+    auto variant = variants[0];
     assert(variant.peek!T !is null);
     return variant.get!T;
+  }
+  /// Returns the Resources from the collection of the given type.
+  const(T)[] getAll(T)() const {
+    import std.algorithm : all, filter, map;
+    import std.array : array;
+
+    assert(contains!T(), "Could not find Resource!");
+    auto variants = resources.values.filter!(resource => resource.type == typeid(T)).array;
+    assert(variants.length, "Could not find Resource!");
+    auto variant = variants[0];
+    assert(variants.all!(variant => variant.peek!T !is null));
+    return variants.map!(variant => variant.get!T).array;
   }
 
   /// Replace a Resource.
   void replace(T)(T resource) {
     assert(contains!T(), "A Resource must first be added before replacement.");
-    const Variant resourceVariant = resource;
-    auto key = resourceVariant.type.toHash;
+    const key = key(resource);
     (*resources)[key] = resource;
     (*resourceChanged)[key] = true;
   }
@@ -102,8 +128,7 @@ struct Resources {
   /// Remove a Resource.
   void remove(T)(T resource) {
     assert(contains!T(), "A Resource must first be added before removal.");
-    const Variant resourceVariant = resource;
-    auto key = resourceVariant.type.toHash;
+    const key = key(resource);
     (*resources).remove(key);
     (*resourceChanged)[key] = true;
   }
