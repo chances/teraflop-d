@@ -41,12 +41,93 @@ $('#symbolSearchPane').show();</script>
 					</div>
 			<ul class="tree-view">
 				<li class="tree-view collapsed">
-					<div class="package ">platform
+					<div class="package ">
+						<a href="./teraflop/async.html">async</a>
 					</div>
 			<ul class="tree-view">
 				<li>
 					<div class="module ">
+						<a href="./teraflop/async/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./teraflop/async/worker.html">worker</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="./teraflop/components.html">components</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./teraflop/components/transform.html">transform</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="./teraflop/graphics.html">graphics</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./teraflop/graphics/primitives.html">primitives</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="./teraflop/input.html">input</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./teraflop/input/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./teraflop/input/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./teraflop/input/map.html">map</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="./teraflop/platform.html">platform</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./teraflop/platform/vulkan.html">vulkan</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
 						<a href="./teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="./teraflop/systems.html">systems</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="./teraflop/systems/rendering.html">rendering</a>
 					</div>
 				</li>
 			</ul>
@@ -58,7 +139,12 @@ $('#symbolSearchPane').show();</script>
 				</li>
 				<li>
 					<div class="module ">
-						<a href="./teraflop/event.html">event</a>
+						<a href="./teraflop/game.html">game</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="./teraflop/math.html">math</a>
 					</div>
 				</li>
 				<li>
@@ -144,13 +230,20 @@ $('#symbolSearchPane').show();</script>
     <img src="https://codecov.io/gh/chances/teraflop-d/branch/master/graph/badge.svg" alt="codecov">
   </a>
 </p>
-<p>An ECS game engine on a <a href="https://github.com/gfx-rs/wgpu-native">wgpu</a> foundation.</p>
+<p>An ECS game engine on a <a href="https://github.com/rtbo/gfx-d#readme">Vulkan</a> foundation.</p>
 <h2 id="Usage">Usage</h2>
 <pre class="json">
 "dependencies": {
-  "teraflop": "0.1.0-pre-alpha-1"
+  "teraflop": "0.1.0"
 }
 </pre>
+<h2>Examples</h2>
+<p>
+  <ul>
+    <li><a href="https://github.com/chances/teraflop-d/blob/master/examples/triangle/source/app.d">`dub run teraflop:triangle`</a></li>
+    <li><a href="https://github.com/chances/teraflop-d/blob/master/examples/cube/source/app.d">`dub run teraflop:cube`</a></li>
+  </ul>
+</p>
 <h2>Modules</h2>
 			<table>
 				<col class="caption"/>
@@ -159,10 +252,108 @@ $('#symbolSearchPane').show();</script>
 				</tr>
 			<tr>
 				<td>
-					<a href="./teraflop/platform/window.html">teraflop.platform.window</a>
+					<a href="./teraflop/async/event.html">teraflop.async.event</a>
+				</td>
+				<td>
+					Abstraction over a D <code class="lang-d"><span class="kwd">delegate</span></code>, modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/async/worker.html">teraflop.async.worker</a>
+				</td>
+				<td>
+					An asynchronous primitive that performs work in the background.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/components/transform.html">teraflop.components.transform</a>
+				</td>
+				<td>
+					Built-in graphics transformation Components.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/graphics/primitives.html">teraflop.graphics.primitives</a>
+				</td>
+				<td>
+					Generative mesh primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/input/event.html">teraflop.input.event</a>
 				</td>
 				<td>
 					
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/input/keyboard.html">teraflop.input.keyboard</a>
+				</td>
+				<td>
+					Keyboard input primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/input/map.html">teraflop.input.map</a>
+				</td>
+				<td>
+					Map user inputs to named actions.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/platform/vulkan.html">teraflop.platform.vulkan</a>
+				</td>
+				<td>
+					Utilities for <a href="https://github.com/rtbo/gfx-d#readme">gfx</a> graphics library integration.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/platform/window.html">teraflop.platform.window</a>
+				</td>
+				<td>
+					Native window primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/systems/rendering.html">teraflop.systems.rendering</a>
+				</td>
+				<td>
+					
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/async.html">teraflop.async</a>
+				</td>
+				<td>
+					Asynchronous primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/components.html">teraflop.components</a>
+				</td>
+				<td>
+					Built-in Components and Component primitives.
+
 				</td>
 			</tr>
 			<tr>
@@ -176,10 +367,56 @@ $('#symbolSearchPane').show();</script>
 			</tr>
 			<tr>
 				<td>
-					<a href="./teraflop/event.html">teraflop.event</a>
+					<a href="./teraflop/game.html">teraflop.game</a>
 				</td>
 				<td>
-					
+					Application primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/graphics.html">teraflop.graphics</a>
+				</td>
+				<td>
+					Graphics pipeline primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/input.html">teraflop.input</a>
+				</td>
+				<td>
+					User input primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/math.html">teraflop.math</a>
+				</td>
+				<td>
+					Mathematics primitives.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/platform.html">teraflop.platform</a>
+				</td>
+				<td>
+					Native platform integrations.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./teraflop/systems.html">teraflop.systems</a>
+				</td>
+				<td>
+					Teraflop's built-in ECS Systems.
+
 				</td>
 			</tr>
 			<tr>
@@ -187,7 +424,8 @@ $('#symbolSearchPane').show();</script>
 					<a href="./teraflop/time.html">teraflop.time</a>
 				</td>
 				<td>
-					
+					Time primitives.
+
 				</td>
 			</tr>
 			<tr>

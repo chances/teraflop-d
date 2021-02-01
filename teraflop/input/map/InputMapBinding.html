@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Class InputMapBinding - Teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+<nav id="main-nav">
+  <h1>Teraflop Engine</h1>
+  <ul style="list-style: none; padding: 0;">
+    <li>
+      <a href="https://chances.github.io/teraflop-d#Usage">Documentation</a>
+    </li>
+    <li>
+      <a href="https://chances.github.io/teraflop-d">API Reference</a>
+    </li>
+    <li>
+      <a href="https://code.dlang.org/packages/teraflop">Download</a>
+    </li>
+    <li>
+      <a href="https://github.com/chances/teraflop-d#readme">Open Source on GitHub</a>
+    </li>
+  </ul>
+  <h2>API Reference</h2>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../teraflop/async.html">async</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/async/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/async/worker.html">worker</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../teraflop/components.html">components</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/components/transform.html">transform</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../teraflop/graphics.html">graphics</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/graphics/primitives.html">primitives</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../../teraflop/input.html">input</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/input/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/input/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../../teraflop/input/map.html">map</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../teraflop/platform.html">platform</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/platform/vulkan.html">vulkan</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../../teraflop/systems.html">systems</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/systems/rendering.html">rendering</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/game.html">game</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Class InputMapBinding</h1><p>An <code class="lang-d"><span class="typ">InputEventAction</span></code> builder.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">class</span> <span class="typ">InputMapBinding</span>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.deadZone.html" class="public"><code>deadZone</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span></code></td><td>A minimum threshold to avoid small input noise and reduce sensitivity.
+Useful with analog inputs, i.e. mouse motion, mouse wheel movement, and joypad sticks.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.strengthCurve.html" class="public"><code>strengthCurve</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">float</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">float</span><span class="pun">, </span><span class="typ">float</span><span class="pun">)</span></code></td><td>A curve formula to influence the strength of held inputs. Defaults to constant strength.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.appliesTo.html" class="public">
+								<code>appliesTo</code>
+							</a>
+							<span class="tableEntryAnnotation">(event)</span>
+						</td>
+						<td>Whether this action binding applies to the given <code class="lang-d"><span class="typ">InputEvent</span></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.keyboardDown.html" class="public">
+								<code>keyboardDown</code>
+							</a>
+							<span class="tableEntryAnnotation">(key, modifiers)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.keyboardHeld.html" class="public">
+								<code>keyboardHeld</code>
+							</a>
+							<span class="tableEntryAnnotation">(key, modifiers)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.keyboardPressed.html" class="public">
+								<code>keyboardPressed</code>
+							</a>
+							<span class="tableEntryAnnotation">(key, modifiers)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.keyboardReleased.html" class="public">
+								<code>keyboardReleased</code>
+							</a>
+							<span class="tableEntryAnnotation">(key, modifiers)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.mouseHeld.html" class="public">
+								<code>mouseHeld</code>
+							</a>
+							<span class="tableEntryAnnotation">(button)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.mouseMotion.html" class="public">
+								<code>mouseMotion</code>
+							</a>
+							<span class="tableEntryAnnotation">(axes)</span>
+						</td>
+						<td>Bind changes to the mouse motion state, optionally filtered by the given bitwise combination of <code class="lang-d"><a href="../../../teraflop/input/map/Axis.html"><span class="typ">Axis</span></a></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.mousePressed.html" class="public">
+								<code>mousePressed</code>
+							</a>
+							<span class="tableEntryAnnotation">(button)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.mouseReleased.html" class="public">
+								<code>mouseReleased</code>
+							</a>
+							<span class="tableEntryAnnotation">(button)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.mouseWheel.html" class="public">
+								<code>mouseWheel</code>
+							</a>
+							<span class="tableEntryAnnotation">(axes)</span>
+						</td>
+						<td>Bind changes to the mouse wheel state, optionally filtered by the given bitwise combination of <code class="lang-d"><a href="../../../teraflop/input/map/Axis.html"><span class="typ">Axis</span></a></code>
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.withDeadZone.html" class="public">
+								<code>withDeadZone</code>
+							</a>
+							<span class="tableEntryAnnotation">(deadZone)</span>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/input/map/InputMapBinding.withStrengthCurve.html" class="public">
+								<code>withStrengthCurve</code>
+							</a>
+							<span class="tableEntryAnnotation">(curve)</span>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>See Also</h2>
+<p><a href="https://refactoring.guru/design-patterns/builder">Builder Design Pattern</a> on <a href="https://refactoring.guru">refactoring.guru</a>
+</p>
+</section>
+
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+<div style="display: flex; justify-content: space-between; margin-top: 2em;">
+  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>
+  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span>
+</div>
+			</footer>
+		</div>
+	</body>
+</html>

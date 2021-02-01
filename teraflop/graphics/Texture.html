@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Class Texture - Teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+<nav id="main-nav">
+  <h1>Teraflop Engine</h1>
+  <ul style="list-style: none; padding: 0;">
+    <li>
+      <a href="https://chances.github.io/teraflop-d#Usage">Documentation</a>
+    </li>
+    <li>
+      <a href="https://chances.github.io/teraflop-d">API Reference</a>
+    </li>
+    <li>
+      <a href="https://code.dlang.org/packages/teraflop">Download</a>
+    </li>
+    <li>
+      <a href="https://github.com/chances/teraflop-d#readme">Open Source on GitHub</a>
+    </li>
+  </ul>
+  <h2>API Reference</h2>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/async.html">async</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/async/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/async/worker.html">worker</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/components.html">components</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/components/transform.html">transform</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package selected">
+						<a href="../../teraflop/graphics.html">graphics</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/graphics/primitives.html">primitives</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/input.html">input</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/input/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/input/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/input/map.html">map</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/platform.html">platform</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/vulkan.html">vulkan</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/systems.html">systems</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/systems/rendering.html">rendering</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/game.html">game</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Class Texture</h1><p>A 2D image stored in GPU memory.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="kwd">class</span> <span class="typ">Texture</span>
+			<br>&nbsp;&nbsp;: <a href="../../teraflop/graphics/BindingDescriptor.html"><span class="typ">BindingDescriptor</span></a>
+			<br>&nbsp;&nbsp;, <a href="../../teraflop/components/IResource.html"><span class="typ">IResource</span></a>
+			<span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(size, bindingLocation, shaderStage)</span>
+						</td>
+						<td>Initialize a new Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(name, size, bindingLocation, shaderStage)</span>
+						</td>
+						<td>Initialize a new named Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(size, data, bindingLocation, shaderStage)</span>
+						</td>
+						<td>Initialize a new Texture with initial data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(name, size, data, bindingLocation, shaderStage)</span>
+						</td>
+						<td>Initialize a new named Texture with initial data.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Fields</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.size.html" class="public"><code>size</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Size of this Texture, in pixels.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Properties</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.data.html" class="public property"><code>data</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">ubyte</span><span class="pun">[]</span><span class="pun">)</span></code></td><td>Texture data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.initialized.html" class="public property"><code>initialized</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this Shader has been successfully initialized.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/BindingDescriptor.bindingLocation.html" class="public inherited property"><code>bindingLocation</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">uint</span></code></td><td>Descriptor binding location, e.g. <code class="lang-d"><span class="pln">layout</span><span class="pun">(</span><span class="pln">binding </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)</span></code> in GLSL.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/BindingDescriptor.dirty.html" class="public inherited property"><code>dirty</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this uniform's data is new or changed and needs to be uploaded to the GPU.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/BindingDescriptor.shaderStage.html" class="public inherited property"><code>shaderStage</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span></code></td><td>Which shader stages this descriptor is going to be referenced.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.initialize.html" class="public">
+								<code>initialize</code>
+							</a>
+							<span class="tableEntryAnnotation">(device)</span>
+						</td>
+						<td>Initialize this Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.update.html" class="public">
+								<code>update</code>
+							</a>
+							<span class="tableEntryAnnotation">(data)</span>
+						</td>
+						<td>Update this texture's data.
+</td>
+					</tr>
+				</table>
+			</section>
+			
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+<div style="display: flex; justify-content: space-between; margin-top: 2em;">
+  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>
+  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span>
+</div>
+			</footer>
+		</div>
+	</body>
+</html>

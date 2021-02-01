@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module teraflop.input.map - Teraflop</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+<nav id="main-nav">
+  <h1>Teraflop Engine</h1>
+  <ul style="list-style: none; padding: 0;">
+    <li>
+      <a href="https://chances.github.io/teraflop-d#Usage">Documentation</a>
+    </li>
+    <li>
+      <a href="https://chances.github.io/teraflop-d">API Reference</a>
+    </li>
+    <li>
+      <a href="https://code.dlang.org/packages/teraflop">Download</a>
+    </li>
+    <li>
+      <a href="https://github.com/chances/teraflop-d#readme">Open Source on GitHub</a>
+    </li>
+  </ul>
+  <h2>API Reference</h2>
+			<noscript>
+				<p style="color: red">The search functionality needs JavaScript enabled</p>
+			</noscript>
+			<div id="symbolSearchPane" style="display: none">
+				<form action="#" method="GET">
+					<input id="symbolSearch" type="text" name="q" placeholder="Search for symbols" autocomplete="off" onchange="performSymbolSearch(40);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+				</form>
+				<ul id="symbolSearchResults" class="symbolList" style="display: none"></ul><script type="application/javascript" src="../../symbols.js"></script><script type="application/javascript">var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();</script>
+			</div>
+			<ul class="tree-view">
+				<li class="tree-view ">
+					<div class="package ">teraflop
+					</div>
+			<ul class="tree-view">
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/async.html">async</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/async/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/async/worker.html">worker</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/components.html">components</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/components/transform.html">transform</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/graphics.html">graphics</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/graphics/primitives.html">primitives</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view ">
+					<div class="package ">
+						<a href="../../teraflop/input.html">input</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/input/event.html">event</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/input/keyboard.html">keyboard</a>
+					</div>
+				</li>
+				<li>
+					<div class="module selected">
+						<a href="../../teraflop/input/map.html">map</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/platform.html">platform</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/vulkan.html">vulkan</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/platform/window.html">window</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li class="tree-view collapsed">
+					<div class="package ">
+						<a href="../../teraflop/systems.html">systems</a>
+					</div>
+			<ul class="tree-view">
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/systems/rendering.html">rendering</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/ecs.html">ecs</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/game.html">game</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/math.html">math</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/time.html">time</a>
+					</div>
+				</li>
+				<li>
+					<div class="module ">
+						<a href="../../teraflop/traits.html">traits</a>
+					</div>
+				</li>
+			</ul>
+				</li>
+			</ul>
+		</nav>
+		<div id="main-contents">
+			<h1>Module teraflop.input.map</h1><p>Map user inputs to named actions.
+</p><section><p>Inspired by Godot's <a href="https://docs.godotengine.org/en/3.2/classes/class_inputmap.html"><code class="lang-d"><a href="../../teraflop/input/map/InputMap.html"><span class="typ">InputMap</span></a></code></a> and <a href="https://github.com/PradeepKumarRajamanickam/bevy_input_map/blob/39443a1a1bc1e59959f31d92543a065575c03a7e/example/binding_in_code.rs#L21">bevy_input_map</a>.
+</p>
+</section>
+
+			<section></section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="InputMap" class="public" href="../../teraflop/input/map/InputMap.html">InputMap</a>
+							</code>
+						</td>
+						<td>Map user inputs to named actions.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="InputMapBinding" class="public" href="../../teraflop/input/map/InputMapBinding.html">InputMapBinding</a>
+							</code>
+						</td>
+						<td>An <code class="lang-d"><span class="typ">InputEventAction</span></code> builder.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="Axis" class="public" href="../../teraflop/input/map/Axis.html">Axis</a>
+							</code>
+						</td>
+						<td>Axis of motion for analog inputs, i.e. mouse motion, mouse wheel movement, and joypad sticks.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Global variables</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="accumulation" class="public" href="../../teraflop/input/map/accumulation.html">
+								<code>accumulation</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">float</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">float</span><span class="pun">, </span><span class="typ">float</span><span class="pun">)</span></code>
+						</td>
+						<td>Increases the strength by continuious accumulation, i.e. linearly.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="double_" class="public" href="../../teraflop/input/map/double_.html">
+								<code>double_</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">float</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">float</span><span class="pun">, </span><span class="typ">float</span><span class="pun">)</span></code>
+						</td>
+						<td>Doubles the current strength value.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="StrengthCurve" class="public" href="../../teraflop/input/map/StrengthCurve.html">
+								<code>StrengthCurve</code>
+							</a>
+						</td>
+						<td>
+							<code class="prettyprint lang-d"><span class="typ">float</span> <span class="kwd">delegate</span><span class="pun">(</span><span class="typ">float</span><span class="pun">, </span><span class="typ">float</span><span class="pun">)</span></code>
+						</td>
+						<td>A formula to influence the strength of a held input given the current strength, <code class="lang-d"><span class="pln">x</span></code>, and the
+last strength value.
+</td>
+					</tr>
+				</table>
+			</section>
+			<footer>
+				<table class="license-info">
+					<tr>
+						<th>Authors</th>
+						<td>
+							<p>Chance Snow
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>Copyright</th>
+						<td>
+							<p>Copyright © 2020 Chance Snow. All rights reserved.
+</p>
+
+						</td>
+					</tr>
+					<tr>
+						<th>License</th>
+						<td>
+							<p><a href="https://opensource.org/licenses/BSD-3-Clause">3-Clause BSD License</a>
+</p>
+
+						</td>
+					</tr>
+				</table>
+<div style="display: flex; justify-content: space-between; margin-top: 2em;">
+  <a href="https://github.com/chances/teraflop-d#readme">GitHub</a>
+  <span class="faint" style="float: right;">Generated using <a href="https://code.dlang.org/packages/ddox">DDOX</a></span>
+</div>
+			</footer>
+		</div>
+	</body>
+</html>
