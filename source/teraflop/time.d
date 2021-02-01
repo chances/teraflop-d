@@ -130,13 +130,14 @@ final class Timer {
 
   /// Start this timer.
   void start() {
+    import std.concurrency : send, spawn;
+
     startedAt = MonoTime.currTime;
     // Spawn a timer worker thread
-    import std.concurrency : send, spawn;
     worker = spawn(&timerWorker, interval);
     shared TickCallback cb = (Duration delta) {
       justTicked_ = delta >= interval;
-      if (justTicked_ && onTick) onTick(this);
+      if (justTicked_) onTick(this);
     };
     send(worker, TickCallbackMessage(cb));
   }

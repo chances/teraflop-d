@@ -5,7 +5,12 @@
 /// License: 3-Clause BSD License
 module teraflop.async.event;
 
+import std.traits : TemplateOf;
+
 // Adapted from https://forum.dlang.org/post/dcdtuqyrxpteuaxmvwft@forum.dlang.org
+
+/// Detect whether `T` is an instance of the `Event` struct.
+enum isEvent(T) = __traits(isSame, TemplateOf!T, Event);
 
 /// Abstraction over a D $(D delegate), modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
 struct Event(Args) {
@@ -32,7 +37,7 @@ struct Event(Args) {
   }
 
   /// Whether or not this event has any assigned handlers.
-  bool opCast(T)() const if (is(T == bool)) {
+  bool hasHandlers() const @property {
     synchronized return callbacks.length != 0;
   }
 }
@@ -56,12 +61,12 @@ unittest {
   Event!int onChanged;
   const s = S(expectedSDotA);
 
-  assert(!onChanged);
+  assert(!onChanged.hasHandlers);
 
   onChanged += (int arg) { assert(arg == expectedArg, "Mismatched argument for lambda callback!"); };
   onChanged ~= &func;
   onChanged += &(cast(S) s).handler;
-  assert(onChanged);
+  assert(onChanged.hasHandlers);
   onChanged(expectedArg += 1);
 
   onChanged -= &(cast(S) s).handler;

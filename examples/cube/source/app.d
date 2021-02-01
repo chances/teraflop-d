@@ -3,6 +3,7 @@ import std.stdio;
 import teraflop.components;
 import teraflop.game : Game;
 import teraflop.graphics;
+import teraflop.input;
 import teraflop.math;
 
 void main()
@@ -13,13 +14,22 @@ void main()
 }
 
 private final class Cube : Game {
+  import std.typecons : Flag, Yes;
+  import teraflop.async : Event;
   import teraflop.ecs : System, World;
   import teraflop.platform : Window;
   import teraflop.systems : FileWatcher;
   import teraflop.time : Time;
 
+  alias ExitEvent = Event!(Flag!"force");
+  ExitEvent onExit;
+
   this() {
     super("Cube");
+
+    onExit ~= (Flag!"force" force) => {
+      if (active && force) exit();
+    }();
   }
 
   override void initializeWorld(scope World world) {
@@ -28,6 +38,13 @@ private final class Cube : Game {
     import std.array : array;
     import teraflop.graphics.primitives : cube;
 
+    // Exit the app with the escape key
+    world.resources.add(onExit);
+    auto input = world.resources.get!Input;
+    input.map.bind("exit").keyboardPressed(KeyboardKey.escape);
+    this.add(System.from!exitOnEscape);
+
+    // Set the scene with a camera that orbits some colored boxes
     const framebufferSize = world.resources.get!Window.framebufferSize;
     auto camera = new Camera();
     camera.view = mat4f.lookAt(vec3f(8f), vec3f(0), up);
@@ -59,6 +76,10 @@ private final class Cube : Game {
       new Mesh!VertexPosNormalColor(Primitive.triangleList, mesh(colors[3]), cubeData.indices.to!(uint[])),
       mat4f.scaling(vec3f(1.2f, 0.45f, 1.2f)).transform
     );
+  }
+
+  static void exitOnEscape(scope const InputEventAction event, scope ExitEvent exit) {
+    if (event.action == "exit") exit(Yes.force);
   }
 
   static void aspectRatio(scope const Window window, scope Camera camera) {
