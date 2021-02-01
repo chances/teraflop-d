@@ -3,6 +3,8 @@ name: Documentation
 on:
   push:
     branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
@@ -18,10 +20,12 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
       - name: Build Documentation
-        run: make docs
+        run: |
+          make glfw
+          make docs
 
       - name: GitHub Pages
-        if: success()
+        if: success() && github.ref == 'refs/heads/master'
         uses: crazy-max/ghaction-github-pages@v2.1.2
         with:
           target_branch: gh-pages
