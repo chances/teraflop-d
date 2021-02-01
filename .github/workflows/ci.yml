@@ -38,10 +38,13 @@ jobs:
       if: runner.os == 'Linux' && steps.cache-glfw.outputs.cache-hit != 'true'
       run: make glfw
     - name: Lint
+      id: lint
       run: dub lint
     - name: Test
-      if: always() # Run tests even if lint CI step fails
+      id: tests
+      if: always() # Run tests even if lint step fails
       run: dub test --parallel --coverage
     - name: Upload Coverage to Codecov
-      if: success()
+      # Upload test coverage even if lint step fails
+      if: success() || (steps.lint.outcome == 'failure' && steps.tests.outcome == 'success')
       run: bash <(curl -s https://codecov.io/bash)
