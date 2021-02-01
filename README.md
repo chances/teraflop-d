@@ -18,7 +18,10 @@ Ported from its original [C# implementation](https://github.com/chances/teraflop
 
 [API Reference](https://chances.github.io/teraflop-d)
 
-TODO: Add a "Hello, World!" example
+## Examples
+
+- [`dub run teraflop:triangle`](https://github.com/chances/teraflop-d/blob/master/examples/triangle/source/app.d)
+- [`dub run teraflop:cube`](https://github.com/chances/teraflop-d/blob/master/examples/cube/source/app.d)
 
 ## License
 

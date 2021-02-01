@@ -10,7 +10,8 @@
   "targetPath": "bin",
   "sourcePaths": [ "source" ],
   "subPackages": [
-    "examples/triangle"
+    "examples/triangle",
+    "examples/cube"
   ],
   "configurations": [
     {
