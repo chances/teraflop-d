@@ -7,6 +7,7 @@ module teraflop.game;
 
 import gfx.graal;
 import std.conv : to;
+import teraflop.input : InputNode;
 import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
@@ -16,8 +17,10 @@ abstract class Game {
   import gfx.core.rc : Rc;
   import libasync.events : EventLoop, getThreadEventLoop;
   import std.exception : enforce;
+  import std.typecons : Rebindable;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
+  import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
 
@@ -29,6 +32,9 @@ abstract class Game {
 
   private Device device;
   private Window[] windows_;
+  private Input[const Window] input;
+  // https://dlang.org/library/std/typecons/rebindable.html#2
+  private Rebindable!(const InputEvent)[InputDevice] newInput;
   private Swapchain[const Window] swapChains;
   private bool[const Window] swapchainNeedsRebuild;
   private Queue[const Window] graphicsQueue;
@@ -120,7 +126,7 @@ abstract class Game {
       }
 
       auto elapsed = stopwatch.peek();
-      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
+      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead? (https://www.glfw.org/docs/latest/input_guide.html#time)
       auto deltaSeconds = time.deltaSeconds;
 
       const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
@@ -189,6 +195,17 @@ abstract class Game {
     // Setup main window
     auto mainWindow = new Window(name);
     enforce(mainWindow.valid, "Could not open main game window!");
+    input[mainWindow] = new Input();
+    input[mainWindow].addNode(mainWindow);
+    mainWindow.onUnhandledInput ~= (const InputEvent event) => {
+      newInput[event.device] = event;
+      if (event.isKeyboardEvent)
+        world.resources.add(event.asKeyboardEvent);
+      if (event.isMouseEvent)
+        world.resources.add(event.asMouseEvent);
+      if (event.isActionEvent)
+        world.resources.add(event.asActionEvent);
+    }();
     windows_ ~= mainWindow;
 
     try {
@@ -244,6 +261,7 @@ abstract class Game {
     systems ~= new TextureUploader(world, new OneTimeCmdBufPool(device, graphicsQueue[mainWindow]));
 
     world.resources.add(mainWindow);
+    world.resources.add(input[mainWindow]);
     initializeWorld(world);
   }
 
@@ -252,12 +270,17 @@ abstract class Game {
     import core.time : Duration;
     import gfx.graal.presentation : ImageAcquisition;
     import std.string : format;
+    import teraflop.input : InputEventAction, InputEventKeyboard, InputEventMouse;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
       window.update();
       // Wait for minimized windows to restore
       if (window.minimized) continue;
+      // Process window input
+      input[window].update(window);
+
+      // Recreate swapchain, if necessary
       updateSwapChain(window, swapchainNeedsRebuild[window]);
       pipelinePreparer.run();
       recordCommands();
@@ -275,6 +298,23 @@ abstract class Game {
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
     foreach (system; systems)
       system.run();
+
+    // Prune old input from the World
+    foreach (input; newInput.values) {
+      if (input.isKeyboardEvent) {
+        if (world.resources.contains!InputEventKeyboard)
+          world.resources.remove(input.asKeyboardEvent);
+      }
+      if (input.isMouseEvent) {
+        if (world.resources.contains!InputEventMouse)
+          world.resources.remove(input.asMouseEvent);
+      }
+      if (input.isActionEvent) {
+        if (world.resources.contains!InputEventAction)
+          world.resources.remove(input.asActionEvent);
+      }
+      newInput.remove(input.device);
+    }
   }
 
   private void updateSwapChain(const Window window, bool needsRebuild = false) {

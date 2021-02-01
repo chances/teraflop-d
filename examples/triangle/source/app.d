@@ -1,6 +1,7 @@
 import std.stdio;
 
 import teraflop.game : Game;
+import teraflop.input;
 import teraflop.math;
 
 void main()
@@ -11,23 +12,42 @@ void main()
 }
 
 private final class Triangle : Game {
-  import teraflop.ecs : World;
+  import std.typecons : Flag, No, Yes;
+  import teraflop.async : Event;
+  import teraflop.ecs : System, World;
   import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, VertexPosColor;
+
+  alias ExitEvent = Event!(Flag!"force");
+  ExitEvent onExit;
 
   this() {
     super("Triangle");
+
+    onExit ~= (Flag!"force" force) => {
+      if (active && force) exit();
+    }();
   }
 
   override void initializeWorld(scope World world) {
+    // Exit the app with the escape key
+    world.resources.add(onExit);
+    auto input = world.resources.get!Input;
+    input.map.bind("exit").keyboardPressed(KeyboardKey.escape);
+    this.add(System.from!exitOnEscape);
+
     auto shaders = [
       new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv"),
       new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv")
     ];
 
-    world.spawn(new Material(shaders), new Mesh!VertexPosColor([
+    world.spawn(new Material(shaders, No.depthTest), new Mesh!VertexPosColor([
       VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
       VertexPosColor(vec3f(0.5f, 0.5f, 0), Color.green.vec3f),
       VertexPosColor(vec3f(-0.5f, 0.5f, 0), Color.blue.vec3f),
     ], [0, 1, 2]));
+  }
+
+  static void exitOnEscape(scope const InputEventAction event, scope ExitEvent exit) {
+    if (event.action == "exit") exit(Yes.force);
   }
 }
