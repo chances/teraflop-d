@@ -21,10 +21,10 @@ lib/glfw-3.3.2/src/libglfw3.a: lib/glfw-3.3.2/CMakeLists.txt
 glfw: lib/glfw-3.3.2/src/libglfw3.a
 .PHONY: glfw
 
-SOURCES := glfw $(SOURCES)
+EXAMPLE_DEPS := glfw $(SOURCES)
 
 TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
-bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
+bin/triangle: $(EXAMPLE_DEPS) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 
 triangle: bin/triangle
@@ -32,7 +32,7 @@ triangle: bin/triangle
 .PHONY: triangle
 
 CUBE_SOURCES := $(shell find examples/cube/source -name '*.d')
-bin/cube: $(SOURCES) $(CUBE_SOURCES)
+bin/cube: $(EXAMPLE_DEPS) $(CUBE_SOURCES)
 	cd examples/cube && dub build
 
 cube: bin/cube
