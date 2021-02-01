@@ -199,7 +199,12 @@ abstract class Game {
     input[mainWindow].addNode(mainWindow);
     mainWindow.onUnhandledInput ~= (const InputEvent event) => {
       newInput[event.device] = event;
-      world.resources.add(event);
+      if (event.isKeyboardEvent)
+        world.resources.add(event.asKeyboardEvent);
+      if (event.isMouseEvent)
+        world.resources.add(event.asMouseEvent);
+      if (event.isActionEvent)
+        world.resources.add(event.asActionEvent);
     }();
     windows_ ~= mainWindow;
 
