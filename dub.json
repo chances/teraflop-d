@@ -12,13 +12,28 @@
   "subPackages": [
     "examples/triangle"
   ],
-  "systemDependencies": "glfw >= 3.2, wgpu-native == 0.6.0",
+  "configurations": [
+    {
+      "name": "unittest"
+    },
+    {
+      "name": "unittest-gpu",
+      "versions": ["GPU"]
+    }
+  ],
+  "systemDependencies": "glfw >= 3.2, vulkan >= 1.1.0",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
+    "concepts": "~>0.0.8",
+    "gfm:math": "~>8.0",
+    "gfx:genmesh": "~master",
+    "gfx:graal": "~master",
+    "gfx:vulkan": "~master",
     "libasync": "~>0.8.6"
   },
   "subConfigurations": {
-    "bindbc-glfw": "static"
+    "bindbc-glfw": "static",
+    "gfx:vulkan": "glfw"
   },
   "lflags-linux": [
     "-Llib/glfw-3.3.2/src"

@@ -15,7 +15,7 @@ import std.meta : templateOr;
 import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
-import teraflop.traits : inheritsFrom, isStruct;
+import teraflop.traits : inheritsFrom, isClass, isInterface, isStruct;
 
 /// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
@@ -54,7 +54,7 @@ final class World {
   }
 }
 
-/// Detect whether `T` is the `Resources` class.
+/// Detect whether `T` is the `Resources` struct.
 enum bool isResources(T) = __traits(isSame, T, Resources);
 
 import std.traits : isBoolean, isNumeric, isSomeString;
@@ -82,7 +82,7 @@ struct Resources {
   }
 
   /// Returns a Resource from the collection given its type.
-  immutable(T) get(T)() const {
+  const(T) get(T)() const {
     assert(contains!T(), "Could not find Resource!");
     auto variant = (*resources)[typeid(T).toHash];
     assert(variant.peek!T !is null);
@@ -145,7 +145,7 @@ final class Entity {
   }
   /// Add a new Component given its type and, optionally, a default value and its name
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
   void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
     add(data.component(name));
   }
@@ -196,6 +196,16 @@ final class Entity {
     }
   }
 
+  /// Get a mutable reference to Component data given its interface type.
+  T[] getMut(T)() const if (isInterface!T) {
+    import std.algorithm.iteration : filter, map;
+    import std.array : array;
+
+    return cast(T[]) components
+      .filter!(c => typeid(T).isBaseOf(c.classinfo))
+      .map!(c => cast(T) c).array;
+  }
+
   /// Get a mutable reference to Component data given its type and optionally its name.
   T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
     import std.algorithm.iteration : filter, map;
@@ -228,14 +238,14 @@ final class Entity {
     static if (isStruct!T) {
       return cast(T[]) namedComponents.map!(c => c.to!(const Structure!T).data).array;
     } else {
-      return cast(T[]) namedComponents.filter!(c => c.type == typeid(T).name)
+      return cast(T[]) namedComponents.filter!(c => typeid(T).isBaseOf(c.classinfo))
         .map!(c => c.to!(const T)).array;
     }
   }
 
   /// Replace a Component given new value.
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
   void replace(Component component) {
     assert(contains(component), "A Component must first be added before replacement.");
     components_[key(component)] = component;
@@ -263,6 +273,7 @@ final class Entity {
     assert(entity.contains(name));
     assert(entity.contains!Number());
     assert(entity.contains!Number(name));
+    assert(entity.contains!NamedComponent);
     assert(entity.contains(entity.components[0]));
 
     import std.conv : to;
@@ -277,7 +288,7 @@ enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
 
 private enum bool isRawComponent(T) = __traits(isSame, T, Component);
 
-/// Detect whether `T` is a `Component` or inherits from `Component`.
+/// Detect whether `T` is the `Component` class or inherits from `Component`.
 template isComponent(T) {
   alias isRawOrInherited = templateOr!(isRawComponent, inheritsComponent);
   enum bool isComponent = isRawOrInherited!T;
@@ -286,12 +297,13 @@ template isComponent(T) {
 /// Detect whether `T` may be stored as Component data.
 template storableAsComponent(T) {
   alias isStructOrComponent = templateOr!(isStruct, isComponent);
-  enum bool storableAsComponent = isStructOrComponent!T;
+  alias isStructOrComponentAndNotInterface = templateAnd!(templateNot!isInterface, isStructOrComponent);
+  enum bool storableAsComponent = isStructOrComponentAndNotInterface!T;
 }
 
 /// A container for specialized `Entity` data.
 ///
-/// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+/// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
 abstract class Component {
   private string type_;
 
@@ -313,7 +325,15 @@ abstract class Component {
 }
 
 /// Detect whether `T` inherits from `NamedComponent`.
-enum bool isNamedComponent(T) = inheritsFrom!(T, NamedComponent);
+enum bool inheritsNamedComponent(T) = inheritsFrom!(T, NamedComponent);
+
+private enum bool isRawNamedComponent(T) = __traits(isSame, T, NamedComponent);
+
+/// Detect whether `T` is the `NamedComponent` class or inherits from `NamedComponent`.
+template isNamedComponent(T) {
+  alias isRawOrInherited = templateOr!(isRawNamedComponent, inheritsComponent);
+  enum bool isNamedComponent = isRawOrInherited!T;
+}
 
 /// A named container for specialized `Entity` data.
 abstract class NamedComponent : Component {
@@ -506,8 +526,13 @@ abstract class System {
     return name_;
   }
 
+  /// Retreive the World's `Resources`.
+  Resources resources() @property const {
+    return world.resources;
+  }
+
   /// Operate this System on Resources and Components in the `World`.
-  abstract void run() const;
+  abstract void run();
 
   /// Query the `World` for Entities containing Components of the given types.
   const(Entity[]) query(ComponentT...)() const {
@@ -518,11 +543,11 @@ abstract class System {
 unittest {
   class Foo : System {
     this(World world) { super(world); }
-    override void run() const {
+    override void run() {
       assert(world.entities.length == 0);
     }
   }
-  const foo = new Foo(new World());
+  auto foo = new Foo(new World());
 
   import std.traits : fullyQualifiedName;
   assert(foo.name == fullyQualifiedName!Foo);
@@ -547,16 +572,14 @@ private alias isIllegalReference = templateAnd!(
   templateOr!(isResources, templateNot!isResourceData),
   templateOr!(isStruct, templateNot!isComponent)
 );
-private alias mustNotBeMutable = templateOr!(isResources, isWorld, isEntity, isSystem);
 private alias isIllegallyMutable = templateAnd!(
-  templateOr!(isResources, templateNot!isResourceData),
   templateNot!hasConstStorage,
-  mustNotBeMutable
+  templateOr!(isResources, templateNot!storableAsComponent)
 );
 private template illegallyEscapesScope(Param, alias ParamStorage) {
   alias escapesScope = templateAnd!(
     templateOr!(isResources, templateNot!isResourceData),
-    templateOr!(isResources, isComponent, isWorld, isEntity, isSystem)
+    templateOr!(isResources, isClass)
   );
   alias notHasScopeStorage = templateNot!(hasScopeStorage!ParamStorage);
   enum bool illegallyEscapesScope = notHasScopeStorage!ParamStorage && escapesScope!Param;
@@ -565,16 +588,19 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
 @safe unittest {
   alias PSCT = ParameterStorageClassTuple;
 
-  alias Func = void function(Resources);
+  class Foo {}
+
+  alias Func = void function(Resources, Foo);
   static assert(!hasConstStorage!(Parameters!Func[0]));
   static assert(!hasImmutableStorage!(Parameters!Func[0]));
   static assert(!hasRefStorage!(PSCT!Func[0]));
   static assert(!hasScopeStorage!(PSCT!Func[0]));
   static assert( isIllegallyMutable!(Parameters!Func[0]));
   static assert( illegallyEscapesScope!(Parameters!Func[0], PSCT!Func[0]));
+  static assert( isIllegallyMutable!(Parameters!Func[1]));
+  static assert( illegallyEscapesScope!(Parameters!Func[1], PSCT!Func[1]));
 
-  alias Func_RefResources = void function(ref Resources);
-  const Func_RefResources f_ref = (ref Resources) => {}();
+  alias f_ref = void function(ref Resources, const Foo);
   static assert(!hasConstStorage!(Parameters!f_ref[0]));
   static assert(!hasImmutableStorage!(Parameters!f_ref[0]));
   static assert( hasRefStorage!(PSCT!f_ref[0]));
@@ -582,9 +608,10 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
   static assert( isIllegalReference!(Parameters!f_ref[0]));
   static assert( isIllegallyMutable!(Parameters!f_ref[0]));
   static assert( illegallyEscapesScope!(Parameters!f_ref[0], PSCT!f_ref[0]));
+  static assert(!isIllegallyMutable!(Parameters!f_ref[1]));
+  static assert( illegallyEscapesScope!(Parameters!f_ref[1], PSCT!f_ref[1]));
 
-  alias Func_ScopeRef = void function(scope ref Resources);
-  const Func_ScopeRef f_scopeRef = (ref Resources) => {}();
+  alias f_scopeRef = void function(scope ref Resources);
   static assert(!hasConstStorage!(Parameters!f_scopeRef[0]));
   static assert(!hasImmutableStorage!(Parameters!f_scopeRef[0]));
   static assert( hasRefStorage!(PSCT!f_scopeRef[0]));
@@ -609,17 +636,19 @@ import std.traits : isCallable, ReturnType;
 ///       $(LI Any <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Type</a>, e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.)
 ///       $(LI Any <a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">array type</a> derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.)
 ///       $(LI Any <a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">string type</a>, e.g. `string`, `char[]`, `wchar[]`, etc.)
-///       $(LI A `struct` type)
+///       $(LI Any `struct` type)
 ///       $(LI `World`)
 ///       $(LI `Resources`)
+///       $(LI `teraflop.platform.window.Window` or any of its derivations)
 ///       $(LI `Entity`)
 ///       $(LI `Component` or any of its derivations)
-///       $(LI `System`)
+///       $(LI `System`, or)
+///       $(LI Any user-defined `class` type)
 ///     )
 ///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `immutable` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>. <p>Use `const` instead.</p>)
 ///   $(LI <i>Certain</i> parameters <b>MUST</b> use specific Storage Classes:)
 ///     $(UL
-///       $(LI `World`, `Resources`, `Entity`, `Component`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
+///       $(LI `World`, `Resources`, `Window`, `Entity`, `Component`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
 ///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `const` Storage Class)
 ///       $(LI The `ref` Storage Class <b>MUST NOT</b> be used with the `const` Storage Class)
 ///     )
@@ -643,9 +672,9 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
     import std.meta : allSatisfy;
     alias isComponentData(T) = storableAsComponent!T;
     enum bool isCallableAsSystem = allSatisfy!(templateOr!(
-      isEntity,
       isResourceData,
-      isComponentData
+      isComponentData,
+      isClass
     ), TParams);
   }
 }
@@ -679,7 +708,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     super(world, "teraflop.ecs.GeneratedSystem:" ~ systemName);
   }
 
-  override void run() const {
+  override void run() {
     import std.algorithm.iteration : each, joiner, map;
     import std.string : join;
 
@@ -745,10 +774,11 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       enum string diagnosticNameOf = "parameter " ~ text(indexOf!T + 1) ~ paramName ~
       " of type `" ~ fullyQualifiedName!(Unqual!T) ~ "`";
     }
-    enum string diagnosticHintOf(T) = text(typeid(Unqual!T).name, ParamName!T) ~ "` parameter";
+    enum string diagnosticHintOf(T) = "`" ~ text(typeid(Unqual!T).name, " ", ParamName!T) ~ "` parameter";
     enum string diagnosticBadPractice =
       "Teraflop considers it bad practice to modify the World, Resources, an Entity, or this System when it's running.";
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";
+    enum string diagnosticFailure(T) = "Could not apply " ~ diagnosticNameOf!T ~ " to " ~ GeneratedSystemName;
 
     // Try to get the dependent Entity, Component, and Resource instances for function arguments
     Tuple!(staticMap!(Unqual, FuncParams)) params;
@@ -770,36 +800,21 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       static if (hasRefStorage!(FuncParamStorage[indexOf!Param]) && hasConstStorage!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // Require the `const` storage class qualifier on `World`, `Resources`, `Entity`, and `System` parameters
+      // Require the `const` storage class qualifier on `World`, Resources, `Entity`, and `System` parameters
       static if (isIllegallyMutable!Param)
         static assert(0, "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
           "\n\t" ~ diagnosticBadPractice ~
           "\n\t" ~ diagnosticDlangFuncParams ~
-          "\n\n\tHint: Add `const` qualifier to `" ~ diagnosticHintOf!Param ~ "." ~
+          "\n\n\tHint: Add `const` qualifier to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
-      // Require the `scope` storage class qualifier on `World`, `Resources`, `Entity`, `Component`, and `System` parameters
+      // Require the `scope` storage class qualifier on `World`, Resources, `Entity`, `Component`, and `System` parameters
       static if (illegallyEscapesScope!(Param, FuncParamStorage[indexOf!Param]))
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-          "\n\tWorld, Resources, Entity, Component, and System references cannot escape a running System." ~
+          "\n\tWorld, Resources, Window, Entity, Component, and System references cannot escape a running System." ~
           "\n\t" ~ diagnosticDlangFuncParams ~
-          "\n\n\tHint: Add `scope` storage class to `" ~ diagnosticHintOf!Param ~ "." ~
+          "\n\n\tHint: Add `scope` storage class to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
 
-      static if (!isWorld!Param && !isResources!Param && !isEntity!Param) {
-        // Run the system function only if this entity contains instances of all the expected Resource and Component types
-        componentExists = storableAsComponent!Param && entity.contains!(Unqual!Param)(ParamName!Param);
-        if (!componentExists && (isResources!Param || isResourceData!Param)) {
-          isResource = isResources!Param || world.resources.contains!(Unqual!Param);
-        } else if (!isResource && !componentExists) {
-          diagnosticMessages ~= format!("Could not apply %s to %s" ~
-            "\n\tThere must exist a Resource of type `%s` or a Component named '%s' in the World.")(
-              diagnosticNameOf!Param,
-              GeneratedSystemName,
-              fullyQualifiedName!(Unqual!Param),
-              ParamName!Param);
-          goto L_continueApplyingParams; // Hack to workaround lack of `continue` support in `static foreach` 😒️
-        }
-      }
       // TODO: Use `T.init` for `out` parameters
       // Otherwise, get the World, Resources, Entity, Resource, or Component data
       static if (isWorld!Param) {
@@ -808,14 +823,24 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
         params[indexOf!Param] = world.resources;
       } else static if (isEntity!Param) {
         params[indexOf!Param] = cast(Entity) entity;
-      } else static if (isResources!Param || isResourceData!Param || storableAsComponent!Param) {
+      } else {
+        // Run the system function only if this entity contains instances of all the expected Resource and Component types
+        static if (!isResources!Param && storableAsComponent!Param) {
+          componentExists = entity.contains!(Unqual!Param)(ParamName!Param);
+        }
+        isResource = isResources!Param || world.resources.contains!(Unqual!Param);
+        if (!isResource && !componentExists) {
+          diagnosticMessages ~= format!(diagnosticFailure!Param ~
+            "\n\tThere must exist a Resource of type `%s` or a Component named '%s' in the World.")(
+              fullyQualifiedName!(Unqual!Param),
+              ParamName!Param);
+          goto L_systemDoesNotApply; // Hack to workaround lack of `continue` support in `static foreach` 😒️
+        }
+
+        // Otherwise carry on with Component or Resource parameter assignment
         if (componentExists) {
-          static if (hasConstStorage!Param) {
-            params[indexOf!Param] = entity.get!(Unqual!Param)(ParamName!Param)[0];
-          } else static if (isImplicitlyConvertableFromMutable!Param) {
+          static if (storableAsComponent!Param && isImplicitlyConvertableFromMutable!Param) {
             params[indexOf!Param] = entity.getMut!(Unqual!Param)(ParamName!Param)[0];
-          } else {
-            static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
           }
         } else if (isIllegallyMutable!Param) {
           // Guard against illegally mutable Resources
@@ -834,28 +859,17 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
           }
           goto L_systemDoesNotApply;
         } else {
-          // Otherwise carry on with Resource(s) parameter assignment
-          static if (isResourceData!Param) {
-            params[indexOf!Param] = world.resources.get!(Unqual!Param);
+          static if (isResourceData!Param || isClass!Param) {
+            params[indexOf!Param] = cast(Unqual!Param) world.resources.get!(Unqual!Param);
           } else {
-            static assert(isResources!Param, "");
-            params[indexOf!Param] = world.resources;
+            static assert(0, diagnosticFailure!Param);
           }
         }
-      } else {
-        static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
-      }
-
-      // Only define this label once
-      static if (indexOf!Param == 0) {
-L_continueApplyingParams:
       }
 
       isResource = false;
       componentExists = false;
     }
-
-    results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
 
     // Run the system, applying dependent `Component` instance arguments
     Func(params.expand);
@@ -873,6 +887,7 @@ L_continueApplyingParams:
 L_systemDoesNotApply:
 
     results.replacements = replacements;
+    results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
     return results;
   }
 }

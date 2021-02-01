@@ -15,8 +15,24 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug Cube",
+      "program": "${workspaceFolder}/bin/cube",
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug Unit Tests",
-      "program": "${workspaceFolder}/bin/teraflop-test-library",
+      "program": "${workspaceFolder}/bin/teraflop-test-unittest",
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug GPU Integration Tests",
+      "program": "${workspaceFolder}/bin/teraflop-test-unittest-gpu",
       "args": [],
       "cwd": "${workspaceFolder}"
     }

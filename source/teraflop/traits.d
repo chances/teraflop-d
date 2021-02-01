@@ -5,6 +5,8 @@ module teraflop.traits;
 
 /// Detect whether `T` is a struct type.
 package enum bool isStruct(T) = is (T == struct);
+/// Detect whether `T` is an interface type.
+package enum bool isInterface(T) = is (T == interface);
 /// Detect whether `T` is a class type.
 package enum bool isClass(T) = is (T == class);
 

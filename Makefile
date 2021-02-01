@@ -4,7 +4,7 @@ TARGET_OS := $(shell uname -s)
 .DEFAULT_GOAL := docs
 all: docs
 
-EXAMPLES := bin/triangle
+EXAMPLES := bin/triangle bin/cube
 examples: $(EXAMPLES)
 .PHONY: examples
 
@@ -31,12 +31,24 @@ triangle: bin/triangle
 	bin/triangle
 .PHONY: triangle
 
+CUBE_SOURCES := $(shell find examples/cube/source -name '*.d')
+bin/cube: $(SOURCES) $(CUBE_SOURCES)
+	cd examples/cube && dub build
+
+cube: bin/cube
+	bin/cube
+.PHONY: cube
+
 test:
-	dub test --parallel
+	dub test --parallel --config=unittest-gpu
 .PHONY: test
 
-cover: $(SOURCES)
-	dub test --parallel --coverage
+scripts/upload-coverage.sh:
+	echo "See 'Upload Coverage to Codecov' task in .github/workflows/ci.yml"
+cover: $(SOURCES) scripts/upload-coverage.sh
+	dub test --parallel --coverage --config=unittest-gpu
+	./scripts/delete-junk-lst-files.sh
+	./scripts/upload-coverage.sh
 
 docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox
@@ -57,11 +69,16 @@ docs/sitemap.xml: $(SOURCES)
 docs: docs/sitemap.xml
 .PHONY: docs
 
-clean:
+clean: clean-docs
 	rm -f bin/teraflop-test-library
+	rm -f bin/triangle
+	rm -f bin/cube
 	rm -f $(EXAMPLES)
+	rm -f -- *.lst
+.PHONY: clean
+
+clean-docs:
 	rm -f docs.json
 	rm -f docs/sitemap.xml docs/file_hashes.json
 	rm -rf `find docs -name '*.html'`
-	rm -f -- *.lst
-.PHONY: clean
+.PHONY: clean-docs

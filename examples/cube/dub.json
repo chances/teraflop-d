@@ -1,10 +1,10 @@
 {
-  "name": "triangle",
-  "description": "Triangle example for teraflop",
-  "authors": [
-    "Chance Snow"
-  ],
-  "license": "BSD 3-clause",
+  "name": "cube",
+  "description": "Cube example for teraflop",
+	"authors": [
+		"Chance Snow"
+	],
+	"license": "BSD 3-clause",
   "copyright": "Copyright © 2020, Chance Snow",
   "targetType": "executable",
   "targetPath": "../../bin",
@@ -15,8 +15,8 @@
     }
   },
   "preBuildCommands": [
-    "glslc assets/shaders/triangle.vs.glsl -o assets/shaders/triangle.vs.spv",
-    "glslc assets/shaders/triangle.fs.glsl -o assets/shaders/triangle.fs.spv"
+    "glslc assets/shaders/cube.vs.glsl -o assets/shaders/cube.vs.spv",
+    "glslc assets/shaders/cube.fs.glsl -o assets/shaders/cube.fs.spv"
   ],
   "lflags-linux": [
     "-L../../lib/glfw-3.3.2/src"

@@ -16,19 +16,35 @@ jobs:
       uses: dlang-community/setup-dlang@v1
       with:
         compiler: ldc-latest
+    - name: Cache DUB Artifacts (Posix)
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      uses: actions/cache@v2
+      with:
+        path: ~/.dub
+        key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+        restore-keys: |
+          ${{ runner.os }}-dub-
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
+    - name: Cache GLFW
+      id: cache-glfw
+      if: runner.os == 'Linux'
+      uses: actions/cache@v2
+      with:
+        path: lib/glfw-3.3.2
+        key: ${{ runner.os }}-glfw
+    - name: Build GLFW
+      if: runner.os == 'Linux' && steps.cache-glfw.outputs.cache-hit != 'true'
+      run: make glfw
     - name: Lint
+      id: lint
       run: dub lint
     - name: Test
-      run: make cover
+      id: tests
+      if: always() # Run tests even if lint step fails
+      run: dub test --parallel --coverage
     - name: Upload Coverage to Codecov
-      if: success()
+      # Upload test coverage even if lint step fails
+      if: success() || (steps.lint.outcome == 'failure' && steps.tests.outcome == 'success')
       run: bash <(curl -s https://codecov.io/bash)
-    # - name: Upload Test Log Artifact on Failure
-    #   uses: actions/upload-artifact@v1
-    #   if: failure()
-    #   with:
-    #     name: Linux_Meson_Testlog
-    #     path: build/meson-logs/testlog.txt

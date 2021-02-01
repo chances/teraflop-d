@@ -1,3 +1,5 @@
+/// Abstraction over a D $(D delegate), modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
@@ -5,7 +7,7 @@ module teraflop.async.event;
 
 // Adapted from https://forum.dlang.org/post/dcdtuqyrxpteuaxmvwft@forum.dlang.org
 
-/// Abstraction over D $(D delegate), modelling the C# event paradigm.
+/// Abstraction over a D $(D delegate), modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
 struct Event(Args) {
   alias Callback = void delegate(Args);
   private Callback[] callbacks;

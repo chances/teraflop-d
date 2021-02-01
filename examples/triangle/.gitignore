@@ -1,3 +1,7 @@
+assets/shaders/triangle.vs.spv
+assets/shaders/triangle.fs.spv
+
+# Dub
 .dub
 docs.json
 __dummy.html
