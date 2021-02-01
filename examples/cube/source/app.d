@@ -28,7 +28,7 @@ private final class Cube : Game {
     super("Cube");
 
     onExit ~= (Flag!"force" force) => {
-      if (force) exit();
+      if (active && force) exit();
     }();
   }
 
