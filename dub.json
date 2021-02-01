@@ -26,11 +26,9 @@
     "bindbc-glfw": "~>0.10.1",
     "concepts": "~>0.0.8",
     "gfm:math": "~>8.0",
-    "gfx:genmesh": "~>0.2.1",
-    "gfx:graal": "~>0.2.1",
-    "gfx:vulkan": {
-      "path": "../gfx-d"
-    },
+    "gfx:genmesh": "~master",
+    "gfx:graal": "~master",
+    "gfx:vulkan": "~master",
     "libasync": "~>0.8.6"
   },
   "subConfigurations": {

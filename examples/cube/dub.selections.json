@@ -6,7 +6,7 @@
 		"concepts": "0.0.8",
 		"derelict-util": "2.0.6",
 		"gfm": "8.0.4",
-		"gfx": {"path":"../../../gfx-d"},
+		"gfx": "~master",
 		"intel-intrinsics": "1.3.6",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",
