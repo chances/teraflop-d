@@ -1,7 +1,7 @@
 # Teraflop
 
 [![DUB Package](https://img.shields.io/dub/v/teraflop.svg)](https://code.dlang.org/packages/teraflop)
-![Teraflop CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20CI/badge.svg?branch=master)
+[![Teraflop CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20CI/badge.svg?branch=master)](https://github.com/chances/teraflop-d/actions)
 [![codecov](https://codecov.io/gh/chances/teraflop-d/branch/master/graph/badge.svg?token=5YN3BU7KR3)](https://codecov.io/gh/chances/teraflop-d/)
 
 An ECS game engine on a [Vulkan](https://github.com/rtbo/gfx-d#readme) foundation.
