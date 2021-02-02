@@ -270,6 +270,7 @@ abstract class Game {
     import core.time : Duration;
     import gfx.graal.presentation : ImageAcquisition;
     import std.string : format;
+    import teraflop.ecs : SystemException;
     import teraflop.input : InputEventAction, InputEventKeyboard, InputEventMouse;
 
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
@@ -296,8 +297,12 @@ abstract class Game {
     world.resources.add(time_);
 
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
-    foreach (system; systems)
-      system.run();
+    foreach (system; systems) {
+      try system.run();
+      catch (SystemException ex) {
+        // TODO: Log recoverable System errors
+      }
+    }
 
     // Prune old input from the World
     foreach (input; newInput.values) {
