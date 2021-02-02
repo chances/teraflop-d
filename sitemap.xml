@@ -154,6 +154,9 @@
 <url><loc>http://127.0.0.1/teraflop/ecs.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Component.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/component.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/Diagnostic.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/Diagnostic.message.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/Diagnostic.source.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Entity.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Entity.add.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Entity.add.html</loc></url>
@@ -196,6 +199,11 @@
 <url><loc>http://127.0.0.1/teraflop/ecs/System.resources.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/System.run.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/System.this.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/SystemException.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/SystemException.diagnostics.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/SystemException.system.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/SystemException.this.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/SystemException.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/SystemGenerator.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Tag.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Tag.this.html</loc></url>
