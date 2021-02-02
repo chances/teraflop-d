@@ -1,6 +1,6 @@
 {
   "name": "teraflop",
-	"description": "An ECS game engine on a wgpu foundation",
+	"description": "An ECS game engine on a Vulkan foundation",
 	"authors": [
 		"Chance Snow"
   ],
