@@ -595,6 +595,13 @@ struct Diagnostic {
   }
 }
 
+unittest {
+  const a = Diagnostic("Foobar");
+  assert(a.message == "Foobar");
+  assert(a.source == "Unknown");
+  assert(a.toString == "Unknown: Foobar");
+}
+
 /// Exception thrown on errors encountered in running `System`s.
 class SystemException : Exception {
   /// The errant `System` that was running when this `Exception` was thrown.
