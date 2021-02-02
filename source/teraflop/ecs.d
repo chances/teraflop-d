@@ -600,7 +600,7 @@ class SystemException : Exception {
   /// The errant `System` that was running when this `Exception` was thrown.
   const System system;
   /// Diagnostics generated while the `system` was running.
-  debug const Diagnostic[] diagnostics;
+  const Diagnostic[] diagnostics;
 
   ///
   this (
@@ -609,23 +609,20 @@ class SystemException : Exception {
     string file = __FILE__, ulong line = cast(ulong)__LINE__,
     Throwable nextInChain = null
   ) pure nothrow @nogc @safe {
-    super(msg, file, line, nextInChain);
-    this.system = system;
-    debug diagnostics = [];
+    this(system, msg, [], file, line, nextInChain);
   }
 
-  debug {
-    this (
-      System system,
-      string msg,
-      Diagnostic[] diagnostics = [],
-      string file = __FILE__, ulong line = cast(ulong)__LINE__,
-      Throwable nextInChain = null
-    ) pure nothrow @nogc @safe {
-      super(msg, file, line, nextInChain);
-      this.system = system;
-      this.diagnostics = diagnostics;
-    }
+  ///
+  this (
+    System system,
+    string msg,
+    Diagnostic[] diagnostics = [],
+    string file = __FILE__, ulong line = cast(ulong)__LINE__,
+    Throwable nextInChain = null
+  ) pure nothrow @nogc @safe {
+    super(msg, file, line, nextInChain);
+    this.system = system;
+    this.diagnostics = diagnostics;
   }
 }
 
