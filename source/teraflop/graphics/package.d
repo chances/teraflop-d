@@ -1040,7 +1040,7 @@ unittest {
     commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
     commands.endRenderPass();
     commands.end();
-    // TODO: Diff with a PPM file, e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
+    // TODO: Diff with a PPM file (https://github.com/aquaratixc/ppmformats), e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
 
     auto submissions = [Submission([], [], [commands])];
     graphicsQueue.submit(submissions, null);
