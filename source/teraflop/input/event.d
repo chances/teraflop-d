@@ -24,6 +24,7 @@ enum InputDevice {
 abstract class InputEvent {
   ///
   const InputDevice device;
+  private bool _handled = false;
 
   ///
   this(const InputDevice device) {
@@ -38,6 +39,12 @@ abstract class InputEvent {
   override bool opEquals(Object o) @safe @nogc const pure {
     InputEvent other = cast(InputEvent) o;
     return other && device == other.device;
+  }
+
+  /// Whether this `InputEvent` has been handled.
+  /// See_Also: `stopPropagation`
+  bool handled() @property const {
+    return _handled;
   }
 
   bool isKeyboardEvent() @property const {
@@ -74,6 +81,12 @@ abstract class InputEvent {
       return cast(InputEventAction) this;
     }
     return null;
+  }
+
+  /// Mark this `InputEvent` as handled, stopping propagation through the input tree.
+  /// See_Also: `handled`
+  void stopPropagation() {
+    _handled = true;
   }
 }
 

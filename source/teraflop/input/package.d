@@ -110,7 +110,7 @@ final class Input {
 
     foreach (handlers; nodes) {
       if (actionEvents.length) foreach (actionEvent; actionEvents) handlers.actionHandler(actionEvent);
-      if (handlers.unhandledHandler(event)) break;
+      if (handlers.unhandledHandler(event) || event.handled) break;
     }
   }
 
