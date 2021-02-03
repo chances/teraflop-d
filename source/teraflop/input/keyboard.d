@@ -10,36 +10,36 @@ import bindbc.glfw;
 ///
 enum Modifiers {
   ///
-  NONE = 0,
+  none = 0,
   ///
-  SHIFT = 1,
+  shift = 1,
   ///
-  CONTROL = 2,
+  control = 2,
   ///
-  ALT = 4,
+  alt = 4,
   ///
-  SUPER = 8,
+  super_ = 8,
   ///
-  LEFT_SHIFT = 16,
+  leftShift = 16,
   ///
-  LEFT_CONTROL = 32,
+  leftControl = 32,
   ///
-  LEFT_ALT = 64,
+  leftAlt = 64,
   ///
-  LEFT_SUPER = 128,
+  leftSuper = 128,
   ///
-  RIGHT_SHIFT = 256,
+  rightShift = 256,
   ///
-  RIGHT_CONTROL = 512,
+  rightControl = 512,
   ///
-  RIGHT_ALT = 1024,
+  rightAlt = 1024,
   ///
-  RIGHT_SUPER = 2048,
+  rightSuper = 2048,
 
   /// Added in GLFW 3.3
-  CAPS_LOCK = 0x0010,
+  capsLock = 0x0010,
   /// Added in GLFW 3.3
-  NUM_LOCK = 0x0020,
+  numLock = 0x0020,
 }
 
 ///

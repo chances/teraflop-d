@@ -117,22 +117,22 @@ final class Input {
       if (window.isKeyDown(key) || (window.isKeyReleased(key) && window.wasKeyDown(key))) {
         int keyModifiers = 0;
         if (window.isKeyDown(KeyboardKey.leftShift))
-          keyModifiers |= Modifiers.SHIFT | Modifiers.LEFT_SHIFT;
+          keyModifiers |= Modifiers.shift | Modifiers.leftShift;
         if (window.isKeyDown(KeyboardKey.leftControl))
-          keyModifiers |= Modifiers.CONTROL | Modifiers.LEFT_CONTROL;
+          keyModifiers |= Modifiers.control | Modifiers.leftControl;
         if (window.isKeyDown(KeyboardKey.leftAlt))
-          keyModifiers |= Modifiers.ALT | Modifiers.LEFT_ALT;
+          keyModifiers |= Modifiers.alt | Modifiers.leftAlt;
         if (window.isKeyDown(KeyboardKey.leftSuper))
-          keyModifiers |= Modifiers.SUPER | Modifiers.LEFT_SUPER;
+          keyModifiers |= Modifiers.super_ | Modifiers.leftSuper;
 
         if (window.isKeyDown(KeyboardKey.rightShift))
-          keyModifiers |= Modifiers.SHIFT | Modifiers.RIGHT_SHIFT;
+          keyModifiers |= Modifiers.shift | Modifiers.rightShift;
         if (window.isKeyDown(KeyboardKey.rightControl))
-          keyModifiers |= Modifiers.CONTROL | Modifiers.RIGHT_CONTROL;
+          keyModifiers |= Modifiers.control | Modifiers.rightControl;
         if (window.isKeyDown(KeyboardKey.rightAlt))
-          keyModifiers |= Modifiers.ALT | Modifiers.RIGHT_ALT;
+          keyModifiers |= Modifiers.alt | Modifiers.rightAlt;
         if (window.isKeyDown(KeyboardKey.rightSuper))
-          keyModifiers |= Modifiers.SUPER | Modifiers.RIGHT_SUPER;
+          keyModifiers |= Modifiers.super_ | Modifiers.rightSuper;
 
         propagate(new InputEventKeyboard(
           key, window.isKeyDown(key), window.isKeyDown(key) && window.wasKeyDown(key), keyModifiers

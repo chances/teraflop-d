@@ -59,26 +59,26 @@ class InputMapBinding {
   StrengthCurve strengthCurve = null;
 
   ///
-  InputMapBinding keyboardPressed(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardPressed(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(true, false, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardHeld(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardHeld(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(false, true, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardDown(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardDown(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(true, false, key, modifiers);
     states ~= BindingState.keyboard(false, true, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardReleased(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardReleased(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(false, false, key, modifiers);
     return this;
   }
@@ -192,8 +192,8 @@ private struct BindingState {
   /// A member of `KeyboardKey`
   int key = 0;
   /// A bitwise combitation of keyboard `Modifiers`
-  int modifiers = Modifiers.NONE;
-  auto button = MouseButton.NONE;
+  int modifiers = Modifiers.none;
+  auto button = MouseButton.none;
   bool wheel = false;
   bool motion = false;
   /// A bitwise combitation of `Axis`
