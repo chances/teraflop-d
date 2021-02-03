@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Class Camera - Teraflop</title>
+		<title>Alias ray2f - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -69,8 +69,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view ">
-					<div class="package selected">
+				<li class="tree-view collapsed">
+					<div class="package ">
 						<a href="../../teraflop/graphics.html">graphics</a>
 					</div>
 			<ul class="tree-view">
@@ -143,7 +143,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module ">
+					<div class="module selected">
 						<a href="../../teraflop/math.html">math</a>
 					</div>
 				</li>
@@ -162,108 +162,16 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Class Camera</h1><p>A 3D camera encapsulating model, view, and projection matrices that may be bound to a vertex shader.
-</p>
+			<h1>Alias ray2f</h1><p></p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">class</span> <span class="typ">Camera</span>
-			<br>&nbsp;&nbsp;: <a href="../../teraflop/ecs/NamedComponent.html"><span class="typ">NamedComponent</span></a>
-			<span class="pun">;</span>
+			<span class="kwd">alias</span> <span class="pln">ray2f</span>
+			 <span class="pun">=</span> <span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">shapes<wbr/></span><span class="pun">.</span><span class="typ">Ray</span>!(float,2)<span class="pun">;</span>
 					</div>
 				</code>
 			</div>
-			<section><p>A World's primary camera is the <code class="lang-d"><span class="typ">Camera</span></code> world Resource.
-Ancillary cameras may be added to render target Entities.
-</p>
-</section>
-
-			<section><h2>Constructors</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(bindingLocation)</span>
-						</td>
-						<td>Initialize a new camera.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Fields</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.invertY.html" class="public"><code>invertY</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether the Y axis of the <code class="lang-d"><a href="../../teraflop/graphics/Camera.projection.html"><span class="pln">projection</span></a></code> matrix shall be inverted.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Properties</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.model.html" class="public property"><code>model</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">matrix<wbr/></span><span class="pun">.</span><span class="typ">Matrix</span>!(float,4,4)</code></td><td>World-space model transformation matrix.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.mvp.html" class="public property"><code>mvp</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">matrix<wbr/></span><span class="pun">.</span><span class="typ">Matrix</span>!(float,4,4)</code></td><td>A combined model-view-projection matrix.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.projection.html" class="public property"><code>projection</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">matrix<wbr/></span><span class="pun">.</span><span class="typ">Matrix</span>!(float,4,4)</code></td><td>Projection matrix, e.g. orthographic or perspective.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.view.html" class="public property"><code>view</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">matrix<wbr/></span><span class="pun">.</span><span class="typ">Matrix</span>!(float,4,4)</code></td><td>View matrix.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Methods</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Camera.mouseRay.html" class="public">
-								<code>mouseRay</code>
-							</a>
-							<span class="tableEntryAnnotation">(fovInRadians, cameraTarget, framebufferSize, mousePosition)</span>
-						</td>
-						<td></td>
-					</tr>
-				</table>
-			</section>
+			
 			
 			<footer>
 				<table class="license-info">

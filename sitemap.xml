@@ -236,6 +236,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.invertY.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.model.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/Camera.mouseRay.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.mvp.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.projection.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Camera.this.html</loc></url>
@@ -350,6 +351,8 @@
 <url><loc>http://127.0.0.1/teraflop/math/failedExtraction.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/forward.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/radians.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/math/ray2f.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/math/ray3f.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/rotationOf.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/scale.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/scaleOf.html</loc></url>
@@ -357,6 +360,7 @@
 <url><loc>http://127.0.0.1/teraflop/math/Size.height.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/Size.width.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/translationOf.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/math/unproject.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/up.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/vulkanClipCorrection.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/withAlpha.html</loc></url>
