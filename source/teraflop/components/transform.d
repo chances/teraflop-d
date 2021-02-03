@@ -37,16 +37,18 @@ class Transform : UniformBuffer!mat4f {
 
   ///
   vec3f translation() @property const {
-    return vec3f(value.c[0][3], value.c[1][3], value.c[2][3]);
+    const value = this.value;
+    return vec3f(value.c[3][0], value.c[3][1], value.c[3][2]);
   }
   /// ditto
   void translation(vec3f value) @property {
     auto matrix = this.value;
-    matrix.c[0][3] = value.x;
-    matrix.c[1][3] = value.y;
-    matrix.c[2][3] = value.z;
-    super.value = matrix;
+    matrix.c[3][0] = value.x;
+    matrix.c[3][1] = value.y;
+    matrix.c[3][2] = value.z;
+    super.value = matrix.transposed;
   }
+  // TODO: Add rotation properties
   // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
   // ///
   // quatf rotation() @property const {
@@ -69,6 +71,19 @@ class Transform : UniformBuffer!mat4f {
 /// Construct a `Transform` Component given a transformation matrix.
 Transform transform(mat4f matrix) {
   return new Transform(matrix);
+}
+
+unittest {
+  const translation = vec3f(0, 1, 0);
+  auto xform = transform(mat4f.translation(translation));
+  assert(xform.translation == translation);
+  assert(xform.scale == vec3f(1));
+
+  xform = transform(mat4f.identity);
+
+  // xform = transform(mat4f.rotation(45.radians, up));
+  // auto r = xform.rotation;
+  // assert(xform.translation == vec3f(0));
 }
 
 ///
