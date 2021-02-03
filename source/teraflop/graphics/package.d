@@ -131,7 +131,7 @@ struct Color {
   /// Returns: A newly adjusted `Color`.
   /// Throws: A `RangeError` if the given `alpha` component is outside the range `0.0` through `1.0`.
   Color withAlpha(float alpha) const {
-    bool outOfBounds = alpha < 0.0 || alpha > 1.0;
+    const outOfBounds = alpha < 0.0 || alpha > 1.0;
     assert(!outOfBounds);
     if (outOfBounds) throw new RangeError();
     return Color(r, g, b, alpha);
