@@ -150,13 +150,6 @@ alias ray2f = Ray!(float, 2);
 ///
 alias ray3f = Ray!(float, 3);
 
-/// Adjust a `Color`s alpha channel, setting it to the given percentage
-Color withAlpha(Color color, float alpha) {
-  assert(alpha >= 0.0 && alpha <= 1.0);
-  import std.math : round;
-  return Color(color.r, color.g, color.b, cast(ubyte) round(255.0 * alpha));
-}
-
 /// Size of an object.
 struct Size {
   /// Width of the object.
