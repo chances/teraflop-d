@@ -263,6 +263,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Color.red.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Color.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Color.this.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/Color.withAlpha.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/CullMode.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/FrontFace.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/isVertexData.html</loc></url>
@@ -381,7 +382,6 @@
 <url><loc>http://127.0.0.1/teraflop/math/unproject.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/up.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/vulkanClipCorrection.html</loc></url>
-<url><loc>http://127.0.0.1/teraflop/math/withAlpha.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/systems.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/systems/FileWatcher.html</loc></url>
