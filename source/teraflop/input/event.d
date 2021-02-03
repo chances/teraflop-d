@@ -245,4 +245,5 @@ unittest {
   assert(event.device == InputDevice.keyboard);
   assert(event.isActionEvent);
   assert(event.asActionEvent == event);
+  assert(event == new InputEventAction(event.device, event.action));
 }
