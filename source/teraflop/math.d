@@ -49,16 +49,35 @@ vec3f translationOf(mat4f matrix) @property {
   return vec3f(matrix.c[0][3], matrix.c[1][3], matrix.c[2][3]);
 }
 
+/// Result of a failed extraction while executing `rotationOf`.
+quatf failedExtraction() {
+  import std.math : NaN;
+  return quatf.fromEulerAngles(NaN(0), NaN(0), NaN(0));
+}
+
 /// Extract the rotation transformation from the given `matrix`.
 quatf rotationOf(mat4f value) @property {
-  return quatf.fromEulerAngles(0, 0, 0);
+  import std.math : sqrt;
 
   // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
+  // https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L301
   // return cast(quatf) value;
 
-  // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
-  // import std.math : sqrt;
+  // https://math.stackexchange.com/a/895033/744305
+  const r = value.c;
+  float wSquared = 0.25 * (1.0 + r[1][1] + r[2][2] + r[3][3]);
+  if (wSquared >= 0.25) {
+    float w = sqrt(wSquared);
 
+    float overW_4 = 0.25 / w;
+    float x = (r[3][2] - r[2][3]) * overW_4;
+    float y = (r[1][3] - r[3][1]) * overW_4;
+    float z = (r[2][1] - r[1][2]) * overW_4;
+
+    return quatf(w, x, y, z);
+  } else return failedExtraction;
+
+  // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
   // auto w = sqrt(1.0 + value.c[0][0] + value.c[1][1] + value.c[2][2]) / 2.0;
 	// auto w4 = 4.0 * w;
 	// auto x = (value.c[1][2] - value.c[2][1]) / w4;
@@ -81,19 +100,19 @@ unittest {
   const translation = vec3f(0, 1, 0);
   xform = mat4f.translation(translation);
   assert(xform.translationOf == translation);
-  assert(xform.rotationOf == quatf.fromEulerAngles(0, 0, 0));
+  assert(xform.rotationOf == quatf(1, 0, 0.25f, 0));
   assert(xform.scaleOf == vec3f(1));
 
-  xform = mat4f.rotation(45.radians, up);
-  assert(xform.translationOf == vec3f(0));
+  // xform = cast(mat4f) quatf.fromEulerAngles(0, 45.radians, 0);
+  // assert(xform.translationOf == vec3f(0));
   // auto r = xform.rotationOf;
-  // auto r2 = quatf.fromEulerAngles(0, 0, 0);
+  // auto r2 = xform.rotationOf.toEulerAngles;
   // assert(xform.rotationOf == quatf.fromEulerAngles(0, 45.radians, 0));
   // assert(xform.scaleOf == vec3f(1));
 
   xform = mat4f.scaling(translation);
   assert(xform.translationOf == vec3f(0));
-  assert(xform.rotationOf == quatf.fromEulerAngles(0, 0, 0));
+  assert(xform.rotationOf == quatf(0.866025388f, 0, 0, 0));
   assert(xform.scaleOf == translation);
 }
 
