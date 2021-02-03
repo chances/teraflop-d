@@ -145,7 +145,6 @@ unittest {
   assert(cyan.vec4d == vec4d(0, 1, 1, 1));
 
   const muddyGreen = Color.fromHsv(139, 0.27, 0.73);
-  const r = muddyGreen.r * 255;
   assert(round(muddyGreen.r * 255).to!int == 136);
   assert(round(muddyGreen.g * 255).to!int == 186);
   assert(round(muddyGreen.b * 255).to!int == 152);
