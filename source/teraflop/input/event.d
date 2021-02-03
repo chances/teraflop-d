@@ -105,13 +105,25 @@ class InputEventKeyboard : InputEvent {
   const int modifiers = 0;
 
   ///
-  this(const KeyboardKey key, bool pressed, bool held, int modifiers) {
+  this(const KeyboardKey key, bool pressed, bool held, int modifiers = 0) {
     super(InputDevice.keyboard);
     this.key = key;
     this.pressed = pressed && !held;
     this.held = held;
     this.modifiers = modifiers;
   }
+}
+
+unittest {
+  auto event = new InputEventKeyboard(KeyboardKey.enter, true, false);
+
+  assert(event.device == InputDevice.keyboard);
+  assert(!event.handled);
+  assert(event.isKeyboardEvent);
+  assert(event.asKeyboardEvent == event);
+
+  event.stopPropagation();
+  assert(event.handled);
 }
 
 ///
@@ -174,16 +186,23 @@ class InputEventMouse : InputEvent {
 unittest {
   auto event = new InputEventMouse(vec2d.init, vec2d.init);
 
+  assert(event.device == InputDevice.mouse);
+  assert(event.isMouseEvent);
+  assert(event.asMouseEvent == event);
+
   assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
   assert((event.buttons & MouseButton.RIGHT) != MouseButton.RIGHT);
   assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
 
   event.buttons |= MouseButton.RIGHT;
+  assert(!event.wasButtonJustClicked(MouseButton.LEFT));
+  assert(event.wasButtonJustPressed(MouseButton.RIGHT));
   assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
   assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
   assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
 
   event.buttons |= MouseButton.MIDDLE;
+  assert(event.wasButtonJustPressed(MouseButton.MIDDLE));
   assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
   assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
   assert((event.buttons & MouseButton.MIDDLE) == MouseButton.MIDDLE);
@@ -220,4 +239,13 @@ class InputEventAction : InputEvent {
     InputEventAction other = cast(InputEventAction) o;
     return other && device == other.device && action == other.action;
   }
+}
+
+unittest {
+  auto event = new InputEventAction(InputDevice.keyboard, "cancel");
+  event.pressed = true;
+
+  assert(event.device == InputDevice.keyboard);
+  assert(event.isActionEvent);
+  assert(event.asActionEvent == event);
 }
