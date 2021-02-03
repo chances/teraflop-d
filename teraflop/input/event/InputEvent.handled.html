@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Class InputEventKeyboard - Teraflop</title>
+		<title>Function InputEvent.handled - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,111 +162,21 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Class InputEventKeyboard</h1><p>Keyboard input event.
+			<h1>Function InputEvent.handled</h1><p>Whether this <code class="lang-d"><a href="../../../teraflop/input/event/InputEvent.html"><span class="typ">InputEvent</span></a></code> has been handled.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">class</span> <span class="typ">InputEventKeyboard</span>
-			<br>&nbsp;&nbsp;: <a href="../../../teraflop/input/event/InputEvent.html"><span class="typ">InputEvent</span></a>
-			<span class="pun">;</span>
+			<span class="typ">bool</span> <span class="pln">handled</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">@property const</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			<section><h2>Constructors</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEventKeyboard.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(key, pressed, held, modifiers)</span>
-						</td>
-						<td></td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Fields</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEventKeyboard.held.html" class="public"><code>held</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">bool</span><span class="pun">)</span></code></td><td>Whether the key was already pressed before this event.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEventKeyboard.key.html" class="public"><code>key</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/input/keyboard/KeyboardKey.html"><span class="typ">KeyboardKey</span></a><span class="pun">)</span></code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEventKeyboard.modifiers.html" class="public"><code>modifiers</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">int</span><span class="pun">)</span></code></td><td>A bitwise combitation of <code class="lang-d"><span class="typ">Modifiers</span></code>
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEventKeyboard.pressed.html" class="public"><code>pressed</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="typ">bool</span><span class="pun">)</span></code></td><td>Whether the key was just pressed.
-If <code class="lang-d"><span class="kwd">false</span></code>, the key is being held *or* was just released
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEvent.device.html" class="public inherited"><code>device</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/input/event/InputDevice.html"><span class="typ">InputDevice</span></a><span class="pun">)</span></code></td><td></td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Properties</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEvent.handled.html" class="public inherited property"><code>handled</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this <code class="lang-d"><a href="../../../teraflop/input/event/InputEvent.html"><span class="typ">InputEvent</span></a></code> has been handled.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Methods</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../../teraflop/input/event/InputEvent.stopPropagation.html" class="public inherited">
-								<code>stopPropagation</code>
-							</a>
-							<span class="tableEntryAnnotation">()</span>
-						</td>
-						<td>Mark this <code class="lang-d"><a href="../../../teraflop/input/event/InputEvent.html"><span class="typ">InputEvent</span></a></code> as handled, stopping propagation through the input tree.
-</td>
-					</tr>
-				</table>
-			</section>
-			
+			<section><h2>See Also</h2>
+<p><code class="lang-d"><a href="../../../teraflop/input/event/InputEvent.stopPropagation.html"><span class="pln">stopPropagation</span></a></code>
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

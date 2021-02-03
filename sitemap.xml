@@ -33,6 +33,8 @@
 <url><loc>http://127.0.0.1/teraflop/input/event/InputDevice.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.device.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.handled.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.stopPropagation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventAction.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventAction.action.html</loc></url>
@@ -43,6 +45,8 @@
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventAction.strength.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventAction.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.device.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.handled.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.stopPropagation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventKeyboard.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventKeyboard.held.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventKeyboard.key.html</loc></url>
@@ -50,6 +54,8 @@
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventKeyboard.pressed.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventKeyboard.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.device.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.handled.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.stopPropagation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventMouse.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventMouse.buttons.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventMouse.buttonsChanged.html</loc></url>
@@ -61,6 +67,8 @@
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventMouse.wasButtonJustPressed.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEventMouse.wheel.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.device.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.handled.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/event/InputEvent.stopPropagation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/event/MouseButton.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/keyboard.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/keyboard/KeyboardKey.html</loc></url>
