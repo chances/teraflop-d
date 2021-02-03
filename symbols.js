@@ -461,7 +461,7 @@ var symbols = [
 {name: 'teraflop.graphics.VertexPosNormalColor.position', kind: "variabledeclaration", path: './teraflop/graphics/VertexPosNormalColor.position.html', attributes: []},
 {name: 'teraflop.input', kind: "module", path: './teraflop/input.html', attributes: []},
 {name: 'teraflop.input.Input', kind: "classdeclaration", path: './teraflop/input/Input.html', attributes: []},
-{name: 'teraflop.input.Input.addNode', kind: "functiondeclaration", path: './teraflop/input/Input.addNode.html', attributes: []},
+{name: 'teraflop.input.Input.addNode', kind: "functiondeclaration", path: './teraflop/input/Input.addNode.html', attributes: ["inout"]},
 {name: 'teraflop.input.Input.ignoreActions', kind: "functiondeclaration", path: './teraflop/input/Input.ignoreActions.html', attributes: ["static"]},
 {name: 'teraflop.input.Input.ignoreUnhandledInputs', kind: "functiondeclaration", path: './teraflop/input/Input.ignoreUnhandledInputs.html', attributes: ["static"]},
 {name: 'teraflop.input.Input.isKeyDown', kind: "functiondeclaration", path: './teraflop/input/Input.isKeyDown.html', attributes: ["property", "const"]},
