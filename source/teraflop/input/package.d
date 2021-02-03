@@ -21,11 +21,47 @@ struct InputEventHandlers {
 ///
 final class Input {
   import std.typecons : Flag, No;
+  import teraflop.math : vec2d;
   import teraflop.platform : Window;
 
   ///
   const(InputEventHandlers)[] nodes;
+  private Window window;
   private auto _map = new InputMap();
+
+  package (teraflop) this(Window window) {
+    this.window = window;
+  }
+
+  ///
+  bool isKeyDown(KeyboardKey key) @property const {
+    return window.isKeyDown(key);
+  }
+  ///
+  bool wasKeyDown(KeyboardKey key) @property const {
+    return window.wasKeyDown(key);
+  }
+  ///
+  bool isKeyReleased(KeyboardKey key) @property const {
+    return window.isKeyReleased(key);
+  }
+
+  ///
+  vec2d mousePosition() @property const {
+    return window.mousePosition;
+  }
+  ///
+  vec2d lastMousePosition() @property const {
+    return window.lastMousePosition;
+  }
+  ///
+  int mouseButtons() @property const {
+    return window.mouseButtons;
+  }
+  ///
+  int lastMouseButtons() @property const {
+    return window.lastMouseButtons;
+  }
 
   ///
   static ActionInput ignoreActions() {

@@ -195,7 +195,7 @@ abstract class Game {
     // Setup main window
     auto mainWindow = new Window(name);
     enforce(mainWindow.valid, "Could not open main game window!");
-    input[mainWindow] = new Input();
+    input[mainWindow] = new Input(mainWindow);
     input[mainWindow].addNode(mainWindow);
     mainWindow.onUnhandledInput ~= (const InputEvent event) => {
       newInput[event.device] = event;
