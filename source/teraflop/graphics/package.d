@@ -27,6 +27,8 @@ public {
 
 /// RGBA double precision color.
 struct Color {
+  import core.exception : RangeError;
+
   /// Red component.
   double r;
   /// Blue component.
@@ -37,13 +39,37 @@ struct Color {
   double a;
 
   /// Solid opaque red.
-  static const red = Color(1, 0, 0, 1);
+  static const red = Color(1.0, 0, 0, 1.0);
   /// Solid opaque green.
-  static const green = Color(0, 1, 0, 1);
+  static const green = Color(0, 1.0, 0, 1.0);
   /// Solid opaque blue.
-  static const blue = Color(0, 0, 1, 1);
+  static const blue = Color(0, 0, 1.0, 1.0);
   /// Solid opaque black.
-  static const black = Color(0, 0, 0, 1);
+  static const black = Color(0, 0, 0, 1.0);
+
+  /// Instantiate a `Color` given double components in the range `0.0` through `1.0`.
+  /// Throws: A `RangeError` if any of the given color components are outside the range `0.0` through `1.0`.
+  this(double r, double g, double b, double a = 1.0) {
+    const outOfBounds =
+      !(r >= 0 && r <= 1.0) || !(g >= 0 && g <= 1.0) || !(b >= 0 && b <= 1.0) || !(a >= 0 && a <= 1.0);
+    if (outOfBounds) throw new RangeError();
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+
+  /// Instantiate a `Color` given whole integer components in the range `0` through `255`.
+  /// Throws: A `RangeError` if any of the given color components are outside the range `0` through `255`.
+  this(int r, int g, int b, int a = 255) {
+    const outOfBounds =
+      !(r >= 0 && r <= 255) || !(g >= 0 && g <= 255) || !(b >= 0 && b <= 255) || !(a >= 0 && a <= 255);
+    if (outOfBounds) throw new RangeError();
+    this.r = r / 255.0;
+    this.g = g / 255.0;
+    this.b = b / 255.0;
+    this.a = a / 255.0;
+  }
 
   teraflop.math.vec3f vec3f() @property const {
     return teraflop.math.vec3f(r, g, b);
@@ -61,6 +87,20 @@ struct Color {
   package (teraflop) auto toVulkan() const {
     return ClearColorValues(r.to!float, g.to!float, b.to!float, a.to!float);
   }
+}
+
+unittest {
+  const green = Color(0, 1.0, 0, 1.0);
+  assert(green.vec3f == vec3f(0, 1, 0));
+  assert(green.vec3d == vec3d(0, 1, 0));
+  assert(green.vec4f == vec4f(0, 1, 0, 1));
+  assert(green.vec4d == vec4d(0, 1, 0, 1));
+
+  const cyan = Color(0, 255, 255);
+  assert(cyan.vec3f == vec3f(0, 1, 1));
+  assert(cyan.vec3d == vec3d(0, 1, 1));
+  assert(cyan.vec4f == vec4f(0, 1, 1, 1));
+  assert(cyan.vec4d == vec4d(0, 1, 1, 1));
 }
 
 /// Detect whether `T` is vertex attribute data.
