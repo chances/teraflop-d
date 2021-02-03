@@ -48,6 +48,11 @@ static StrengthCurve double_ = (float x, float last = 0.0) => x + x;
 /// Increases the strength by continuious accumulation, i.e. linearly.
 static StrengthCurve accumulation = (float x, float last = 0.0) => x + last;
 
+unittest {
+  assert(double_(2) == 4);
+  assert(accumulation(1, 1) == 2);
+}
+
 /// An `InputEventAction` builder.
 /// See_Also: <a href="https://refactoring.guru/design-patterns/builder">Builder Design Pattern</a> on <a href="https://refactoring.guru">refactoring.guru</a>
 class InputMapBinding {
