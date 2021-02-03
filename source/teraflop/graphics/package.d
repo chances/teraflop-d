@@ -71,6 +71,45 @@ struct Color {
     this.a = a / 255.0;
   }
 
+  /// Instantiate a `Color` given HSV components.
+  /// Params:
+  /// hue = Hue angle, in degrees, in the range `0` through `360`.
+  /// saturation = Saturation percentage in the range `0.0` through `1.0`.
+  /// value = Value percentage in the range `0.0` through `1.0`.
+  /// Throws: A `RangeError` if any of the given color components are outside their respective ranges.
+  static Color fromHsv(int hue, float saturation, float value) {
+    import core.stdc.math : fmodf;
+
+    // https://github.com/raysan5/raylib/blob/d7b4b9e4857809c249b0451edff8a7b93e4a3872/src/textures.c#L3535-L3563
+    auto color = Color(0, 0, 0, 255);
+
+    // Red channel
+    float k = fmodf(5.0f + hue / 60.0f, 6);
+    float t = 4.0f - k;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
+    color.r = value - value * saturation * k;
+
+    // Green channel
+    k = fmodf(3.0f + hue / 60.0f, 6);
+    t = 4.0f - k;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
+    color.g = value - value * saturation * k;
+
+    // Blue channel
+    k = fmodf(1.0f + hue / 60.0f, 6);
+    t = 4.0f - k;
+    k = (t < k)? t : k;
+    k = (k < 1)? k : 1;
+    k = (k > 0)? k : 0;
+    color.b = value - value * saturation * k;
+
+    return color;
+  }
+
   teraflop.math.vec3f vec3f() @property const {
     return teraflop.math.vec3f(r, g, b);
   }
@@ -90,6 +129,9 @@ struct Color {
 }
 
 unittest {
+  import std.conv : to;
+  import std.math : round;
+
   const green = Color(0, 1.0, 0, 1.0);
   assert(green.vec3f == vec3f(0, 1, 0));
   assert(green.vec3d == vec3d(0, 1, 0));
@@ -101,6 +143,12 @@ unittest {
   assert(cyan.vec3d == vec3d(0, 1, 1));
   assert(cyan.vec4f == vec4f(0, 1, 1, 1));
   assert(cyan.vec4d == vec4d(0, 1, 1, 1));
+
+  const muddyGreen = Color.fromHsv(139, 0.27, 0.73);
+  const r = muddyGreen.r * 255;
+  assert(round(muddyGreen.r * 255).to!int == 136);
+  assert(round(muddyGreen.g * 255).to!int == 186);
+  assert(round(muddyGreen.b * 255).to!int == 152);
 }
 
 /// Detect whether `T` is vertex attribute data.
