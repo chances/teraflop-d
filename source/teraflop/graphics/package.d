@@ -1006,6 +1006,7 @@ unittest {
     // Render a blank scene to a single image
     auto renderTargetSize = Size(400, 400);
     auto renderTarget = createImage(device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
+    // TODO: auto renderTargetTexture = new Texture(renderTargetSize, 0, ShaderStage.allGraphics);
 
     const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
       AttachmentOps(LoadOp.clear, StoreOp.store),
