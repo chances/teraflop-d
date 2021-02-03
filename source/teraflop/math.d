@@ -56,6 +56,7 @@ quatf rotationOf(mat4f value) @property {
   // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
   // return cast(quatf) value;
 
+  // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
   // import std.math : sqrt;
 
   // auto w = sqrt(1.0 + value.c[0][0] + value.c[1][1] + value.c[2][2]) / 2.0;
