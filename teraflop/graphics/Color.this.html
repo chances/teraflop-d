@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Struct Color - Teraflop</title>
+		<title>Color.this - multiple declarations - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -162,110 +162,71 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Struct Color</h1><p>RGBA double precision color.
+			<h1>Color.this - multiple declarations</h1>
+			<nav class="page-nav">
+				<ul>
+					<li>
+						<a href="#0">
+							Function <code>Color.this</code>
+						</a>
+					</li>
+					<li>
+						<a href="#1">
+							Function <code>Color.this</code>
+						</a>
+					</li>
+				</ul>
+			</nav><h2 id="0">Function Color.this</h2><p>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given double components in the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">struct</span> <span class="typ">Color</span>
-			<span class="pun">;</span>
+			<span class="pln">this</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">double</span> <span class="pln">r</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">double</span> <span class="pln">g</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">double</span> <span class="pln">b</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">double</span> <span class="pln">a</span> <span class="pun">=</span> <span class="lit">1.0</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			<section><h2>Constructors</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(r, g, b, a)</span>
-						</td>
-						<td>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given double components in the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(r, g, b, a)</span>
-						</td>
-						<td>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given whole integer components in the range <code class="lang-d"><span class="lit">0</span></code> through <code class="lang-d"><span class="lit">255</span></code>.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Fields</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.a.html" class="public"><code>a</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Alpha component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.b.html" class="public"><code>b</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Green component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.black.html" class="public"><code>black</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque black.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.blue.html" class="public"><code>blue</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque blue.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.g.html" class="public"><code>g</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Blue component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.green.html" class="public"><code>green</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque green.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.r.html" class="public"><code>r</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Red component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.red.html" class="public"><code>red</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque red.
-</td>
-					</tr>
-				</table>
-			</section>
+			<section><h3>Throws</h3>
+<p>A <code class="lang-d"><span class="typ">RangeError</span></code> if any of the given color components are outside the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.
+</p>
+</section>
+<h2 id="1">Function Color.this</h2><p>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given whole integer components in the range <code class="lang-d"><span class="lit">0</span></code> through <code class="lang-d"><span class="lit">255</span></code>.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">this</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">r</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">g</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">b</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">a</span> <span class="pun">=</span> <span class="lit">255</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
 			
+			<section><h3>Throws</h3>
+<p>A <code class="lang-d"><span class="typ">RangeError</span></code> if any of the given color components are outside the range <code class="lang-d"><span class="lit">0</span></code> through <code class="lang-d"><span class="lit">255</span></code>.
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

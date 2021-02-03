@@ -392,6 +392,7 @@ var symbols = [
 {name: 'teraflop.graphics.Color.green', kind: "variabledeclaration", path: './teraflop/graphics/Color.green.html', attributes: []},
 {name: 'teraflop.graphics.Color.r', kind: "variabledeclaration", path: './teraflop/graphics/Color.r.html', attributes: []},
 {name: 'teraflop.graphics.Color.red', kind: "variabledeclaration", path: './teraflop/graphics/Color.red.html', attributes: []},
+{name: 'teraflop.graphics.Color.this', kind: "functiondeclaration", path: './teraflop/graphics/Color.this.html', attributes: []},
 {name: 'teraflop.graphics.CullMode', kind: "enumdeclaration", path: './teraflop/graphics/CullMode.html', attributes: []},
 {name: 'teraflop.graphics.CullMode.back', kind: "enummemberdeclaration", path: './teraflop/graphics/CullMode.html#back', attributes: []},
 {name: 'teraflop.graphics.CullMode.both', kind: "enummemberdeclaration", path: './teraflop/graphics/CullMode.html#both', attributes: []},
