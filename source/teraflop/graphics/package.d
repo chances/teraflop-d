@@ -126,6 +126,16 @@ struct Color {
   package (teraflop) auto toVulkan() const {
     return ClearColorValues(r.to!float, g.to!float, b.to!float, a.to!float);
   }
+
+  /// Adjust a `Color`s alpha channel, setting it to the given percentage.
+  /// Returns: A newly adjusted `Color`.
+  /// Throws: A `RangeError` if the given `alpha` component is outside the range `0.0` through `1.0`.
+  Color withAlpha(float alpha) const {
+    bool outOfBounds = alpha < 0.0 || alpha > 1.0;
+    assert(!outOfBounds);
+    if (outOfBounds) throw new RangeError();
+    return Color(r, g, b, alpha);
+  }
 }
 
 unittest {
@@ -137,6 +147,7 @@ unittest {
   assert(green.vec3d == vec3d(0, 1, 0));
   assert(green.vec4f == vec4f(0, 1, 0, 1));
   assert(green.vec4d == vec4d(0, 1, 0, 1));
+  assert(green.withAlpha(0.5).vec4f == vec4f(0, 1, 0, 0.5));
 
   const cyan = Color(0, 255, 255);
   assert(cyan.vec3f == vec3f(0, 1, 1));
