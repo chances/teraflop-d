@@ -388,6 +388,7 @@ var symbols = [
 {name: 'teraflop.graphics.Color.b', kind: "variabledeclaration", path: './teraflop/graphics/Color.b.html', attributes: []},
 {name: 'teraflop.graphics.Color.black', kind: "variabledeclaration", path: './teraflop/graphics/Color.black.html', attributes: []},
 {name: 'teraflop.graphics.Color.blue', kind: "variabledeclaration", path: './teraflop/graphics/Color.blue.html', attributes: []},
+{name: 'teraflop.graphics.Color.fromHsv', kind: "functiondeclaration", path: './teraflop/graphics/Color.fromHsv.html', attributes: ["static"]},
 {name: 'teraflop.graphics.Color.g', kind: "variabledeclaration", path: './teraflop/graphics/Color.g.html', attributes: []},
 {name: 'teraflop.graphics.Color.green', kind: "variabledeclaration", path: './teraflop/graphics/Color.green.html', attributes: []},
 {name: 'teraflop.graphics.Color.r', kind: "variabledeclaration", path: './teraflop/graphics/Color.r.html', attributes: []},

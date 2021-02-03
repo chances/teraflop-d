@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Struct Color - Teraflop</title>
+		<title>Function Color.fromHsv - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -162,128 +162,37 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Struct Color</h1><p>RGBA double precision color.
+			<h1>Function Color.fromHsv</h1><p>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given HSV components.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">struct</span> <span class="typ">Color</span>
-			<span class="pun">;</span>
+			<span class="kwd">static </span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a> <span class="pln">fromHsv</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">hue</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">float</span> <span class="pln">saturation</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">float</span> <span class="pln">value</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			<section><h2>Constructors</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(r, g, b, a)</span>
-						</td>
-						<td>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given double components in the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.this.html" class="public">
-								<code>this</code>
-							</a>
-							<span class="tableEntryAnnotation">(r, g, b, a)</span>
-						</td>
-						<td>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given whole integer components in the range <code class="lang-d"><span class="lit">0</span></code> through <code class="lang-d"><span class="lit">255</span></code>.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Fields</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.a.html" class="public"><code>a</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Alpha component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.b.html" class="public"><code>b</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Green component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.black.html" class="public"><code>black</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque black.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.blue.html" class="public"><code>blue</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque blue.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.g.html" class="public"><code>g</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Blue component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.green.html" class="public"><code>green</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque green.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.r.html" class="public"><code>r</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">double</span></code></td><td>Red component.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.red.html" class="public"><code>red</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Solid opaque red.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Methods</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/graphics/Color.fromHsv.html" class="public">
-								<code>fromHsv</code>
-							</a>
-							<span class="tableEntryAnnotation">(hue, saturation, value)</span>
-						</td>
-						<td>Instantiate a <code class="lang-d"><a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code> given HSV components.
-</td>
-					</tr>
-				</table>
-			</section>
-			
+			<section><h2>Parameters</h2>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="hue">hue</td><td> Hue angle, in degrees, in the range <code class="lang-d"><span class="lit">0</span></code> through <code class="lang-d"><span class="lit">360</span></code>.</td></tr>
+<tr><td id="saturation">saturation</td><td> Saturation percentage in the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.</td></tr>
+<tr><td id="value">value</td><td> Value percentage in the range <code class="lang-d"><span class="lit">0.0</span></code> through <code class="lang-d"><span class="lit">1.0</span></code>.</td></tr>
+</table>
+</section>
+<section><h2>Throws</h2>
+<p>A <code class="lang-d"><span class="typ">RangeError</span></code> if any of the given color components are outside their respective ranges.
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>
