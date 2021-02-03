@@ -127,15 +127,14 @@ final class Input {
 }
 
 /// A node in the input event tree.
-abstract class InputNode {
+interface InputNode {
   ///
-  void actionInput(const InputEventAction event) {
-    assert(event.action.length);
-  }
+  void actionInput(const InputEventAction event);
 
-  ///
-  bool unhandledInput(const InputEvent event) {
-    assert(event.device);
-    return false;
-  }
+  /// Returns: Whether the mark the given input `event` as handled, stopping propagation through the input tree.
+  bool unhandledInput(const InputEvent event);
+}
+
+unittest {
+  // TODO: Test an event tree
 }
