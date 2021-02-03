@@ -130,6 +130,7 @@ unittest {
   assert(!event.handled);
   assert(event.isKeyboardEvent);
   assert(event.asKeyboardEvent == event);
+  assert(event == new InputEventKeyboard(event.key, event.pressed, event.held));
 
   event.stopPropagation();
   assert(event.handled);
