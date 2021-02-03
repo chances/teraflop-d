@@ -7,6 +7,7 @@
 /// License: 3-Clause BSD License
 module teraflop.input.map;
 
+import teraflop.input : MouseButton;
 import teraflop.input.event;
 import teraflop.input.keyboard;
 import teraflop.math : vec2d;
@@ -47,6 +48,11 @@ static StrengthCurve double_ = (float x, float last = 0.0) => x + x;
 /// Increases the strength by continuious accumulation, i.e. linearly.
 static StrengthCurve accumulation = (float x, float last = 0.0) => x + last;
 
+unittest {
+  assert(double_(2) == 4);
+  assert(accumulation(1, 1) == 2);
+}
+
 /// An `InputEventAction` builder.
 /// See_Also: <a href="https://refactoring.guru/design-patterns/builder">Builder Design Pattern</a> on <a href="https://refactoring.guru">refactoring.guru</a>
 class InputMapBinding {
@@ -58,26 +64,26 @@ class InputMapBinding {
   StrengthCurve strengthCurve = null;
 
   ///
-  InputMapBinding keyboardPressed(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardPressed(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(true, false, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardHeld(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardHeld(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(false, true, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardDown(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardDown(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(true, false, key, modifiers);
     states ~= BindingState.keyboard(false, true, key, modifiers);
     return this;
   }
 
   ///
-  InputMapBinding keyboardReleased(KeyboardKey key, Modifiers modifiers = Modifiers.NONE) {
+  InputMapBinding keyboardReleased(KeyboardKey key, Modifiers modifiers = Modifiers.none) {
     states ~= BindingState.keyboard(false, false, key, modifiers);
     return this;
   }
@@ -191,8 +197,8 @@ private struct BindingState {
   /// A member of `KeyboardKey`
   int key = 0;
   /// A bitwise combitation of keyboard `Modifiers`
-  int modifiers = Modifiers.NONE;
-  auto button = MouseButton.NONE;
+  int modifiers = Modifiers.none;
+  auto button = MouseButton.none;
   bool wheel = false;
   bool motion = false;
   /// A bitwise combitation of `Axis`
@@ -268,7 +274,7 @@ private struct BindingState {
     motionAxesApply = motionAxesApply || motionAxes == 0;
 
     bool buttonApplies = true;
-    if (button != MouseButton.NONE) {
+    if (button != MouseButton.none) {
       // Check that the event's button state matches this binding's expectation
       const isButtonPressed = (event.buttons & button) == button;
 

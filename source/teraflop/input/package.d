@@ -11,21 +11,61 @@ public import teraflop.input.keyboard;
 public import teraflop.input.map;
 
 ///
-struct InputEventHandlers {
+enum MouseButton {
   ///
-  const ActionInput actionHandler;
+  none = 0,
   ///
-  const UnhandledInput unhandledHandler;
+  left = 1,
+  ///
+  right = 2,
+  ///
+  middle = 4
 }
 
 ///
 final class Input {
   import std.typecons : Flag, No;
+  import teraflop.math : vec2d;
   import teraflop.platform : Window;
 
   ///
   const(InputEventHandlers)[] nodes;
+  private Window window;
   private auto _map = new InputMap();
+
+  package (teraflop) this(Window window) {
+    this.window = window;
+  }
+
+  ///
+  bool isKeyDown(KeyboardKey key) @property const {
+    return window.isKeyDown(key);
+  }
+  ///
+  bool wasKeyDown(KeyboardKey key) @property const {
+    return window.wasKeyDown(key);
+  }
+  ///
+  bool isKeyReleased(KeyboardKey key) @property const {
+    return window.isKeyReleased(key);
+  }
+
+  ///
+  vec2d mousePosition() @property const {
+    return window.mousePosition;
+  }
+  ///
+  vec2d lastMousePosition() @property const {
+    return window.lastMousePosition;
+  }
+  ///
+  int mouseButtons() @property const {
+    return window.mouseButtons;
+  }
+  ///
+  int lastMouseButtons() @property const {
+    return window.lastMouseButtons;
+  }
 
   ///
   static ActionInput ignoreActions() {
@@ -77,22 +117,22 @@ final class Input {
       if (window.isKeyDown(key) || (window.isKeyReleased(key) && window.wasKeyDown(key))) {
         int keyModifiers = 0;
         if (window.isKeyDown(KeyboardKey.leftShift))
-          keyModifiers |= Modifiers.SHIFT | Modifiers.LEFT_SHIFT;
+          keyModifiers |= Modifiers.shift | Modifiers.leftShift;
         if (window.isKeyDown(KeyboardKey.leftControl))
-          keyModifiers |= Modifiers.CONTROL | Modifiers.LEFT_CONTROL;
+          keyModifiers |= Modifiers.control | Modifiers.leftControl;
         if (window.isKeyDown(KeyboardKey.leftAlt))
-          keyModifiers |= Modifiers.ALT | Modifiers.LEFT_ALT;
+          keyModifiers |= Modifiers.alt | Modifiers.leftAlt;
         if (window.isKeyDown(KeyboardKey.leftSuper))
-          keyModifiers |= Modifiers.SUPER | Modifiers.LEFT_SUPER;
+          keyModifiers |= Modifiers.super_ | Modifiers.leftSuper;
 
         if (window.isKeyDown(KeyboardKey.rightShift))
-          keyModifiers |= Modifiers.SHIFT | Modifiers.RIGHT_SHIFT;
+          keyModifiers |= Modifiers.shift | Modifiers.rightShift;
         if (window.isKeyDown(KeyboardKey.rightControl))
-          keyModifiers |= Modifiers.CONTROL | Modifiers.RIGHT_CONTROL;
+          keyModifiers |= Modifiers.control | Modifiers.rightControl;
         if (window.isKeyDown(KeyboardKey.rightAlt))
-          keyModifiers |= Modifiers.ALT | Modifiers.RIGHT_ALT;
+          keyModifiers |= Modifiers.alt | Modifiers.rightAlt;
         if (window.isKeyDown(KeyboardKey.rightSuper))
-          keyModifiers |= Modifiers.SUPER | Modifiers.RIGHT_SUPER;
+          keyModifiers |= Modifiers.super_ | Modifiers.rightSuper;
 
         propagate(new InputEventKeyboard(
           key, window.isKeyDown(key), window.isKeyDown(key) && window.wasKeyDown(key), keyModifiers

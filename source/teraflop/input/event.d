@@ -4,11 +4,20 @@
 module teraflop.input.event;
 
 import teraflop.math : vec2d;
+import teraflop.input : MouseButton;
 import teraflop.input.keyboard;
 import teraflop.traits;
 
 alias ActionInput = void delegate(const InputEventAction event);
 alias UnhandledInput = bool delegate(const InputEvent event);
+
+///
+struct InputEventHandlers {
+  ///
+  const ActionInput actionHandler;
+  ///
+  const UnhandledInput unhandledHandler;
+}
 
 /// The user input device from which an `InputEvent` originated.
 enum InputDevice {
@@ -121,29 +130,18 @@ unittest {
   assert(!event.handled);
   assert(event.isKeyboardEvent);
   assert(event.asKeyboardEvent == event);
+  assert(event == new InputEventKeyboard(event.key, event.pressed, event.held));
 
   event.stopPropagation();
   assert(event.handled);
 }
 
-///
-enum MouseButton {
-  ///
-  NONE = 0,
-  ///
-  LEFT = 1,
-  ///
-  RIGHT = 2,
-  ///
-  MIDDLE = 4
-}
-
 /// Mouse button and/or motion event.
 class InputEventMouse : InputEvent {
   /// One of or a bitwise combination of `MouseButton`s that are down.
-  int buttons = MouseButton.NONE;
+  int buttons = MouseButton.none;
   /// One of or a bitwise combination of `MouseButton`s that were just down.
-  int lastButtons = MouseButton.NONE;
+  int lastButtons = MouseButton.none;
   ///
   const bool buttonsChanged = false;
   ///
@@ -190,22 +188,22 @@ unittest {
   assert(event.isMouseEvent);
   assert(event.asMouseEvent == event);
 
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) != MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) != MouseButton.right);
+  assert((event.buttons & MouseButton.middle) != MouseButton.middle);
 
-  event.buttons |= MouseButton.RIGHT;
-  assert(!event.wasButtonJustClicked(MouseButton.LEFT));
-  assert(event.wasButtonJustPressed(MouseButton.RIGHT));
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
+  event.buttons |= MouseButton.right;
+  assert(!event.wasButtonJustClicked(MouseButton.left));
+  assert(event.wasButtonJustPressed(MouseButton.right));
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) == MouseButton.right);
+  assert((event.buttons & MouseButton.middle) != MouseButton.middle);
 
-  event.buttons |= MouseButton.MIDDLE;
-  assert(event.wasButtonJustPressed(MouseButton.MIDDLE));
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) == MouseButton.MIDDLE);
+  event.buttons |= MouseButton.middle;
+  assert(event.wasButtonJustPressed(MouseButton.middle));
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) == MouseButton.right);
+  assert((event.buttons & MouseButton.middle) == MouseButton.middle);
 }
 
 /// Mapped action input event.
@@ -248,4 +246,5 @@ unittest {
   assert(event.device == InputDevice.keyboard);
   assert(event.isActionEvent);
   assert(event.asActionEvent == event);
+  assert(event == new InputEventAction(event.device, event.action));
 }
