@@ -95,6 +95,17 @@ unittest {
   assert(xform.scaleOf == translation);
 }
 
+///
+vec3f scale(vec3f a, float scale) {
+  return vec3f(a.x * scale, a.y * scale, a.z * scale);
+}
+
+///
+vec3f abs(vec3f a) @property {
+  import std.math : abs;
+  return vec3f(abs(a.x), abs(a.y), abs(a.z));
+}
+
 /// Transformation matrix to correct for the Vulkan coordinate system.
 /// Vulkan clip space has inverted Y and half Z.
 /// Params:
