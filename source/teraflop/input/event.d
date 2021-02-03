@@ -187,22 +187,22 @@ unittest {
   assert(event.isMouseEvent);
   assert(event.asMouseEvent == event);
 
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) != MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) != MouseButton.right);
+  assert((event.buttons & MouseButton.middle) != MouseButton.middle);
 
-  event.buttons |= MouseButton.RIGHT;
-  assert(!event.wasButtonJustClicked(MouseButton.LEFT));
-  assert(event.wasButtonJustPressed(MouseButton.RIGHT));
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) != MouseButton.MIDDLE);
+  event.buttons |= MouseButton.right;
+  assert(!event.wasButtonJustClicked(MouseButton.left));
+  assert(event.wasButtonJustPressed(MouseButton.right));
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) == MouseButton.right);
+  assert((event.buttons & MouseButton.middle) != MouseButton.middle);
 
-  event.buttons |= MouseButton.MIDDLE;
-  assert(event.wasButtonJustPressed(MouseButton.MIDDLE));
-  assert((event.buttons & MouseButton.LEFT) != MouseButton.LEFT);
-  assert((event.buttons & MouseButton.RIGHT) == MouseButton.RIGHT);
-  assert((event.buttons & MouseButton.MIDDLE) == MouseButton.MIDDLE);
+  event.buttons |= MouseButton.middle;
+  assert(event.wasButtonJustPressed(MouseButton.middle));
+  assert((event.buttons & MouseButton.left) != MouseButton.left);
+  assert((event.buttons & MouseButton.right) == MouseButton.right);
+  assert((event.buttons & MouseButton.middle) == MouseButton.middle);
 }
 
 /// Mapped action input event.
