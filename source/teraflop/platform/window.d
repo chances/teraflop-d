@@ -110,10 +110,9 @@ class Window : InputNode {
   string title() @property const {
     return _title;
   }
-  void title(string value) @property {
+  void title(const string value) @property {
     _title = value;
-
-    if (valid) glfwSetWindowTitle(window, toStringz(_title));
+    if (valid) glfwSetWindowTitle(window, value.toStringz);
   }
 
   /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
