@@ -554,9 +554,9 @@ class Camera : NamedComponent {
 
     // Calculate normalized device coordinates
     // NOTE: y value is negative
-    float x = (2.0f * mousePosition.x) / framebufferSize.width - 1.0f;
-    float y = 1.0f - (2.0f * mousePosition.y) / framebufferSize.height;
-    float z = 1.0f;
+    const float x = (2.0f * mousePosition.x) / framebufferSize.width - 1.0f;
+    const float y = 1.0f - (2.0f * mousePosition.y) / framebufferSize.height;
+    const float z = 1.0f;
 
     // Store values in a vector
     auto deviceCoords = vec3f(x, y, z);
@@ -580,8 +580,8 @@ class Camera : NamedComponent {
     // }
 
     // Unproject far/near points
-    auto nearPoint = vec3f(deviceCoords.x, deviceCoords.y, 0.0f).unproject(view * proj);
-    auto farPoint = vec3f(deviceCoords.x, deviceCoords.y, 1.0f).unproject(view * proj);
+    const nearPoint = vec3f(deviceCoords.x, deviceCoords.y, 0.0f).unproject(view * proj);
+    const farPoint = vec3f(deviceCoords.x, deviceCoords.y, 1.0f).unproject(view * proj);
 
     // Unproject the mouse cursor in the near plane.
     // We need this as the source position because orthographic projects, compared to perspect doesn't have a

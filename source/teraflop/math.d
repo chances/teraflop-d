@@ -80,12 +80,12 @@ quatf rotationOf(mat4f value) @property {
   const r = value.c;
   float wSquared = 0.25 * (1.0 + r[1][1] + r[2][2] + r[3][3]);
   if (wSquared >= 0.25) {
-    float w = sqrt(wSquared);
+    const float w = sqrt(wSquared);
 
-    float overW_4 = 0.25 / w;
-    float x = (r[3][2] - r[2][3]) * overW_4;
-    float y = (r[1][3] - r[3][1]) * overW_4;
-    float z = (r[2][1] - r[1][2]) * overW_4;
+    const float overW_4 = 0.25 / w;
+    const float x = (r[3][2] - r[2][3]) * overW_4;
+    const float y = (r[1][3] - r[3][1]) * overW_4;
+    const float z = (r[2][1] - r[1][2]) * overW_4;
 
     return quatf(w, x, y, z);
   } else return failedExtraction;
