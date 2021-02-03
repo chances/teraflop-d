@@ -11,11 +11,15 @@ public import teraflop.input.keyboard;
 public import teraflop.input.map;
 
 ///
-struct InputEventHandlers {
+enum MouseButton {
   ///
-  const ActionInput actionHandler;
+  none = 0,
   ///
-  const UnhandledInput unhandledHandler;
+  left = 1,
+  ///
+  right = 2,
+  ///
+  middle = 4
 }
 
 ///

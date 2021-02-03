@@ -250,9 +250,9 @@ class Window : InputNode {
       this.hovered = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
       this.lastMouseButtons = this.mouseButtons;
       this.mouseButtons = 0;
-      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) this.mouseButtons |= MouseButton.LEFT;
-      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) this.mouseButtons |= MouseButton.RIGHT;
-      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) this.mouseButtons |= MouseButton.MIDDLE;
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) this.mouseButtons |= MouseButton.left;
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) this.mouseButtons |= MouseButton.right;
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) this.mouseButtons |= MouseButton.middle;
       // Keyboard input
       foreach (key; keyPressed.keys)
         wasKeyPressed[key] = (key in keyPressed) !is null ? keyPressed[key] : false;

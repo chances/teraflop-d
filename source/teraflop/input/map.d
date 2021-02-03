@@ -7,6 +7,7 @@
 /// License: 3-Clause BSD License
 module teraflop.input.map;
 
+import teraflop.input : MouseButton;
 import teraflop.input.event;
 import teraflop.input.keyboard;
 import teraflop.math : vec2d;
@@ -268,7 +269,7 @@ private struct BindingState {
     motionAxesApply = motionAxesApply || motionAxes == 0;
 
     bool buttonApplies = true;
-    if (button != MouseButton.NONE) {
+    if (button != MouseButton.none) {
       // Check that the event's button state matches this binding's expectation
       const isButtonPressed = (event.buttons & button) == button;
 

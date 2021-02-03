@@ -4,11 +4,20 @@
 module teraflop.input.event;
 
 import teraflop.math : vec2d;
+import teraflop.input : MouseButton;
 import teraflop.input.keyboard;
 import teraflop.traits;
 
 alias ActionInput = void delegate(const InputEventAction event);
 alias UnhandledInput = bool delegate(const InputEvent event);
+
+///
+struct InputEventHandlers {
+  ///
+  const ActionInput actionHandler;
+  ///
+  const UnhandledInput unhandledHandler;
+}
 
 /// The user input device from which an `InputEvent` originated.
 enum InputDevice {
@@ -126,24 +135,12 @@ unittest {
   assert(event.handled);
 }
 
-///
-enum MouseButton {
-  ///
-  NONE = 0,
-  ///
-  LEFT = 1,
-  ///
-  RIGHT = 2,
-  ///
-  MIDDLE = 4
-}
-
 /// Mouse button and/or motion event.
 class InputEventMouse : InputEvent {
   /// One of or a bitwise combination of `MouseButton`s that are down.
-  int buttons = MouseButton.NONE;
+  int buttons = MouseButton.none;
   /// One of or a bitwise combination of `MouseButton`s that were just down.
-  int lastButtons = MouseButton.NONE;
+  int lastButtons = MouseButton.none;
   ///
   const bool buttonsChanged = false;
   ///
