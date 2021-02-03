@@ -9,6 +9,7 @@ module teraflop.math;
 
 public import gfm.math;
 import std.typecons : Flag, Yes;
+import teraflop.graphics : Color;
 
 private const float ONE_DEGREE_IN_RADIANS = 0.01745329252;
 
@@ -117,6 +118,13 @@ mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure 
     0f, 0f, 0.5f, 0.5f,
     0f, 0f, 0f, 1f,
   );
+}
+
+/// Adjust a `Color`s alpha channel, setting it to the given percentage
+Color withAlpha(Color color, float alpha) {
+  assert(alpha >= 0.0 && alpha <= 1.0);
+  import std.math : round;
+  return Color(color.r, color.g, color.b, cast(ubyte) round(255.0 * alpha));
 }
 
 /// Size of an object.
