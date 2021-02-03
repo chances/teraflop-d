@@ -44,6 +44,19 @@ enum vec3f forward = vec3f(0, 0, 1);
 /// Backward unit vector, i.e. inverse of Z-forward.
 enum vec3f back = vec3f(0, 0, -1);
 
+/// Transformation matrix to correct for the Vulkan coordinate system.
+/// Vulkan clip space has inverted Y and half Z.
+/// Params:
+/// invertY = Whether the Y axis of the matrix is inverted.
+mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
+  return mat4f(
+    1f, 0f, 0f, 0f,
+    0f, invertY ? -1f : 1.0f, 0f, 0f,
+    0f, 0f, 0.5f, 0.5f,
+    0f, 0f, 0f, 1f,
+  );
+}
+
 /// Extract the translation transformation from the given `matrix`.
 vec3f translationOf(mat4f matrix) @property {
   return vec3f(matrix.c[0][3], matrix.c[1][3], matrix.c[2][3]);
@@ -67,12 +80,12 @@ quatf rotationOf(mat4f value) @property {
   const r = value.c;
   float wSquared = 0.25 * (1.0 + r[1][1] + r[2][2] + r[3][3]);
   if (wSquared >= 0.25) {
-    float w = sqrt(wSquared);
+    const float w = sqrt(wSquared);
 
-    float overW_4 = 0.25 / w;
-    float x = (r[3][2] - r[2][3]) * overW_4;
-    float y = (r[1][3] - r[3][1]) * overW_4;
-    float z = (r[2][1] - r[1][2]) * overW_4;
+    const float overW_4 = 0.25 / w;
+    const float x = (r[3][2] - r[2][3]) * overW_4;
+    const float y = (r[1][3] - r[3][1]) * overW_4;
+    const float z = (r[2][1] - r[1][2]) * overW_4;
 
     return quatf(w, x, y, z);
   } else return failedExtraction;
@@ -127,18 +140,15 @@ vec3f abs(vec3f a) @property {
   return vec3f(abs(a.x), abs(a.y), abs(a.z));
 }
 
-/// Transformation matrix to correct for the Vulkan coordinate system.
-/// Vulkan clip space has inverted Y and half Z.
-/// Params:
-/// invertY = Whether the Y axis of the matrix is inverted.
-mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
-  return mat4f(
-    1f, 0f, 0f, 0f,
-    0f, invertY ? -1f : 1.0f, 0f, 0f,
-    0f, 0f, 0.5f, 0.5f,
-    0f, 0f, 0f, 1f,
-  );
+/// Projects a Vector from screen space into object space.
+vec3f unproject(vec3f source, mat4f viewProj) {
+  return (viewProj.inverse * vec4f(source, 0)).xyz;
 }
+
+///
+alias ray2f = Ray!(float, 2);
+///
+alias ray3f = Ray!(float, 3);
 
 /// Adjust a `Color`s alpha channel, setting it to the given percentage
 Color withAlpha(Color color, float alpha) {

@@ -547,6 +547,55 @@ class Camera : NamedComponent {
     const clip = vulkanClipCorrection(invertY ? Yes.invertY : No.invertY);
     return (clip * projection * view * model).transposed;
   }
+
+  ///
+  ray3f mouseRay(float fovInRadians, vec3f cameraTarget, Size framebufferSize, vec2d mousePosition) const {
+    // https://github.com/raysan5/raylib/blob/96db787657313c671ff618c23ffc91638cbc72b0/src/core.c#L1997
+
+    // Calculate normalized device coordinates
+    // NOTE: y value is negative
+    const float x = (2.0f * mousePosition.x) / framebufferSize.width - 1.0f;
+    const float y = 1.0f - (2.0f * mousePosition.y) / framebufferSize.height;
+    const float z = 1.0f;
+
+    // Store values in a vector
+    auto deviceCoords = vec3f(x, y, z);
+
+    // Calculate view matrix from camera look at
+    auto view = mat4f.lookAt(view.translationOf, cameraTarget, up);
+    auto proj = mat4f.identity;
+
+    // if (camera.type == CAMERA_PERSPECTIVE) {
+      // Calculate projection matrix from perspective
+      proj = mat4f.perspective(fovInRadians, (framebufferSize.width / framebufferSize.height), 0.01f, 1000.0f);
+    // }
+    // TODO: Support orthographic cameras?
+    // else if (camera.type == CAMERA_ORTHOGRAPHIC) {
+    //     float aspect = (float)CORE.Window.screen.width/(float)CORE.Window.screen.height;
+    //     double top = camera.fovy/2.0;
+    //     double right = top*aspect;
+
+    //     // Calculate projection matrix from orthographic
+    //     proj = MatrixOrtho(-right, right, -top, top, 0.01, 1000.0);
+    // }
+
+    // Unproject far/near points
+    const nearPoint = vec3f(deviceCoords.x, deviceCoords.y, 0.0f).unproject(view * proj);
+    const farPoint = vec3f(deviceCoords.x, deviceCoords.y, 1.0f).unproject(view * proj);
+
+    // Unproject the mouse cursor in the near plane.
+    // We need this as the source position because orthographic projects, compared to perspect doesn't have a
+    // convergence point, meaning that the "eye" of the camera is more like a plane than a point.
+    // auto cameraPlanePointerPos = vec3f(deviceCoords.x, deviceCoords.y, -1.0f).unproject(view * proj);
+
+    // Calculate normalized direction vector
+    auto direction = (farPoint - nearPoint).normalized;
+
+    // if (camera.type == CAMERA_PERSPECTIVE) ray.orig = view.translationOf;
+    // else if (camera.type == CAMERA_ORTHOGRAPHIC) ray.orig = cameraPlanePointerPos;
+
+    return ray3f(view.translationOf, direction);
+  }
 }
 
 /// A 2D image stored in GPU memory.
@@ -957,6 +1006,7 @@ unittest {
     // Render a blank scene to a single image
     auto renderTargetSize = Size(400, 400);
     auto renderTarget = createImage(device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
+    // TODO: auto renderTargetTexture = new Texture(renderTargetSize, 0, ShaderStage.allGraphics);
 
     const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
       AttachmentOps(LoadOp.clear, StoreOp.store),
