@@ -180,7 +180,15 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="degrees" class="public" href="../teraflop/math/degrees.html">degrees</a><span class="tableEntryAnnotation">(radians)</span>
+								<a id="abs" class="public property" href="../teraflop/math/abs.html">abs</a><span class="tableEntryAnnotation">(a)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="degrees" class="public property" href="../teraflop/math/degrees.html">degrees</a><span class="tableEntryAnnotation">(radians)</span>
 							</code>
 						</td>
 						<td>Convert and angle from radians to degrees.
@@ -189,10 +197,54 @@ $('#symbolSearchPane').show();</script>
 					<tr>
 						<td>
 							<code>
-								<a id="radians" class="public" href="../teraflop/math/radians.html">radians</a><span class="tableEntryAnnotation">(degrees)</span>
+								<a id="failedExtraction" class="public" href="../teraflop/math/failedExtraction.html">failedExtraction</a><span class="tableEntryAnnotation">()</span>
+							</code>
+						</td>
+						<td>Result of a failed extraction while executing <code class="lang-d"><a href="../teraflop/math/rotationOf.html"><span class="pln">rotationOf</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="radians" class="public property" href="../teraflop/math/radians.html">radians</a><span class="tableEntryAnnotation">(degrees)</span>
 							</code>
 						</td>
 						<td>Convert and angle from degrees to radians.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="rotationOf" class="public property" href="../teraflop/math/rotationOf.html">rotationOf</a><span class="tableEntryAnnotation">(value)</span>
+							</code>
+						</td>
+						<td>Extract the rotation transformation from the given <code class="lang-d"><span class="pln">matrix</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="scale" class="public" href="../teraflop/math/scale.html">scale</a><span class="tableEntryAnnotation">(a, scale)</span>
+							</code>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="scaleOf" class="public property" href="../teraflop/math/scaleOf.html">scaleOf</a><span class="tableEntryAnnotation">(value)</span>
+							</code>
+						</td>
+						<td>Extract the scale transformation from the given <code class="lang-d"><span class="pln">matrix</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="translationOf" class="public property" href="../teraflop/math/translationOf.html">translationOf</a><span class="tableEntryAnnotation">(matrix)</span>
+							</code>
+						</td>
+						<td>Extract the translation transformation from the given <code class="lang-d"><a href="../teraflop/math/translationOf.html#matrix"><span class="pln">matrix</span></a></code>.
 </td>
 					</tr>
 					<tr>
@@ -203,6 +255,15 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td>Transformation matrix to correct for the Vulkan coordinate system.
 Vulkan clip space has inverted Y and half Z.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<code>
+								<a id="withAlpha" class="public" href="../teraflop/math/withAlpha.html">withAlpha</a><span class="tableEntryAnnotation">(color, alpha)</span>
+							</code>
+						</td>
+						<td>Adjust a <code class="lang-d"><span class="typ">Color</span></code>s alpha channel, setting it to the given percentage
 </td>
 					</tr>
 				</table>
