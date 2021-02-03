@@ -37,8 +37,7 @@ class Transform : UniformBuffer!mat4f {
 
   ///
   vec3f translation() @property const {
-    const value = this.value;
-    return vec3f(value.c[3][0], value.c[3][1], value.c[3][2]);
+    return super.value.translationOf;
   }
   /// ditto
   void translation(vec3f value) @property {
@@ -48,15 +47,14 @@ class Transform : UniformBuffer!mat4f {
     matrix.c[3][2] = value.z;
     super.value = matrix.transposed;
   }
-  // TODO: Add rotation properties
-  // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
-  // ///
-  // quatf rotation() @property const {
-  //   return cast(Quaternion!float) value;
-  // }
+  ///
+  quatf rotation() @property const {
+    return super.value.rotationOf;
+  }
+  // TODO: Add rotation setter
   ///
   vec3f scale() @property const {
-    return vec3f(value.c[0][0], value.c[1][1], value.c[2][2]);
+    return super.value.scaleOf;
   }
   /// ditto
   void scale(vec3f value) @property {

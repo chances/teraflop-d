@@ -13,7 +13,7 @@ import std.typecons : Flag, Yes;
 private const float ONE_DEGREE_IN_RADIANS = 0.01745329252;
 
 /// Convert and angle from radians to degrees.
-float degrees(float radians) {
+float degrees(float radians) @property {
   return radians / ONE_DEGREE_IN_RADIANS;
 }
 
@@ -24,7 +24,7 @@ unittest {
 }
 
 /// Convert and angle from degrees to radians.
-float radians(float degrees) {
+float radians(float degrees) @property {
   return ONE_DEGREE_IN_RADIANS * degrees;
 }
 
@@ -42,6 +42,58 @@ enum vec3f down = vec3f(0, -1, 0);
 enum vec3f forward = vec3f(0, 0, 1);
 /// Backward unit vector, i.e. inverse of Z-forward.
 enum vec3f back = vec3f(0, 0, -1);
+
+/// Extract the translation transformation from the given `matrix`.
+vec3f translationOf(mat4f matrix) @property {
+  return vec3f(matrix.c[0][3], matrix.c[1][3], matrix.c[2][3]);
+}
+
+/// Extract the rotation transformation from the given `matrix`.
+quatf rotationOf(mat4f value) @property {
+  return quatf.fromEulerAngles(0, 0, 0);
+
+  // TODO: Fix this cast to a Quaternion (https://gfm.dpldocs.info/source/gfm.math.matrix.d.html#L370)
+  // return cast(quatf) value;
+
+  // import std.math : sqrt;
+
+  // auto w = sqrt(1.0 + value.c[0][0] + value.c[1][1] + value.c[2][2]) / 2.0;
+	// auto w4 = 4.0 * w;
+	// auto x = (value.c[1][2] - value.c[2][1]) / w4;
+	// auto y = (value.c[2][0] - value.c[0][2]) / w4;
+	// auto z = (value.c[0][1] - value.c[1][0]) / w4;
+  // return quatf(w, x, y, z);
+}
+
+/// Extract the scale transformation from the given `matrix`.
+vec3f scaleOf(mat4f value) @property {
+  return vec3f(value.c[0][0], value.c[1][1], value.c[2][2]);
+}
+
+unittest {
+  auto xform = mat4f.identity;
+  assert(xform.translationOf == vec3f(0));
+  assert(xform.rotationOf == quatf.fromEulerAngles(0, 0, 0));
+  assert(xform.scaleOf == vec3f(1));
+
+  const translation = vec3f(0, 1, 0);
+  xform = mat4f.translation(translation);
+  assert(xform.translationOf == translation);
+  assert(xform.rotationOf == quatf.fromEulerAngles(0, 0, 0));
+  assert(xform.scaleOf == vec3f(1));
+
+  xform = mat4f.rotation(45.radians, up);
+  assert(xform.translationOf == vec3f(0));
+  // auto r = xform.rotationOf;
+  // auto r2 = quatf.fromEulerAngles(0, 0, 0);
+  // assert(xform.rotationOf == quatf.fromEulerAngles(0, 45.radians, 0));
+  // assert(xform.scaleOf == vec3f(1));
+
+  xform = mat4f.scaling(translation);
+  assert(xform.translationOf == vec3f(0));
+  assert(xform.rotationOf == quatf.fromEulerAngles(0, 0, 0));
+  assert(xform.scaleOf == translation);
+}
 
 /// Transformation matrix to correct for the Vulkan coordinate system.
 /// Vulkan clip space has inverted Y and half Z.
