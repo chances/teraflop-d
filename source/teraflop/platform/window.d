@@ -193,7 +193,7 @@ class Window : InputNode {
 
   override bool unhandledInput(const InputEvent event) {
     onUnhandledInput(event);
-    return false;
+    return true; // Mark handled
   }
 
   extern(C) {
