@@ -702,6 +702,14 @@ class Texture : BindingDescriptor, IResource {
 
   /// Size of this Texture, in pixels.
   const Size size;
+  /// Data format of a Texture's `data`.
+  static const format = Format.bgra8_sRgb;
+  /// Manner in which this Texture will be used. Defaults to `ImageUsage.sampled | ImageUsage.transferDst`.
+  /// See_Also: `defaultUsage`
+  const ImageUsage usage;
+  /// Default value of a Texture's `usage`.
+  /// See_Also: `usage`
+  static const defaultUsage = ImageUsage.sampled | ImageUsage.transferDst;
 
   private ubyte[] data_;
   private Buffer stagingBuffer;
@@ -709,40 +717,73 @@ class Texture : BindingDescriptor, IResource {
   private Sampler sampler_;
 
   /// Initialize a new Texture.
-  this(const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
+  this(const Size size, ImageUsage usage = defaultUsage, ShaderStage shaderStage = ShaderStage.fragment) {
+    this(size, 0, usage, shaderStage);
+  }
+  /// Initialize a new named Texture.
+  this(string name, const Size size, ImageUsage usage = defaultUsage, ShaderStage shaderStage = ShaderStage.fragment) {
+    this(name, size, 0, usage, shaderStage);
+  }
+  /// Initialize a new Texture.
+  this(
+    const Size size, uint bindingLocation, ImageUsage usage = defaultUsage,
+    ShaderStage shaderStage = ShaderStage.fragment
+  ) {
     super(bindingLocation);
     bindingType_ = DescriptorType.sampledImage;
     shaderStage_ = shaderStage;
 
     this.size = size;
+    assert(
+      (usage & ImageUsage.transferDst) == ImageUsage.transferDst,
+      "Must include `ImageUsage.transferDst`.\n\tAll Textures make use of a staging buffer."
+    );
+    this.usage = usage;
   }
   /// Initialize a new named Texture.
-  this(string name, const Size size, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
+  this(
+    string name, const Size size, uint bindingLocation, ImageUsage usage = defaultUsage,
+    ShaderStage shaderStage = ShaderStage.fragment
+  ) {
     super(name, bindingLocation);
     bindingType_ = DescriptorType.sampledImage;
     shaderStage_ = shaderStage;
 
     this.size = size;
+    assert(
+      (usage & ImageUsage.transferDst) == ImageUsage.transferDst,
+      "Must include `ImageUsage.transferDst`.\n\tAll Textures make use of a staging buffer."
+    );
+    this.usage = usage;
   }
   /// Initialize a new Texture with initial data.
-  this(const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment) {
-    this(size, bindingLocation, shaderStage);
+  this(
+    const Size size, ubyte[] data, uint bindingLocation = 0, ImageUsage usage = defaultUsage,
+    ShaderStage shaderStage = ShaderStage.fragment
+  ) {
+    this(size, bindingLocation, usage, shaderStage);
     this.data_ = data;
     dirty = true;
   }
   /// Initialize a new named Texture with initial data.
   this(
-    string name, const Size size, ubyte[] data, uint bindingLocation, ShaderStage shaderStage = ShaderStage.fragment
+    string name, const Size size, ubyte[] data, uint bindingLocation = 0, ImageUsage usage = defaultUsage,
+    ShaderStage shaderStage = ShaderStage.fragment
   ) {
-    this(name, size, bindingLocation, shaderStage);
+    this(name, size, bindingLocation, usage, shaderStage);
     this.data_ = data;
     dirty = true;
+  }
+
+  ///
+  size_t sizeInBytes() @property const {
+    return size.width * size.height * 4;
   }
 
   /// Whether this Shader has been successfully initialized.
   bool initialized() @property const {
     return stagingBuffer !is null &&
-      (cast(Buffer) stagingBuffer).size == data_.length &&
+      (cast(Buffer) stagingBuffer).size == sizeInBytes &&
       image_ !is null && sampler_ !is null;
   }
 
@@ -763,13 +804,13 @@ class Texture : BindingDescriptor, IResource {
 
   /// Initialize this Texture.
   void initialize(scope Device device) {
-    import teraflop.platform.vulkan : createDynamicBuffer;
+    import teraflop.platform.vulkan : createDynamicBuffer, createImage;
 
-    stagingBuffer = device.createDynamicBuffer(size.width * size.height * 4, BufferUsage.transferSrc);
-    image_ = device.createImage(ImageInfo.d2(size.width, size.height));
+    stagingBuffer = device.createDynamicBuffer(sizeInBytes, BufferUsage.transferSrc);
+    image_ = createImage(device, size, format, usage);
     sampler_ = device.createSampler(SamplerInfo.nearest.withWrapMode(WrapMode.border));
 
-    copyToStage();
+    if (this.data_.length) copyToStage();
   }
 
   /// Update this texture's data.
@@ -1104,7 +1145,9 @@ unittest {
     // Render a blank scene to a single image
     auto renderTargetSize = Size(400, 400);
     auto renderTarget = createImage(device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
-    // TODO: auto renderTargetTexture = new Texture(renderTargetSize, 0, ShaderStage.allGraphics);
+    auto renderTargetTexture = new Texture(renderTargetSize);
+    renderTargetTexture.initialize(device);
+    assert(renderTargetTexture.initialized);
 
     const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
       AttachmentOps(LoadOp.clear, StoreOp.store),
