@@ -186,7 +186,7 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../teraflop/graphics/Texture.this.html" class="public">
 								<code>this</code>
 							</a>
-							<span class="tableEntryAnnotation">(size, bindingLocation, shaderStage)</span>
+							<span class="tableEntryAnnotation">(size, usage, shaderStage)</span>
 						</td>
 						<td>Initialize a new Texture.
 </td>
@@ -196,7 +196,7 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../teraflop/graphics/Texture.this.html" class="public">
 								<code>this</code>
 							</a>
-							<span class="tableEntryAnnotation">(name, size, bindingLocation, shaderStage)</span>
+							<span class="tableEntryAnnotation">(name, size, usage, shaderStage)</span>
 						</td>
 						<td>Initialize a new named Texture.
 </td>
@@ -206,7 +206,27 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../teraflop/graphics/Texture.this.html" class="public">
 								<code>this</code>
 							</a>
-							<span class="tableEntryAnnotation">(size, data, bindingLocation, shaderStage)</span>
+							<span class="tableEntryAnnotation">(size, bindingLocation, usage, shaderStage)</span>
+						</td>
+						<td>Initialize a new Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(name, size, bindingLocation, usage, shaderStage)</span>
+						</td>
+						<td>Initialize a new named Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(size, data, bindingLocation, usage, shaderStage)</span>
 						</td>
 						<td>Initialize a new Texture with initial data.
 </td>
@@ -216,7 +236,7 @@ $('#symbolSearchPane').show();</script>
 							<a href="../../teraflop/graphics/Texture.this.html" class="public">
 								<code>this</code>
 							</a>
-							<span class="tableEntryAnnotation">(name, size, data, bindingLocation, shaderStage)</span>
+							<span class="tableEntryAnnotation">(name, size, data, bindingLocation, usage, shaderStage)</span>
 						</td>
 						<td>Initialize a new named Texture with initial data.
 </td>
@@ -231,9 +251,30 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../teraflop/graphics/Texture.defaultUsage.html" class="public"><code>defaultUsage</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span><span class="pun">)</span></code></td><td>Default value of a Texture's <code class="lang-d"><a href="../../teraflop/graphics/Texture.usage.html"><span class="pln">usage</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.format.html" class="public"><code>format</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">format<wbr/></span><span class="pun">.</span><span class="typ">Format</span><span class="pun">)</span></code></td><td>Data format of a Texture's <code class="lang-d"><a href="../../teraflop/graphics/Texture.data.html"><span class="pln">data</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../teraflop/graphics/Texture.size.html" class="public"><code>size</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Size of this Texture, in pixels.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.usage.html" class="public"><code>usage</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span><span class="pun">)</span></code></td><td>Manner in which this Texture will be used. Defaults to <code class="lang-d"><span class="typ">ImageUsage<wbr/></span><span class="pun">.</span><span class="pln">sampled </span><span class="pun">| </span><span class="typ">ImageUsage<wbr/></span><span class="pun">.</span><span class="pln">transferDst</span></code>.
 </td>
 					</tr>
 				</table>
@@ -257,6 +298,12 @@ $('#symbolSearchPane').show();</script>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this Shader has been successfully initialized.
 </td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/graphics/Texture.sizeInBytes.html" class="public property"><code>sizeInBytes</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td></td>
 					</tr>
 					<tr>
 						<td>

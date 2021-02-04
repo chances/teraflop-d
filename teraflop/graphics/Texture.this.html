@@ -185,6 +185,16 @@ $('#symbolSearchPane').show();</script>
 							Function <code>Texture.this</code>
 						</a>
 					</li>
+					<li>
+						<a href="#4">
+							Function <code>Texture.this</code>
+						</a>
+					</li>
+					<li>
+						<a href="#5">
+							Function <code>Texture.this</code>
+						</a>
+					</li>
 				</ul>
 			</nav><h2 id="0">Function Texture.this</h2><p>Initialize a new Texture.
 </p>
@@ -196,7 +206,7 @@ $('#symbolSearchPane').show();</script>
 			<br/>
 			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">size</span><span class="pun">,</span>
 			<br/>
-			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
 			<br/>
 			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
 			<br/>
@@ -217,7 +227,7 @@ $('#symbolSearchPane').show();</script>
 			<br/>
 			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">size</span><span class="pun">,</span>
 			<br/>
-			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
 			<br/>
 			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
 			<br/>
@@ -226,7 +236,51 @@ $('#symbolSearchPane').show();</script>
 				</code>
 			</div>
 			
-			<h2 id="2">Function Texture.this</h2><p>Initialize a new Texture with initial data.
+			<h2 id="2">Function Texture.this</h2><p>Initialize a new Texture.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">this</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">size</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<h2 id="3">Function Texture.this</h2><p>Initialize a new named Texture.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">this</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">name</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">size</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			
+			<h2 id="4">Function Texture.this</h2><p>Initialize a new Texture with initial data.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -238,7 +292,9 @@ $('#symbolSearchPane').show();</script>
 			<br/>
 			&nbsp;&nbsp;<span class="typ">ubyte</span><span class="pun">[]</span> <span class="pln">data</span><span class="pun">,</span>
 			<br/>
-			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span> <span class="pun">=</span> <span class="lit">0u</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
 			<br/>
 			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
 			<br/>
@@ -247,7 +303,7 @@ $('#symbolSearchPane').show();</script>
 				</code>
 			</div>
 			
-			<h2 id="3">Function Texture.this</h2><p>Initialize a new named Texture with initial data.
+			<h2 id="5">Function Texture.this</h2><p>Initialize a new named Texture with initial data.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -261,7 +317,9 @@ $('#symbolSearchPane').show();</script>
 			<br/>
 			&nbsp;&nbsp;<span class="typ">ubyte</span><span class="pun">[]</span> <span class="pln">data</span><span class="pun">,</span>
 			<br/>
-			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span><span class="pun">,</span>
+			&nbsp;&nbsp;<span class="typ">uint</span> <span class="pln">bindingLocation</span> <span class="pun">=</span> <span class="lit">0u</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span> <span class="pln">usage</span> <span class="pun">=</span> <span class="kwd">cast</span><span class="pun">(</span><span class="typ">ImageUsage</span><span class="pun">)</span><span class="lit">6</span><span class="pun">,</span>
 			<br/>
 			&nbsp;&nbsp;<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">pipeline<wbr/></span><span class="pun">.</span><span class="typ">ShaderStage</span> <span class="pln">shaderStage</span> <span class="pun">=</span> <span class="typ">ShaderStage<wbr/></span><span class="pun">.</span><span class="pln">fragment</span>
 			<br/>
