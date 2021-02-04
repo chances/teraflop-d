@@ -62,7 +62,7 @@ private final class Cube : Game {
     ];
     auto flat = new Material(shaders, FrontFace.clockwise, CullMode.front);
 
-    auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1, 0, 1).vec3f];
+    auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1.0f, 0, 1.0f).vec3f];
     auto cubeData = cube();
     auto mesh = (vec3f color) => cubeData.vertices.map!(v => VertexPosNormalColor(v.position, v.normal, color)).array;
 
