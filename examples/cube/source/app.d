@@ -56,6 +56,7 @@ private final class Cube : Game {
     this.add(System.from!aspectRatio);
     this.add(System.from!rotate);
 
+    // TODO: `dub describe` to get the path to examples? or https://github.com/dlang/dub/issues/940
     auto shaders = [
       Shader.watched(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
       Shader.watched(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
