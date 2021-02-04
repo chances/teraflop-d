@@ -43,7 +43,7 @@
   "libs-linux": [
     "X11"
   ],
-  "copyFiles-linux": [
-    "lib/glfw-3.3.2/src/libglfw3.a"
+  "preBuildCommands-linux": [
+    "cd $TERAFLOP_PACKAGE_DIR && make lib/glfw-3.3.2/src/libglfw3.a"
   ]
 }
