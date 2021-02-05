@@ -27,8 +27,25 @@ final class ResourceInitializer : System {
   override void run() {
     auto resources = query().map!(entity => entity.getMut!IResource).joiner
       .filter!(c => !c.initialized).array;
-    foreach (resource; resources)
-      resource.initialize(device);
+    foreach (resource; resources) resource.initialize(device);
+  }
+}
+
+/// Dispose managed GPU resources.
+final class ResourceGarbageCollector : System {
+  private Device device;
+
+  /// Initialize a new ResourceGarbageCollector.
+  this(const World world, Device device) {
+    super(world);
+
+    this.device = device;
+  }
+
+  override void run() {
+    auto resources = query().map!(entity => entity.getMut!IResource).joiner
+      .filter!(c => c.initialized).array;
+    foreach (resource; resources) destroy(resource);
   }
 }
 
