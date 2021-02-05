@@ -346,6 +346,7 @@ var symbols = [
 {name: 'teraflop.ecs.Resources.contains', kind: "functiondeclaration", path: './teraflop/ecs/Resources.contains.html', attributes: ["const"]},
 {name: 'teraflop.ecs.Resources.get', kind: "functiondeclaration", path: './teraflop/ecs/Resources.get.html', attributes: ["const"]},
 {name: 'teraflop.ecs.Resources.getAll', kind: "functiondeclaration", path: './teraflop/ecs/Resources.getAll.html', attributes: ["const"]},
+{name: 'teraflop.ecs.Resources.hasChanged', kind: "functiondeclaration", path: './teraflop/ecs/Resources.hasChanged.html', attributes: ["const"]},
 {name: 'teraflop.ecs.Resources.remove', kind: "functiondeclaration", path: './teraflop/ecs/Resources.remove.html', attributes: []},
 {name: 'teraflop.ecs.Resources.replace', kind: "functiondeclaration", path: './teraflop/ecs/Resources.replace.html', attributes: []},
 {name: 'teraflop.ecs.storableAsComponent', kind: "enummemberdeclaration", path: './teraflop/ecs/storableAsComponent.html', attributes: []},

@@ -209,6 +209,7 @@
 <url><loc>http://127.0.0.1/teraflop/ecs/Resources.contains.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Resources.get.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Resources.getAll.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/Resources.hasChanged.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Resources.remove.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/Resources.replace.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/storableAsComponent.html</loc></url>
