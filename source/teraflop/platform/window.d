@@ -32,6 +32,8 @@ class Window : InputNode {
 
   /// Color this window's framebuffer should be cleared to when rendered.
   auto clearColor = Color.black;
+  ///
+  static Color defaultClearColor = Color.black;
 
   /// Fired when this window receives an unhandled `InputEvent`.
   Event!(const InputEvent) onUnhandledInput;
@@ -43,12 +45,28 @@ class Window : InputNode {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(string title, int width = 960, int height = 720, bool initiallyFocused = true) {
+  this(
+    string title, int width = 960, int height = 720, bool initiallyFocused = true
+  ) {
+    this(title, defaultClearColor, width, height, initiallyFocused);
+  }
+  /// Initialize a new Window.
+  ///
+  /// Params:
+  /// title = Title of the Window
+  /// clearColor = Color the window's framebuffer should be cleared to when rendered.
+  /// width = Initial width of the Window
+  /// height = Initial height of the Window
+  /// initiallyFocused = Whether the window will be given input focus when created
+  this(
+    string title, Color clearColor, int width = 960, int height = 720, bool initiallyFocused = true
+  ) {
     import gfx.vulkan.wsi : createVulkanGlfwSurface;
     import teraflop.platform.vulkan : instance;
 
     id = lastWindowId += 1;
     _title = title;
+    this.clearColor = clearColor;
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
     glfwWindowHint(GLFW_RESIZABLE, true);

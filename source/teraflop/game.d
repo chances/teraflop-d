@@ -19,10 +19,18 @@ abstract class Game {
   import std.exception : enforce;
   import std.typecons : Rebindable;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
-  import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
+  import teraflop.graphics : BindingGroup, Color, Pipeline, Material, MeshBase;
   import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
+
+  /// Color that this Game's windows' framebuffers should be cleared to when rendered.
+  const Color clearColor;
+
+  /// This Game's primary Window.
+  protected Window mainWindow;
+  /// This Game's primary World.
+  protected auto world = new World();
 
   private string name_;
   private bool active_;
@@ -46,15 +54,15 @@ abstract class Game {
   private PipelinePreparer pipelinePreparer;
   private EventLoop eventLoop;
 
-  private auto world = new World();
   private auto systems = new System[0];
 
-  /// Initialize a new Game.
+  /// Instantiate a new Game.
   ///
   /// Params:
   /// name = Name of the Game.
-  this(string name) {
+  this(string name, Color clearColor = Window.defaultClearColor) {
     name_ = name;
+    this.clearColor = clearColor;
   }
 
   /// Name of the Game.
@@ -187,13 +195,14 @@ abstract class Game {
     unloadVulkan();
   }
 
+  /// Initialize this Game.
   private void initialize() {
     import gfx.core : retainObj, some;
     import std.typecons : No;
     import teraflop.systems : TextureUploader, ResourceInitializer;
 
     // Setup main window
-    auto mainWindow = new Window(name);
+    mainWindow = new Window(name, clearColor);
     enforce(mainWindow.valid, "Could not open main game window!");
     input[mainWindow] = new Input(mainWindow);
     input[mainWindow].addNode(mainWindow);
