@@ -12,6 +12,17 @@ import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
 /// Derive this class for your game application.
+///
+/// <h2>Overview</h2>
+/// $(UL
+///   $(LI <a href="#loop">Game Loop</a>)
+///   $(LI <a href="#members">Constructors</a>)
+///   $(LI <a href="#members">Properties</a>)
+///   $(LI <a href="#members">Methods</a>)
+/// )
+/// <h2 id="loop">Game Loop</h2>
+/// <img class="diagram" src="../../images/Teraflop Game Loop Flow.svg" alt="Flow chart of a Teraflop game loop" style="max-width: 100%;"></img>
+/// <span id="members"></span>
 abstract class Game {
   import core.time : msecs;
   import gfx.core.rc : Rc;
