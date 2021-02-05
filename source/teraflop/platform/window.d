@@ -30,7 +30,7 @@ class Window : InputNode {
   /// Window identifier.
   const int id;
 
-  /// Color this window's framebuffer should be cleared to when rendered.
+  /// Color this Window's framebuffer should be cleared to when rendered.
   auto clearColor = Color.black;
   ///
   static Color defaultClearColor = Color.black;

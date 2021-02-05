@@ -24,7 +24,7 @@ abstract class Game {
   import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
 
-  /// Color that this Game's windows' framebuffers should be cleared to when rendered.
+  /// Default value for the color this Game's Windows' framebuffers should be cleared to when rendered.
   const Color clearColor;
 
   /// This Game's primary Window.
@@ -60,6 +60,8 @@ abstract class Game {
   ///
   /// Params:
   /// name = Name of the Game.
+  /// clearColor = Default value for the color a Game's Windows' framebuffers should be cleared to when rendered.
+  /// See_Also: `Window.clearColor`
   this(string name, Color clearColor = Window.defaultClearColor) {
     name_ = name;
     this.clearColor = clearColor;
