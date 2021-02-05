@@ -69,10 +69,11 @@ class Window : InputNode {
     this.clearColor = clearColor;
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, true);
     glfwWindowHint(GLFW_FOCUSED, initiallyFocused);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, true);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by wgpu
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by Vulkan
 
     window = glfwCreateWindow(width, height, toStringz(title), null, null);
     _valid = window !is null;
@@ -131,6 +132,20 @@ class Window : InputNode {
   void title(const string value) @property {
     _title = value;
     if (valid) glfwSetWindowTitle(window, value.toStringz);
+  }
+
+  /// Whether this Window is currently visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.show`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool visible() @property const {
+    return data.visible;
+  }
+  void visible(bool value) @property {
+    if (this.visible && !value) hide();
+    else if (!this.visible && value) show();
   }
 
   /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
@@ -230,6 +245,33 @@ class Window : InputNode {
     return data.lastMouseButtons;
   }
 
+  /// Hides this Window if it was previously visible.
+  /// If the window is already hidden or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool show() {
+    glfwShowWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return this.visible;
+  }
+  /// Makes this Window visible if it was previously hidden.
+  /// If the window is already visible or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now hidden.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.show`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool hide() {
+    glfwHideWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return !this.visible;
+  }
+
   package (teraflop) void update() {
     if (glfwWindowShouldClose(window)) {
       glfwDestroyWindow(window);
@@ -279,6 +321,7 @@ class Window : InputNode {
     Size minimumSize = Window.dontCare;
     Size maximumSize = Window.dontCare;
     Size framebufferSize;
+    bool visible = false;
     bool minimized = false;
     bool dirty = false;
     vec2d mousePos = vec2d(0, 0);

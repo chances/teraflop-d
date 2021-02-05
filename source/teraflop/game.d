@@ -63,6 +63,13 @@ abstract class Game {
   this(string name, Color clearColor = Window.defaultClearColor) {
     name_ = name;
     this.clearColor = clearColor;
+
+    enforce(initGlfw()); // TODO: Log an error
+    enforce(initVulkan(name), "Unsupported platform: Could not load Vulkan! Try upgrading your graphics drivers.");
+
+    // Setup main window
+    mainWindow = new Window(name, clearColor);
+    enforce(mainWindow.valid, "Could not open main game window!");
   }
 
   /// Name of the Game.
@@ -117,10 +124,7 @@ abstract class Game {
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
 
-    enforce(initGlfw()); // TODO: Log an error
-    enforce(initVulkan(name), "Unsupported platform: Could not load Vulkan! Try upgrading your graphics drivers.");
     scope(exit) terminateGlfw();
-
     initialize();
     active_ = true;
 
@@ -202,8 +206,7 @@ abstract class Game {
     import teraflop.systems : TextureUploader, ResourceInitializer;
 
     // Setup main window
-    mainWindow = new Window(name, clearColor);
-    enforce(mainWindow.valid, "Could not open main game window!");
+    mainWindow.show();
     input[mainWindow] = new Input(mainWindow);
     input[mainWindow].addNode(mainWindow);
     mainWindow.onUnhandledInput ~= (const InputEvent event) => {
@@ -285,8 +288,8 @@ abstract class Game {
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
       window.update();
-      // Wait for minimized windows to restore
-      if (window.minimized) continue;
+      // Wait for hidden and minimized windows to restore
+      if (!window.visible || window.minimized) continue;
       // Process window input
       input[window].update(window);
 
