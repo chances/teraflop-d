@@ -140,6 +140,44 @@ class Window : InputNode {
   const(Size) size() @property const {
     return data.size;
   }
+  /// Value used to disable minimum or maximum size limits of a Window.
+  static const Size dontCare = Size(GLFW_DONT_CARE, GLFW_DONT_CARE);
+  /// Minimum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  ///
+  /// To disable the minimum size limit for this Window, set this property to `dontCare`.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits">Window size limits</a> in the GLFW documentation
+  const(Size) minimumSize() @property const {
+    return data.minimumSize;
+  }
+  /// ditto
+  void minimumSize(Size value) @property {
+    data.minimumSize.width = value.width;
+    data.minimumSize.height = value.height;
+    glfwSetWindowSizeLimits(
+      // Minimum size
+      window, data.minimumSize.width, data.minimumSize.height,
+      // Maximum size
+      data.maximumSize.width, data.maximumSize.height
+    );
+  }
+  /// Maximum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  ///
+  /// To disable the maximum size limit for this Window, set this property to `dontCare`.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits">Window size limits</a> in the GLFW documentation
+  const(Size) maximumSize() @property const {
+    return data.maximumSize;
+  }
+  /// ditto
+  void maximumSize(Size value) @property {
+    data.maximumSize.width = value.width;
+    data.maximumSize.height = value.height;
+    glfwSetWindowSizeLimits(
+      // Minimum size
+      window, data.minimumSize.width, data.minimumSize.height,
+      // Maximum size
+      data.maximumSize.width, data.maximumSize.height
+    );
+  }
   /// Size of this Window, in pixels.
   ///
   /// This value may not necessarily match `Window.size`. For example, on mac OS machines with high-DPI Retina displays.
@@ -238,6 +276,8 @@ class Window : InputNode {
     int xpos;
     int ypos;
     Size size;
+    Size minimumSize = Window.dontCare;
+    Size maximumSize = Window.dontCare;
     Size framebufferSize;
     bool minimized = false;
     bool dirty = false;
