@@ -296,10 +296,14 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     this.topology = topology;
   }
   ~this() {
-    _vertexBuffer.dispose();
-    destroy(_vertexBuffer);
-    _indexBuffer.dispose();
-    destroy(_indexBuffer);
+    if (_vertexBuffer !is null) {
+      _vertexBuffer.dispose();
+      destroy(_vertexBuffer);
+    }
+    if (_indexBuffer !is null) {
+      _indexBuffer.dispose();
+      destroy(_indexBuffer);
+    }
   }
 
   /// Whether this mesh's vertex data is new or changed and needs to be uploaded to the GPU.
@@ -871,7 +875,7 @@ class Shader : ObservableFile, IResource {
     super(spv);
   }
   ~this() {
-    _shaderModule.dispose();
+    if (_shaderModule !is null) _shaderModule.dispose();
   }
 
   /// Initialize a new Shader compiled from the given `filePath`.
