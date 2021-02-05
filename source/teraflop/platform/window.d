@@ -30,8 +30,10 @@ class Window : InputNode {
   /// Window identifier.
   const int id;
 
-  /// Color this window's framebuffer should be cleared to when rendered.
+  /// Color this Window's framebuffer should be cleared to when rendered.
   auto clearColor = Color.black;
+  ///
+  static Color defaultClearColor = Color.black;
 
   /// Fired when this window receives an unhandled `InputEvent`.
   Event!(const InputEvent) onUnhandledInput;
@@ -43,18 +45,35 @@ class Window : InputNode {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(string title, int width = 960, int height = 720, bool initiallyFocused = true) {
+  this(
+    string title, int width = 960, int height = 720, bool initiallyFocused = true
+  ) {
+    this(title, defaultClearColor, width, height, initiallyFocused);
+  }
+  /// Initialize a new Window.
+  ///
+  /// Params:
+  /// title = Title of the Window
+  /// clearColor = Color the window's framebuffer should be cleared to when rendered.
+  /// width = Initial width of the Window
+  /// height = Initial height of the Window
+  /// initiallyFocused = Whether the window will be given input focus when created
+  this(
+    string title, Color clearColor, int width = 960, int height = 720, bool initiallyFocused = true
+  ) {
     import gfx.vulkan.wsi : createVulkanGlfwSurface;
     import teraflop.platform.vulkan : instance;
 
     id = lastWindowId += 1;
     _title = title;
+    this.clearColor = clearColor;
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, true);
     glfwWindowHint(GLFW_FOCUSED, initiallyFocused);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, true);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by wgpu
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by Vulkan
 
     window = glfwCreateWindow(width, height, toStringz(title), null, null);
     _valid = window !is null;
@@ -82,11 +101,9 @@ class Window : InputNode {
 
     data.update(window);
   }
-
-  ///
-  void dispose() {
+  ~this() {
     if (valid) glfwDestroyWindow(window);
-    _surface.dispose();
+    // TODO: This segfaults... Fix it? _surface.dispose();
   }
 
   // Swap chains are keyed on their windows
@@ -115,12 +132,68 @@ class Window : InputNode {
     if (valid) glfwSetWindowTitle(window, value.toStringz);
   }
 
-  /// Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  /// Whether this Window is currently visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.show`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool visible() @property const {
+    return data.visible;
+  }
+  void visible(bool value) @property {
+    if (this.visible && !value) hide();
+    else if (!this.visible && value) show();
+  }
+
+  /// Size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
   ///
   /// This value may not necessarily match `Window.framebufferSize`. For example, on mac OS machines with high-DPI Retina displays.
   /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_size">Window size</a> in the GLFW documentation
   const(Size) size() @property const {
     return data.size;
+  }
+  /// Value used to disable minimum or maximum size limits of a Window.
+  /// See_Also: $(UL
+  ///   $(LI `Window.minimumSize`)
+  ///   $(LI `Window.maximumSize`)
+  /// )
+  static const Size dontCare = Size(GLFW_DONT_CARE, GLFW_DONT_CARE);
+  /// Minimum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  ///
+  /// To disable the minimum size limit for this Window, set this property to `Window.dontCare`.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits">Window size limits</a> in the GLFW documentation
+  const(Size) minimumSize() @property const {
+    return data.minimumSize;
+  }
+  /// ditto
+  void minimumSize(Size value) @property {
+    data.minimumSize.width = value.width;
+    data.minimumSize.height = value.height;
+    glfwSetWindowSizeLimits(
+      // Minimum size
+      window, data.minimumSize.width, data.minimumSize.height,
+      // Maximum size
+      data.maximumSize.width, data.maximumSize.height
+    );
+  }
+  /// Maximum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+  ///
+  /// To disable the maximum size limit for this Window, set this property to `Window.dontCare`.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits">Window size limits</a> in the GLFW documentation
+  const(Size) maximumSize() @property const {
+    return data.maximumSize;
+  }
+  /// ditto
+  void maximumSize(Size value) @property {
+    data.maximumSize.width = value.width;
+    data.maximumSize.height = value.height;
+    glfwSetWindowSizeLimits(
+      // Minimum size
+      window, data.minimumSize.width, data.minimumSize.height,
+      // Maximum size
+      data.maximumSize.width, data.maximumSize.height
+    );
   }
   /// Size of this Window, in pixels.
   ///
@@ -174,6 +247,35 @@ class Window : InputNode {
     return data.lastMouseButtons;
   }
 
+  /// Hides this Window if it was previously visible.
+  ///
+  /// If the window is already hidden or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool show() {
+    glfwShowWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return this.visible;
+  }
+  /// Makes this Window visible if it was previously hidden.
+  ///
+  /// If the window is already visible or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now hidden.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.show`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool hide() {
+    glfwHideWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return !this.visible;
+  }
+
   package (teraflop) void update() {
     if (glfwWindowShouldClose(window)) {
       glfwDestroyWindow(window);
@@ -220,7 +322,10 @@ class Window : InputNode {
     int xpos;
     int ypos;
     Size size;
+    Size minimumSize = Window.dontCare;
+    Size maximumSize = Window.dontCare;
     Size framebufferSize;
+    bool visible = false;
     bool minimized = false;
     bool dirty = false;
     vec2d mousePos = vec2d(0, 0);

@@ -13,6 +13,7 @@
     "examples/triangle",
     "examples/cube"
   ],
+  "versions": ["GLFW_32"],
   "configurations": [
     {
       "name": "unittest"

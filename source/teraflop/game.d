@@ -12,6 +12,17 @@ import teraflop.platform.vulkan;
 import teraflop.platform.window;
 
 /// Derive this class for your game application.
+///
+/// <h2>Overview</h2>
+/// $(UL
+///   $(LI <a href="#loop">Game Loop</a>)
+///   $(LI <a href="#members">Constructors</a>)
+///   $(LI <a href="#members">Properties</a>)
+///   $(LI <a href="#members">Methods</a>)
+/// )
+/// <h2 id="loop">Game Loop</h2>
+/// <img class="diagram" src="../../images/Teraflop Game Loop Flow.svg" alt="Flow chart of a Teraflop game loop" style="max-width: 100%;"></img>
+/// <span id="members"></span>
 abstract class Game {
   import core.time : msecs;
   import gfx.core.rc : Rc;
@@ -19,10 +30,18 @@ abstract class Game {
   import std.exception : enforce;
   import std.typecons : Rebindable;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
-  import teraflop.graphics : BindingGroup, Pipeline, Material, MeshBase;
+  import teraflop.graphics : BindingGroup, Color, Pipeline, Material, MeshBase;
   import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.systems : PipelinePreparer;
   import teraflop.time : Time;
+
+  /// Default value for the color this Game's Windows' framebuffers should be cleared to when rendered.
+  const Color clearColor;
+
+  /// This Game's primary Window.
+  protected Window mainWindow;
+  /// This Game's primary World.
+  protected auto world = new World();
 
   private string name_;
   private bool active_;
@@ -46,15 +65,24 @@ abstract class Game {
   private PipelinePreparer pipelinePreparer;
   private EventLoop eventLoop;
 
-  private auto world = new World();
   private auto systems = new System[0];
 
-  /// Initialize a new Game.
+  /// Instantiate a new Game.
   ///
   /// Params:
   /// name = Name of the Game.
-  this(string name) {
+  /// clearColor = Default value for the color a Game's Windows' framebuffers should be cleared to when rendered.
+  /// See_Also: <a href="../platform/window/Window.clearColor.html">`Window.clearColor`</a>
+  this(string name, Color clearColor = Window.defaultClearColor) {
     name_ = name;
+    this.clearColor = clearColor;
+
+    enforce(initGlfw()); // TODO: Log an error
+    enforce(initVulkan(name), "Unsupported platform: Could not load Vulkan! Try upgrading your graphics drivers.");
+
+    // Setup main window
+    mainWindow = new Window(name, clearColor);
+    enforce(mainWindow.valid, "Could not open main game window!");
   }
 
   /// Name of the Game.
@@ -109,10 +137,7 @@ abstract class Game {
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
 
-    enforce(initGlfw()); // TODO: Log an error
-    enforce(initVulkan(name), "Unsupported platform: Could not load Vulkan! Try upgrading your graphics drivers.");
     scope(exit) terminateGlfw();
-
     initialize();
     active_ = true;
 
@@ -187,14 +212,14 @@ abstract class Game {
     unloadVulkan();
   }
 
+  /// Initialize this Game.
   private void initialize() {
     import gfx.core : retainObj, some;
     import std.typecons : No;
     import teraflop.systems : TextureUploader, ResourceInitializer;
 
     // Setup main window
-    auto mainWindow = new Window(name);
-    enforce(mainWindow.valid, "Could not open main game window!");
+    mainWindow.show();
     input[mainWindow] = new Input(mainWindow);
     input[mainWindow].addNode(mainWindow);
     mainWindow.onUnhandledInput ~= (const InputEvent event) => {
@@ -276,8 +301,8 @@ abstract class Game {
     windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
       window.update();
-      // Wait for minimized windows to restore
-      if (window.minimized) continue;
+      // Wait for hidden and minimized windows to restore
+      if (!window.visible || window.minimized) continue;
       // Process window input
       input[window].update(window);
 
