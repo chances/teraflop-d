@@ -88,21 +88,21 @@ struct Resources {
 
   /// Returns `true` if and only if the given Resource type can be found in the collection.
   bool contains(T)() const {
-    import std.algorithm : canFind, map;
-    return resources.values.map!(resource => resource.type).canFind(typeid(T));
+    import std.algorithm : any, canFind, map;
+    // When T is a class, whether T is a base class of any of the Resources
+    static if (isClass!T) return resources.values.any!((Variant resource) => isBaseOf!T(resource));
+    // Otherwise, whether T can be found in the collection of Resource types
+    else return resources.values.map!(resource => resource.type).canFind(typeid(T));
+  }
+
+  /// Whether the given Resource has been changed.
+  bool hasChanged(T)(T resource) const {
+    return (*resourceChanged)[key(resource)];
   }
 
   /// Returns the first Resource from the collection that is of the given type.
   const(T) get(T)() const {
-    import std.algorithm : filter;
-    import std.array : array;
-
-    assert(contains!T(), "Could not find Resource!");
-    auto variants = resources.values.filter!(resource => resource.type == typeid(T)).array;
-    assert(variants.length, "Could not find Resource!");
-    auto variant = variants[0];
-    assert(variant.peek!T !is null);
-    return variant.get!T;
+    return getAll!T[0];
   }
   /// Returns the Resources from the collection of the given type.
   const(T)[] getAll(T)() const {
@@ -110,10 +110,11 @@ struct Resources {
     import std.array : array;
 
     assert(contains!T(), "Could not find Resource!");
-    auto variants = resources.values.filter!(resource => resource.type == typeid(T)).array;
+    auto variants = resources.values.filter!(resource => {
+      static if (isClass!T) return isBaseOf!T(resource);
+      else return resource.type == typeid(T);
+    }()).array;
     assert(variants.length, "Could not find Resource!");
-    auto variant = variants[0];
-    assert(variants.all!(variant => variant.peek!T !is null));
     return variants.map!(variant => variant.get!T).array;
   }
 
@@ -139,6 +140,10 @@ struct Resources {
       (*resourceChanged)[key] = false;
     }
   }
+
+  private bool isBaseOf(T)(Variant resource) const if(isClass!T) {
+    return typeid(resource.type) == typeid(TypeInfo_Class) && typeid(T).isBaseOf(resource.type.to!TypeInfo_Class);
+  }
 }
 
 unittest {
@@ -148,11 +153,23 @@ unittest {
   world.resources.replace(3);
   assert(world.resources.get!int == 3);
 
+  world.resources.remove(3);
+  assert(!world.resources.contains!int);
+
   struct Foo {
     auto bar = "hello";
   }
   world.resources.add(Foo());
   assert(world.resources.get!Foo.bar == "hello");
+
+  // Subclasses retreived by superclass
+  class A {
+    const x = 7;
+  }
+  class B : A {}
+  world.resources.add(new B());
+  assert(world.resources.contains!A);
+  assert(world.resources.get!A.x == 7);
 }
 
 /// Detect whether `T` is the `Entity` class.
