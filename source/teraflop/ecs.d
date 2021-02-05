@@ -95,6 +95,11 @@ struct Resources {
     else return resources.values.map!(resource => resource.type).canFind(typeid(T));
   }
 
+  /// Whether the given Resource has been changed.
+  bool hasChanged(T)(T resource) const {
+    return (*resourceChanged)[key(resource)];
+  }
+
   /// Returns the first Resource from the collection that is of the given type.
   const(T) get(T)() const {
     return getAll!T[0];
