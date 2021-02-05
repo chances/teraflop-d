@@ -101,11 +101,9 @@ class Window : InputNode {
 
     data.update(window);
   }
-
-  ///
-  void dispose() {
+  ~this() {
     if (valid) glfwDestroyWindow(window);
-    _surface.dispose();
+    // TODO: This segfaults... Fix it? _surface.dispose();
   }
 
   // Swap chains are keyed on their windows
