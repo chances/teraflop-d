@@ -61,7 +61,7 @@ abstract class Game {
   /// Params:
   /// name = Name of the Game.
   /// clearColor = Default value for the color a Game's Windows' framebuffers should be cleared to when rendered.
-  /// See_Also: `Window.clearColor`
+  /// See_Also: <a href="../platform/window/Window.clearColor.html">`Window.clearColor`</a>
   this(string name, Color clearColor = Window.defaultClearColor) {
     name_ = name;
     this.clearColor = clearColor;
