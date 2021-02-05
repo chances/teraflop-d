@@ -162,7 +162,7 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Game.this</h1><p>Initialize a new Game.
+			<h1>Function Game.this</h1><p>Instantiate a new Game.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -170,7 +170,9 @@ $('#symbolSearchPane').show();</script>
 			<span class="pln">this</span>
 			<span class="pun">(</span>
 			<br/>
-			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">name</span>
+			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">name</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../teraflop/graphics/Color.html"><span class="typ">Color</span></a> <span class="pln">clearColor</span> <span class="pun">=</span> <span class="pln">defaultClearColor</span>
 			<br/>
 			<span class="pun">)</span><span class="pun">;</span>
 					</div>
@@ -181,7 +183,12 @@ $('#symbolSearchPane').show();</script>
 			<section><h2>Parameters</h2>
 <table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
 <tr><td id="name">name</td><td> Name of the Game.</td></tr>
+<tr><td id="clearColor">clearColor</td><td> Default value for the color a Game's Windows' framebuffers should be cleared to when rendered.</td></tr>
 </table>
+</section>
+<section><h2>See Also</h2>
+<p><a href="../platform/window/Window.clearColor.html"><code class="lang-d"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">clearColor</span></code></a>
+</p>
 </section>
 
 			<footer>

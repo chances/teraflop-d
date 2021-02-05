@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Variable Window.clearColor - Teraflop</title>
+		<title>Function Window.maximumSize - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,30 +162,32 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Variable Window.clearColor</h1><p>Color this Window's framebuffer should be cleared to when rendered.
+			<h1>Function Window.maximumSize</h1><p>Maximum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">class</span> <a href="../../../teraflop/platform/window/Window.html"><span class="typ">Window</span></a>
+			<span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">maximumSize</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">@property const</span><span class="pun">;</span>
 			<br/>
-			<span class="pun">
-				{
-				<br/>
-			</span>
-			&nbsp;&nbsp;<span class="com">// ...</span>
 			<br/>
-			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span> <span class="pln">clearColor</span>
-			 <span class="pun">=</span> <span class="typ">Color</span><span class="pun">(</span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">1.0</span><span class="pun">)</span><span class="pun">;</span>
+			<span class="typ">void</span> <span class="pln">maximumSize</span>
+			<span class="pun">(</span>
 			<br/>
-			&nbsp;&nbsp;<span class="com">// ...</span>
+			&nbsp;&nbsp;<a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a> <span class="pln">value</span>
 			<br/>
-			<span class="pun">}</span>
+			<span class="pun">)</span><span class="pln"> </span><span class="kwd">@property</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
-			
-			
+			<section><p>To disable the maximum size limit for this Window, set this property to <code class="lang-d"><a href="../../../teraflop/platform/window/Window.dontCare.html"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">dontCare</span></a></code>.
+</p>
+</section>
+
+			<section><h2>See Also</h2>
+<p><a href="https://www.glfw.org/docs/3.3/window_guide.html#window_sizelimits">Window size limits</a> in the GLFW documentation
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

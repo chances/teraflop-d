@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Variable Window.clearColor - Teraflop</title>
+		<title>Variable Window.dontCare - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,7 +162,7 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Variable Window.clearColor</h1><p>Color this Window's framebuffer should be cleared to when rendered.
+			<h1>Variable Window.dontCare</h1><p>Value used to disable minimum or maximum size limits of a Window.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -175,8 +175,8 @@ $('#symbolSearchPane').show();</script>
 			</span>
 			&nbsp;&nbsp;<span class="com">// ...</span>
 			<br/>
-			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span> <span class="pln">clearColor</span>
-			 <span class="pun">=</span> <span class="typ">Color</span><span class="pun">(</span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">1.0</span><span class="pun">)</span><span class="pun">;</span>
+			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span> <span class="pln">dontCare</span>
+			 <span class="pun">=</span> <span class="typ">Size</span><span class="pun">(</span><span class="lit">4294967295u</span><span class="pun">, </span><span class="lit">4294967295u</span><span class="pun">)</span><span class="pun">;</span>
 			<br/>
 			&nbsp;&nbsp;<span class="com">// ...</span>
 			<br/>
@@ -185,7 +185,13 @@ $('#symbolSearchPane').show();</script>
 				</code>
 			</div>
 			
-			
+			<section><h2>See Also</h2>
+<p><ul><li><code class="lang-d"><a href="../../../teraflop/platform/window/Window.minimumSize.html"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">minimumSize</span></a></code></li>
+<li><code class="lang-d"><a href="../../../teraflop/platform/window/Window.maximumSize.html"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">maximumSize</span></a></code></li>
+</ul>
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

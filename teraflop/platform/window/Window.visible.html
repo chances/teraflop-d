@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Variable Window.clearColor - Teraflop</title>
+		<title>Function Window.visible - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,30 +162,24 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Variable Window.clearColor</h1><p>Color this Window's framebuffer should be cleared to when rendered.
+			<h1>Function Window.visible</h1><p>Whether this Window is currently visible.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">class</span> <a href="../../../teraflop/platform/window/Window.html"><span class="typ">Window</span></a>
-			<br/>
-			<span class="pun">
-				{
-				<br/>
-			</span>
-			&nbsp;&nbsp;<span class="com">// ...</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span> <span class="pln">clearColor</span>
-			 <span class="pun">=</span> <span class="typ">Color</span><span class="pun">(</span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">0.0</span><span class="pun">, </span><span class="lit">1.0</span><span class="pun">)</span><span class="pun">;</span>
-			<br/>
-			&nbsp;&nbsp;<span class="com">// ...</span>
-			<br/>
-			<span class="pun">}</span>
+			<span class="typ">bool</span> <span class="pln">visible</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">@property const</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			
+			<section><h2>See Also</h2>
+<p><ul><li><code class="lang-d"><a href="../../../teraflop/platform/window/Window.show.html"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">show</span></a></code></li>
+<li><code class="lang-d"><a href="../../../teraflop/platform/window/Window.hide.html"><span class="typ">Window<wbr/></span><span class="pun">.</span><span class="pln">hide</span></a></code></li>
+<li><a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation</li>
+</ul>
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

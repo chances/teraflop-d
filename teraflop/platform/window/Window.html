@@ -190,6 +190,16 @@ $('#symbolSearchPane').show();</script>
 						<td>Initialize a new Window.
 </td>
 					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/platform/window/Window.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(title, clearColor, width, height, initiallyFocused)</span>
+						</td>
+						<td>Initialize a new Window.
+</td>
+					</tr>
 				</table>
 			</section>
 			<section><h2>Fields</h2>
@@ -202,7 +212,20 @@ $('#symbolSearchPane').show();</script>
 						<td>
 							<a href="../../../teraflop/platform/window/Window.clearColor.html" class="public"><code>clearColor</code></a>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Color this window's framebuffer should be cleared to when rendered.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a><span class="pun">)</span></code></td><td>Color this Window's framebuffer should be cleared to when rendered.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/platform/window/Window.defaultClearColor.html" class="public"><code>defaultClearColor</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a></code></td><td></td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/platform/window/Window.dontCare.html" class="public"><code>dontCare</code></a>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Value used to disable minimum or maximum size limits of a Window.
 </td>
 					</tr>
 					<tr>
@@ -236,6 +259,13 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../../teraflop/platform/window/Window.maximumSize.html" class="public property"><code>maximumSize</code></a><span class="tableEntryAnnotation">[get, set]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Maximum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../../teraflop/platform/window/Window.minimized.html" class="public property"><code>minimized</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this window is minimized.
@@ -243,9 +273,16 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../../teraflop/platform/window/Window.minimumSize.html" class="public property"><code>minimumSize</code></a><span class="tableEntryAnnotation">[get, set]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Minimum size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../../teraflop/platform/window/Window.size.html" class="public property"><code>size</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Size of this Window, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
+						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
 </td>
 					</tr>
 					<tr>
@@ -262,6 +299,13 @@ $('#symbolSearchPane').show();</script>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether the native window handle is valid.
 </td>
 					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/platform/window/Window.visible.html" class="public property"><code>visible</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this Window is currently visible.
+</td>
+					</tr>
 				</table>
 			</section>
 			<section><h2>Methods</h2>
@@ -272,12 +316,23 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../../teraflop/platform/window/Window.dispose.html" class="public">
-								<code>dispose</code>
+							<a href="../../../teraflop/platform/window/Window.hide.html" class="public">
+								<code>hide</code>
 							</a>
 							<span class="tableEntryAnnotation">()</span>
 						</td>
-						<td></td>
+						<td>Makes this Window visible if it was previously hidden.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../../teraflop/platform/window/Window.show.html" class="public">
+								<code>show</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Hides this Window if it was previously visible.
+</td>
 					</tr>
 					<tr>
 						<td>

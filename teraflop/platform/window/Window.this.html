@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Window.this - Teraflop</title>
+		<title>Window.this - multiple declarations - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,7 +162,21 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Window.this</h1><p>Initialize a new Window.
+			<h1>Window.this - multiple declarations</h1>
+			<nav class="page-nav">
+				<ul>
+					<li>
+						<a href="#0">
+							Function <code>Window.this</code>
+						</a>
+					</li>
+					<li>
+						<a href="#1">
+							Function <code>Window.this</code>
+						</a>
+					</li>
+				</ul>
+			</nav><h2 id="0">Function Window.this</h2><p>Initialize a new Window.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
@@ -184,9 +198,42 @@ $('#symbolSearchPane').show();</script>
 			</div>
 			<section></section>
 
-			<section><h2>Parameters</h2>
+			<section><h3>Parameters</h3>
 <table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
 <tr><td id="title">title</td><td> Title of the Window</td></tr>
+<tr><td id="width">width</td><td> Initial width of the Window</td></tr>
+<tr><td id="height">height</td><td> Initial height of the Window</td></tr>
+<tr><td id="initiallyFocused">initiallyFocused</td><td> Whether the window will be given input focus when created</td></tr>
+</table>
+</section>
+<h2 id="1">Function Window.this</h2><p>Initialize a new Window.
+</p>
+			<div class="prototype">
+				<code class="lang-d">
+					<div class="single-prototype">
+			<span class="pln">this</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">string</span> <span class="pln">title</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<a href="../../../teraflop/graphics/Color.html"><span class="typ">Color</span></a> <span class="pln">clearColor</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">width</span> <span class="pun">=</span> <span class="lit">960</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">int</span> <span class="pln">height</span> <span class="pun">=</span> <span class="lit">720</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="typ">bool</span> <span class="pln">initiallyFocused</span> <span class="pun">=</span> <span class="kwd">true</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
+					</div>
+				</code>
+			</div>
+			<section></section>
+
+			<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="title">title</td><td> Title of the Window</td></tr>
+<tr><td id="clearColor">clearColor</td><td> Color the window's framebuffer should be cleared to when rendered.</td></tr>
 <tr><td id="width">width</td><td> Initial width of the Window</td></tr>
 <tr><td id="height">height</td><td> Initial height of the Window</td></tr>
 <tr><td id="initiallyFocused">initiallyFocused</td><td> Whether the window will be given input focus when created</td></tr>
