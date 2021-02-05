@@ -56,13 +56,14 @@ private final class Cube : Game {
     this.add(System.from!aspectRatio);
     this.add(System.from!rotate);
 
+    // TODO: `dub describe` to get the path to examples? or https://github.com/dlang/dub/issues/940
     auto shaders = [
       Shader.watched(ShaderStage.vertex, "examples/cube/assets/shaders/cube.vs.spv"),
       Shader.watched(ShaderStage.fragment, "examples/cube/assets/shaders/cube.fs.spv")
     ];
     auto flat = new Material(shaders, FrontFace.clockwise, CullMode.front);
 
-    auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1, 0, 1).vec3f];
+    auto colors = [Color.red.vec3f, Color.green.vec3f, Color.blue.vec3f, Color(1.0f, 0, 1.0f).vec3f];
     auto cubeData = cube();
     auto mesh = (vec3f color) => cubeData.vertices.map!(v => VertexPosNormalColor(v.position, v.normal, color)).array;
 

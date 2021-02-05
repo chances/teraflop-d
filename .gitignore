@@ -24,6 +24,8 @@ cube.cap
 *.exe
 bin/teraflop-test-unittest
 bin/teraflop-test-unittest-gpu
+bin/teraflop_triangle
+bin/teraflop_cube
 bin/triangle
 bin/cube
 
