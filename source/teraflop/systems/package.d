@@ -43,9 +43,12 @@ final class ResourceGarbageCollector : System {
   }
 
   override void run() {
-    auto resources = query().map!(entity => entity.getMut!IResource).joiner
-      .filter!(c => c.initialized).array;
-    foreach (resource; resources) destroy(resource);
+    auto resources = query().map!(entity => cast(Component[]) entity.components).joiner
+      .filter!(c => typeid(IResource).isBaseOf(c.classinfo) && (cast(IResource) c).initialized).array;
+    foreach (resource; resources) {
+      device.waitIdle();
+      destroy(resource);
+    }
   }
 }
 
