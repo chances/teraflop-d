@@ -188,6 +188,8 @@ enum bool isEntity(T) = __traits(isSame, Unqual!T, Entity);
 
 /// A world entity consisting of a unique ID and a collection of associated components.
 final class Entity {
+  import std.algorithm : canFind, filter, map;
+  import std.array : array;
   import std.uuid : randomUUID;
 
   private Component[string] components_;
@@ -230,9 +232,6 @@ final class Entity {
   /// Complexity: Linear
   bool contains(string name) const {
     assert(name.length);
-    import std.algorithm.iteration : filter, map;
-    import std.algorithm.searching : canFind;
-
     auto componentNames = components.filter!(Component.isNamed)
       .map!(c => c.to!(const NamedComponent).name);
     if (componentNames.empty) return false;
@@ -247,9 +246,6 @@ final class Entity {
 
   /// Get Component data given its type and optionally its name.
   immutable(T[]) get(T)(string name = "") const if (storableAsComponent!T) {
-    import std.algorithm.iteration : map;
-    import std.array : array;
-
     auto components = getMut!T(name);
     static if (isStruct!T && !isEvent!T) {
       return components.idup;
@@ -262,20 +258,14 @@ final class Entity {
 
   /// Get a mutable reference to Component data given its interface type.
   T[] getMut(T)() const if (isInterface!T) {
-    import std.algorithm.iteration : filter, map;
-    import std.array : array;
-
-    return cast(T[]) components
+    // https://forum.dlang.org/post/ojbovwuzvzxnycaauolr@forum.dlang.org
+    return components
       .filter!(c => typeid(T).isBaseOf(c.classinfo))
       .map!(c => cast(T) c).array;
   }
 
   /// Get a mutable reference to Component data given its type and optionally its name.
   T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
-    import std.algorithm.iteration : filter, map;
-    import std.algorithm.searching : canFind;
-    import std.array : array;
-
     // For unnamed `Component` derivations
     static if (!isStruct!T && !isNamedComponent!T) {
       assert(name == "", "Cannot filter for named components given an unnamed Component type.");
