@@ -282,6 +282,46 @@ struct VertexPosColorTex {
   }
 }
 
+/// Vertex attribute data comprising a 3D position, tint color, and texture coordinates.
+struct VertexPosTintTex {
+  /// 3D position.
+  vec3f position;
+  /// Tint color.
+  vec4f tint;
+  /// Texture UV coordinates.
+  vec2f uv;
+
+  /// Describes how vertex attributes should be bound to the vertex shader.
+  static VertexInputBinding bindingDescription() {
+    VertexInputBinding bindingDescription = {
+      binding: 0,
+      stride: VertexPosTintTex.sizeof,
+    };
+    return bindingDescription;
+  }
+
+  /// Describes the format of each vertex attribute so that they can be applied to the vertex shader.
+  static VertexInputAttrib[3] attributeDescriptions() {
+    VertexInputAttrib[3] attributeDescriptions;
+    // Position
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = Format.rgb32_sFloat;
+    attributeDescriptions[0].offset = position.offsetof;
+    // Color
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = Format.rgba32_sFloat;
+    attributeDescriptions[1].offset = tint.offsetof;
+    // Texture UV Coordinates
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = Format.rg32_sFloat;
+    attributeDescriptions[2].offset = uv.offsetof;
+    return attributeDescriptions;
+  }
+}
+
 package (teraflop) abstract class MeshBase : NamedComponent, IResource {
   private Buffer _vertexBuffer;
   private Buffer _indexBuffer;
