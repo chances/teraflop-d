@@ -365,6 +365,12 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/VertexPosNormalColor.color.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/VertexPosNormalColor.normal.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/VertexPosNormalColor.position.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.attributeDescriptions.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.bindingDescription.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.position.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.tint.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.uv.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.addNode.html</loc></url>
