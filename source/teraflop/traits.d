@@ -9,6 +9,8 @@ package enum bool isStruct(T) = is (T == struct);
 package enum bool isInterface(T) = is (T == interface);
 /// Detect whether `T` is a class type.
 package enum bool isClass(T) = is (T == class);
+/// Detect whether `T` is an interface or class type.
+package enum bool isHeritable(T) = isInterface!T || isClass!T;
 
 /// Detect whether `T` inherits from `U`.
 package template inheritsFrom(T, U) if (isClass!T && isClass!U) {
