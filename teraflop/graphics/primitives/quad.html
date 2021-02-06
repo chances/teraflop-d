@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function cube - Teraflop</title>
+		<title>Function quad - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../../scripts/ddox.js">/**/</script>
@@ -162,35 +162,29 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function cube</h1><p>Generate a cube of a normalized size, i.e. all axes bounded by <code class="lang-d"><span class="pun">[-</span><span class="lit">1</span><span class="pun">, </span><span class="lit">1</span><span class="pun">]</span></code>.
+			<h1>Function quad</h1><p>Generate a quadrilateral of a normalized size, i.e. all axes bounded by <code class="lang-d"><span class="pun">[-</span><span class="lit">1</span><span class="pun">, </span><span class="lit">1</span><span class="pun">]</span></code>.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">genmesh<wbr/></span><span class="pun">.</span><span class="pln">algorithm<wbr/></span><span class="pun">.</span><span class="pln">indexCollectMesh</span>!(gfx.genmesh.algorithm.DecompResult!(gfx.genmesh.algorithm.DecompResult!(std.algorithm.iteration.MapResult!(teraflop.graphics.primitives.cube().__lambda1,gfx.genmesh.cube.CubeGenerator!(1).CubeGenerator).MapResult,gfx.genmesh.poly.GenFace!(3L,teraflop.graphics.primitives.Vertex).GenFace,gfx.genmesh.algorithm.eachTriangle).DecompResult,teraflop.graphics.primitives.Vertex,gfx.genmesh.algorithm.eachVertex).DecompResult,gfx.genmesh.algorithm.LruIndexer!(ushort,teraflop.graphics.primitives.Vertex).LruIndexer) <span class="pln">cube</span>
-			<span class="pun">(</span>
-			<br/>
-			&nbsp;&nbsp;<span class="typ">void</span> <span class="pln"></span><span class="pun">,</span>
-			<br/>
-			&nbsp;&nbsp;<span class="typ">void</span> <span class="pln"></span>
-			<br/>
-			<span class="pun">)</span><span class="pun">;</span>
+			<span class="kwd">auto</span> <span class="pln">quad</span>(<span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span>!("normals") normals<span class="pln"> </span><span class="pun">= </span><span class="typ">Yes<wbr/></span><span class="pun">.</span><span class="pln">normals</span>)<span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">@property</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			<section></section>
 
 			<section><h2>Examples</h2>
-<p><h3>Generate a Cube <a href="../Mesh.html"><code class="lang-d"><span class="typ">Mesh</span></code></a></h3>
+<p><h3>Generate a square quadrilateral <a href="../Mesh.html"><code class="lang-d"><span class="typ">Mesh</span></code></a></h3>
 </p>
 <pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">algorithm </span><span class="pun">: </span><span class="pln">map</span><span class="pun">;
 </span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">array </span><span class="pun">: </span><span class="pln">array</span><span class="pun">;
 </span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">conv </span><span class="pun">: </span><span class="pln">to</span><span class="pun">;
+</span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons </span><span class="pun">: </span><span class="typ">No</span><span class="pun">;
 </span><span class="kwd">import <a href="../../../teraflop/graphics.html"></span><span class="pln">teraflop<wbr/></span><span class="pun">.</span><span class="pln">graphics</span></a><span class="pln"> </span><span class="pun">: </span><span class="typ">Color</span><span class="pun">, </span><span class="typ">Mesh</span><span class="pun">, </span><span class="typ">Primitive</span><span class="pun">, </span><span class="typ">VertexPosColor</span><span class="pun">;
 
-</span><span class="kwd">auto </span><span class="pln">cubeData </span><span class="pun">= </span><span class="pln">cube</span><span class="pun">();
-</span><span class="kwd">auto </span><span class="pln">vertices </span><span class="pun">= </span><span class="pln">cubeData<wbr/></span><span class="pun">.</span><span class="pln">vertices<wbr/></span><span class="pun">.</span><span class="pln">map</span><span class="pun">!(</span><span class="pln">v </span><span class="pun">=&gt; </span><span class="typ">VertexPosColor</span><span class="pun">(</span><span class="pln">v<wbr/></span><span class="pun">.</span><span class="pln">position</span><span class="pun">, </span><span class="typ">Color<wbr/></span><span class="pun">.</span><span class="pln">blue</span><span class="pun">))<wbr/>.</span><span class="pln">array</span><span class="pun">;
-</span><span class="kwd">auto </span><span class="pln">mesh </span><span class="pun">= </span><span class="kwd">new </span><span class="typ">Mesh</span><span class="pun">!</span><span class="typ">VertexPosColor</span><span class="pun">(</span><span class="typ">Primitive<wbr/></span><span class="pun">.</span><span class="pln">triangleList</span><span class="pun">, </span><span class="pln">vertices</span><span class="pun">, </span><span class="pln">cubeData<wbr/></span><span class="pun">.</span><span class="pln">indices<wbr/></span><span class="pun">.</span><span class="pln">to</span><span class="pun">!(</span><span class="typ">uint</span><span class="pun">[]));</span></code></pre>
+</span><span class="kwd">auto </span><span class="pln">quadData </span><span class="pun">= </span><span class="pln">quad</span><span class="pun">!</span><span class="typ">No<wbr/></span><span class="pun">.</span><span class="pln">normals</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">vertices </span><span class="pun">= </span><span class="pln">quadData<wbr/></span><span class="pun">.</span><span class="pln">vertices<wbr/></span><span class="pun">.</span><span class="pln">map</span><span class="pun">!(</span><span class="pln">v </span><span class="pun">=&gt; </span><span class="typ">VertexPosColor</span><span class="pun">(</span><span class="pln">v<wbr/></span><span class="pun">.</span><span class="pln">position</span><span class="pun">, </span><span class="typ">Color<wbr/></span><span class="pun">.</span><span class="pln">blue</span><span class="pun">))<wbr/>.</span><span class="pln">array</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">mesh </span><span class="pun">= </span><span class="kwd">new </span><span class="typ">Mesh</span><span class="pun">!</span><span class="typ">VertexPosColor</span><span class="pun">(</span><span class="typ">Primitive<wbr/></span><span class="pun">.</span><span class="pln">triangleList</span><span class="pun">, </span><span class="pln">vertices</span><span class="pun">, </span><span class="pln">quadData<wbr/></span><span class="pun">.</span><span class="pln">indices<wbr/></span><span class="pun">.</span><span class="pln">to</span><span class="pun">!(</span><span class="typ">uint</span><span class="pun">[]));</span></code></pre>
 </section>
 
 			<footer>

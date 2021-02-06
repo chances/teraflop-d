@@ -22,6 +22,7 @@ var symbols = [
 {name: 'teraflop.components.transform.transform', kind: "functiondeclaration", path: './teraflop/components/transform/transform.html', attributes: []},
 {name: 'teraflop.graphics.primitives', kind: "module", path: './teraflop/graphics/primitives.html', attributes: []},
 {name: 'teraflop.graphics.primitives.cube', kind: "functiondeclaration", path: './teraflop/graphics/primitives/cube.html', attributes: ["auto"]},
+{name: 'teraflop.graphics.primitives.quad', kind: "functiondeclaration", path: './teraflop/graphics/primitives/quad.html', attributes: ["auto", "property"]},
 {name: 'teraflop.graphics.primitives.Vertex', kind: "structdeclaration", path: './teraflop/graphics/primitives/Vertex.html', attributes: []},
 {name: 'teraflop.graphics.primitives.Vertex.normal', kind: "variabledeclaration", path: './teraflop/graphics/primitives/Vertex.normal.html', attributes: []},
 {name: 'teraflop.graphics.primitives.Vertex.position', kind: "variabledeclaration", path: './teraflop/graphics/primitives/Vertex.position.html', attributes: []},

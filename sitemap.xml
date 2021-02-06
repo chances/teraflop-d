@@ -26,6 +26,7 @@
 <url><loc>http://127.0.0.1/teraflop/components/transform/transform.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/primitives.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/primitives/cube.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/primitives/quad.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/primitives/Vertex.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/primitives/Vertex.normal.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/primitives/Vertex.position.html</loc></url>
