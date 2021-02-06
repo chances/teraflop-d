@@ -43,9 +43,12 @@ final class ResourceGarbageCollector : System {
   }
 
   override void run() {
-    auto resources = query().map!(entity => entity.getMut!IResource).joiner
-      .filter!(c => c.initialized).array;
-    foreach (resource; resources) destroy(resource);
+    auto resources = query().map!(entity => cast(Component[]) entity.components).joiner
+      .filter!(c => typeid(IResource).isBaseOf(c.classinfo) && (cast(IResource) c).initialized).array;
+    foreach (resource; resources) {
+      device.waitIdle();
+      destroy(resource);
+    }
   }
 }
 
@@ -68,13 +71,14 @@ final class TextureUploader : System {
   override void run() {
     import teraflop.graphics : Material;
 
-    auto textures = query().map!(entity => entity.getMut!Material).joiner
-      .filter!(c => c.textured && c.initialized && c.texture.dirty)
-      .map!(c => c.texture).array;
-    if (textures.length == 0) return;
+    auto materials = query().map!(entity => entity.getMut!Material).joiner
+      .filter!(c => c.initialized && c.textured && c.dirty && c.dirtied.textureChanged)
+      .map!(c => c.dirtied).array;
+    if (materials.length == 0) return;
 
     auto commands = cmdBuf.get;
-    foreach (texture; textures) {
+    foreach (material; materials) {
+      const texture = material.texture;
       commands.pipelineBarrier(trans(PipelineStage.topOfPipe, PipelineStage.transfer), [], [
         ImageMemoryBarrier(
           trans(Access.none, Access.transferWrite),
@@ -100,6 +104,7 @@ final class TextureUploader : System {
         )
       ]);
 
+      material.resetDirtied();
       texture.dirty = false;
     }
     cmdBuf.submit(commands);

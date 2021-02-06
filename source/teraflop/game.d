@@ -182,13 +182,7 @@ abstract class Game {
     eventLoop.exit();
 
     // Gracefully release GPU and other unmanaged resources
-    foreach (entity; world.entities) {
-      device.waitIdle();
-      foreach (component; entity.components) {
-        device.waitIdle();
-        destroy(component);
-      }
-    }
+    new ResourceGarbageCollector(world, device).run();
     foreach (system; systems) destroy(system);
     destroy(world);
 
@@ -201,8 +195,6 @@ abstract class Game {
       destroy(window);
     }
 
-    device.waitIdle();
-    new ResourceGarbageCollector(world, device).run();
     destroy(pipelinePreparer);
 
     device.waitIdle();

@@ -9,11 +9,12 @@ import bindbc.glfw;
 import std.exception : enforce;
 import std.string : toStringz;
 import teraflop.input;
+import teraflop.platform.vulkan : SurfaceSizeProvider;
 
 private uint lastWindowId = 0;
 
 /// A native window.
-class Window : InputNode {
+class Window : SurfaceSizeProvider, InputNode {
   import teraflop.async : Event;
   import teraflop.graphics : Color;
   import teraflop.math : Size, vec2d;
@@ -194,6 +195,14 @@ class Window : InputNode {
       // Maximum size
       data.maximumSize.width, data.maximumSize.height
     );
+  }
+
+  /// Size of this Window's Surface, in pixels.
+  ///
+  /// This value may not necessarily match `Window.size`. For example, on mac OS machines with high-DPI Retina displays.
+  /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_fbsize">Framebuffer size</a> in the GLFW documentation
+  const(Size) surfaceSize() @property const {
+    return data.framebufferSize;
   }
   /// Size of this Window, in pixels.
   ///

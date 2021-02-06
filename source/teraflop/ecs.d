@@ -16,7 +16,7 @@ import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
 import teraflop.async : isEvent;
-import teraflop.traits : inheritsFrom, isClass, isInterface, isStruct;
+import teraflop.traits : inheritsFrom, isClass, isInterface, isHeritable, isStruct;
 
 /// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
@@ -55,6 +55,15 @@ final class World {
   }
 }
 
+version (unittest) {
+  class MockScene {
+    protected World world = new World();
+
+    /// Called when the Scene should initialize its `World`.
+    protected abstract void initializeWorld(scope World world);
+  }
+}
+
 /// Detect whether `T` is the `Resources` struct.
 enum bool isResources(T) = __traits(isSame, T, Resources);
 
@@ -72,11 +81,10 @@ struct Resources {
   private ResourceCollection* resources;
   private ResourceTracker* resourceChanged;
 
-  private ResourceId key(T)(T resource) {
-    Variant resourceVariant = resource;
-    auto key = resourceVariant.type.toHash;
-    static if (isClass!T) {
-      key = resourceVariant.type.hashOf(resource.toHash);
+  private ResourceId key(T)(const T resource) {
+    auto key = typeid(T).toHash;
+    static if (isHeritable!T) {
+      key = hashOf(resource, key);
     }
     return key;
   }
@@ -88,11 +96,7 @@ struct Resources {
 
   /// Returns `true` if and only if the given Resource type can be found in the collection.
   bool contains(T)() const {
-    import std.algorithm : any, canFind, map;
-    // When T is a class, whether T is a base class of any of the Resources
-    static if (isClass!T) return resources.values.any!((Variant resource) => isBaseOf!T(resource));
-    // Otherwise, whether T can be found in the collection of Resource types
-    else return resources.values.map!(resource => resource.type).canFind(typeid(T));
+    return getAll!T.length > 0;
   }
 
   /// Whether the given Resource has been changed.
@@ -102,36 +106,41 @@ struct Resources {
 
   /// Returns the first Resource from the collection that is of the given type.
   const(T) get(T)() const {
+    assert(contains!T(), "Could not find Resource of type `" ~ fullyQualifiedName!T ~ "`!");
     return getAll!T[0];
   }
   /// Returns the Resources from the collection of the given type.
   const(T)[] getAll(T)() const {
-    import std.algorithm : all, filter, map;
+    import std.algorithm : filter, map;
     import std.array : array;
 
-    assert(contains!T(), "Could not find Resource!");
-    auto variants = resources.values.filter!(resource => {
-      static if (isClass!T) return isBaseOf!T(resource);
+    return resources.values.filter!(resource => {
+      // When T is heritable, whether T is a base class of the resource's class
+      static if (isHeritable!T) return typeid(resource.type) == typeid(TypeInfo_Class) &&
+        typeid(T).isBaseOf(resource.type.to!TypeInfo_Class);
+      // Otherwise, whether T matches the resource's type
       else return resource.type == typeid(T);
-    }()).array;
-    assert(variants.length, "Could not find Resource!");
-    return variants.map!(variant => variant.get!T).array;
+    }()).map!(variant => variant.get!T).array;
   }
 
   /// Replace a Resource.
   void replace(T)(T resource) {
-    assert(contains!T(), "A Resource must first be added before replacement.");
+    assert(contains!T(), "A Resource must first be added before being replaced.");
     const key = key(resource);
     (*resources)[key] = resource;
     (*resourceChanged)[key] = true;
   }
 
   /// Remove a Resource.
-  void remove(T)(T resource) {
+  void remove(T)(const T resource) {
     assert(contains!T(), "A Resource must first be added before removal.");
-    const key = key(resource);
-    (*resources).remove(key);
-    (*resourceChanged)[key] = true;
+    foreach (key, value; *resources) {
+      if (resource == value) {
+        (*resources).remove(key);
+        (*resourceChanged)[key] = true;
+        break;
+      }
+    }
   }
 
   /// Clear each Resource's change detection tracking state.
@@ -139,10 +148,6 @@ struct Resources {
     foreach (key; resourceChanged.keys) {
       (*resourceChanged)[key] = false;
     }
-  }
-
-  private bool isBaseOf(T)(Variant resource) const if(isClass!T) {
-    return typeid(resource.type) == typeid(TypeInfo_Class) && typeid(T).isBaseOf(resource.type.to!TypeInfo_Class);
   }
 }
 
@@ -156,20 +161,35 @@ unittest {
   world.resources.remove(3);
   assert(!world.resources.contains!int);
 
+  // Structs
   struct Foo {
     auto bar = "hello";
   }
   world.resources.add(Foo());
   assert(world.resources.get!Foo.bar == "hello");
 
-  // Subclasses retreived by superclass
-  class A {
-    const x = 7;
+  // Interfaces and subclasses retreived by superclass
+  interface Integer {
+    int x() @property const;
   }
+  class A {}
   class B : A {}
-  world.resources.add(new B());
+  class C : B, Integer {
+    int x() @property const {
+      return 7;
+    }
+  }
+  world.resources.add(new C());
   assert(world.resources.contains!A);
-  assert(world.resources.get!A.x == 7);
+  assert(world.resources.contains!B);
+  assert(world.resources.get!C.x == 7);
+  assert(world.resources.contains!Integer);
+  assert(world.resources.get!Integer.x == 7);
+
+  world.resources.remove(world.resources.get!A);
+  assert(!world.resources.contains!A);
+  assert(!world.resources.contains!B);
+  assert(!world.resources.contains!Integer);
 }
 
 /// Detect whether `T` is the `Entity` class.
@@ -177,6 +197,8 @@ enum bool isEntity(T) = __traits(isSame, Unqual!T, Entity);
 
 /// A world entity consisting of a unique ID and a collection of associated components.
 final class Entity {
+  import std.algorithm : canFind, filter, map;
+  import std.array : array;
   import std.uuid : randomUUID;
 
   private Component[string] components_;
@@ -219,9 +241,6 @@ final class Entity {
   /// Complexity: Linear
   bool contains(string name) const {
     assert(name.length);
-    import std.algorithm.iteration : filter, map;
-    import std.algorithm.searching : canFind;
-
     auto componentNames = components.filter!(Component.isNamed)
       .map!(c => c.to!(const NamedComponent).name);
     if (componentNames.empty) return false;
@@ -236,9 +255,6 @@ final class Entity {
 
   /// Get Component data given its type and optionally its name.
   immutable(T[]) get(T)(string name = "") const if (storableAsComponent!T) {
-    import std.algorithm.iteration : map;
-    import std.array : array;
-
     auto components = getMut!T(name);
     static if (isStruct!T && !isEvent!T) {
       return components.idup;
@@ -251,20 +267,14 @@ final class Entity {
 
   /// Get a mutable reference to Component data given its interface type.
   T[] getMut(T)() const if (isInterface!T) {
-    import std.algorithm.iteration : filter, map;
-    import std.array : array;
-
-    return cast(T[]) components
+    // https://forum.dlang.org/post/ojbovwuzvzxnycaauolr@forum.dlang.org
+    return components
       .filter!(c => typeid(T).isBaseOf(c.classinfo))
       .map!(c => cast(T) c).array;
   }
 
   /// Get a mutable reference to Component data given its type and optionally its name.
   T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
-    import std.algorithm.iteration : filter, map;
-    import std.algorithm.searching : canFind;
-    import std.array : array;
-
     // For unnamed `Component` derivations
     static if (!isStruct!T && !isNamedComponent!T) {
       assert(name == "", "Cannot filter for named components given an unnamed Component type.");
