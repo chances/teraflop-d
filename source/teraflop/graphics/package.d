@@ -1025,11 +1025,39 @@ enum FrontFace : gfx.graal.FrontFace {
 }
 
 /// Argument to the `Material.onDirtied` `Event`.
+/// See_Also: `Material.dirtied`
 struct MaterialDirtied {
-  ///
-  size_t formerMaterialHash;
-  ///
-  Shader changedShader;
+  package Material material;
+  package(teraflop) size_t formerMaterialHash;
+
+  /// The `Shader` that changed.
+  /// See_Also: `Material.shaders`
+  Shader shader;
+  /// The `Texture` that changed.
+  /// See_Also: `Material.textured`
+  Texture texture;
+
+  /// Whether a `Material` was dirtied because one of its `Shader` changed.
+  /// See_Also: $UL(
+  ///   $(LI `Material.shaders`)
+  ///   $(LI `Material.dirtied`)
+  /// )
+  bool shaderChanged() @property const {
+    return shader !is null;
+  }
+
+  /// Whether a textured `Material` was dirtied because its `Texture` changed.
+  /// See_Also: $UL(
+  ///   $(LI `Material.textured`)
+  ///   $(LI `Material.dirtied`)
+  /// )
+  bool textureChanged() @property const {
+    return texture !is null;
+  }
+
+  package (teraflop) void resetDirtied() @property const {
+    (cast(MaterialDirtied) this).material.resetDirtied();
+  }
 }
 
 /// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
@@ -1089,10 +1117,15 @@ class Material : ObservableFileCollection, IResource {
     super(name, shaders.to!(ObservableFile[]));
     foreach(shader; shaders) {
       shader.onChanged ~= (const(ubyte)[] _) => {
-        _dirtied = new MaterialDirtied(_formerMaterialHash, shader);
+        _dirtied = new MaterialDirtied(this, _formerMaterialHash, shader);
         _formerMaterialHash = this.toHash;
       }();
     }
+
+    if (textured) texture.onChanged ~= (const(ubyte)[] _) => {
+      _dirtied = new MaterialDirtied(this, _formerMaterialHash, null, texture);
+      _formerMaterialHash = this.toHash;
+    }();
   }
   ~this() {
     foreach (shader; _shaders)
@@ -1104,7 +1137,7 @@ class Material : ObservableFileCollection, IResource {
     import std.algorithm.searching : all;
 
     if (!_shaders.length) return true;
-    return _shaders.all!(shader => shader.initialized) && (texture is null || texture.initialized);
+    return _shaders.all!(shader => shader.initialized) && (!textured || texture.initialized);
   }
 
   /// Whether to perform the depth test. If `true`, assumes the render target has a depth buffer attachment.
@@ -1167,15 +1200,16 @@ class Material : ObservableFileCollection, IResource {
   bool dirty() @property const {
     return _dirtied !is null;
   }
+  package (teraflop) void resetDirtied() @property const {
+    (cast(Material) this)._dirtied = null;
+  }
   /// The properties of this Material that have changed.
   ///
   /// Be sure to check `Material.dirty` before accessing this property.
   /// See_Also: `Material.dirty`
-  @property const(MaterialDirtied) dirtied() {
+  const(MaterialDirtied) dirtied() @property const {
     assert(dirty, "This Material is not dirty!\n\tHint: Check `Material.dirty` beforehand.");
-    auto result = *_dirtied;
-    _dirtied = null;
-    return result;
+    return *_dirtied;
   }
 
   /// Pipelines are keyed on `Material`s, `MeshBase.bindingDescription`, `MeshBase.attributeDescriptions`, and `MeshBase.topology`
