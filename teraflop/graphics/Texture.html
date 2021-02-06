@@ -265,13 +265,6 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../teraflop/graphics/Texture.size.html" class="public"><code>size</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a><span class="pun">)</span></code></td><td>Size of this Texture, in pixels.
-</td>
-					</tr>
-					<tr>
-						<td>
 							<a href="../../teraflop/graphics/Texture.usage.html" class="public"><code>usage</code></a>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><span class="pln">gfx<wbr/></span><span class="pun">.</span><span class="pln">graal<wbr/></span><span class="pun">.</span><span class="pln">image<wbr/></span><span class="pun">.</span><span class="typ">ImageUsage</span><span class="pun">)</span></code></td><td>Manner in which this Texture will be used. Defaults to <code class="lang-d"><span class="typ">ImageUsage<wbr/></span><span class="pun">.</span><span class="pln">sampled </span><span class="pun">| </span><span class="typ">ImageUsage<wbr/></span><span class="pun">.</span><span class="pln">transferDst</span></code>.
@@ -294,6 +287,13 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../teraflop/graphics/Texture.dimensions.html" class="public property"><code>dimensions</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../teraflop/math/Size.html"><span class="typ">Size</span></a></code></td><td>Size of this Texture, in pixels.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../teraflop/graphics/Texture.initialized.html" class="public property"><code>initialized</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td>Whether this Shader has been successfully initialized.
@@ -301,7 +301,7 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
-							<a href="../../teraflop/graphics/Texture.sizeInBytes.html" class="public property"><code>sizeInBytes</code></a><span class="tableEntryAnnotation">[get]</span>
+							<a href="../../teraflop/graphics/Texture.size.html" class="public property"><code>size</code></a><span class="tableEntryAnnotation">[get]</span>
 						</td>
 						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">ulong</span></code></td><td></td>
 					</tr>
@@ -346,12 +346,22 @@ $('#symbolSearchPane').show();</script>
 					</tr>
 					<tr>
 						<td>
+							<a href="../../teraflop/graphics/Texture.resize.html" class="public">
+								<code>resize</code>
+							</a>
+							<span class="tableEntryAnnotation">(size)</span>
+						</td>
+						<td>Resize this Texture.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a href="../../teraflop/graphics/Texture.update.html" class="public">
 								<code>update</code>
 							</a>
 							<span class="tableEntryAnnotation">(data)</span>
 						</td>
-						<td>Update this texture's data.
+						<td>Update this Texture's data.
 </td>
 					</tr>
 				</table>

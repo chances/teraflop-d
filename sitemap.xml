@@ -326,11 +326,12 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.data.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.defaultUsage.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/Texture.dimensions.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.format.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.initialize.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.initialized.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/Texture.resize.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.size.html</loc></url>
-<url><loc>http://127.0.0.1/teraflop/graphics/Texture.sizeInBytes.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.this.html</loc></url>
@@ -405,6 +406,13 @@
 <url><loc>http://127.0.0.1/teraflop/systems.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/systems/FileWatcher.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/systems/FileWatcher.this.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/System.from.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/System.name.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/System.query.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/System.resources.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/ecs/System.run.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/systems/ResourceGarbageCollector.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/systems/ResourceGarbageCollector.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/System.from.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/System.name.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/ecs/System.query.html</loc></url>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Texture.update - Teraflop</title>
+		<title>Class ResourceGarbageCollector - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -69,8 +69,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view ">
-					<div class="package selected">
+				<li class="tree-view collapsed">
+					<div class="package ">
 						<a href="../../teraflop/graphics.html">graphics</a>
 					</div>
 			<ul class="tree-view">
@@ -120,8 +120,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view collapsed">
-					<div class="package ">
+				<li class="tree-view ">
+					<div class="package selected">
 						<a href="../../teraflop/systems.html">systems</a>
 					</div>
 			<ul class="tree-view">
@@ -162,21 +162,96 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Texture.update</h1><p>Update this Texture's data.
+			<h1>Class ResourceGarbageCollector</h1><p>Dispose managed GPU resources.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="typ">void</span> <span class="pln">update</span>
-			<span class="pun">(</span>
-			<br/>
-			&nbsp;&nbsp;<span class="typ">ubyte</span><span class="pun">[]</span> <span class="pln">data</span>
-			<br/>
-			<span class="pun">)</span><span class="pun">;</span>
+			<span class="kwd">class</span> <span class="typ">ResourceGarbageCollector</span>
+			<br>&nbsp;&nbsp;: <a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a>
+			<span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
+			<section><h2>Constructors</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/systems/ResourceGarbageCollector.this.html" class="public">
+								<code>this</code>
+							</a>
+							<span class="tableEntryAnnotation">(world, device)</span>
+						</td>
+						<td>Initialize a new ResourceGarbageCollector.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Properties</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Type</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/System.name.html" class="public inherited property"><code>name</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">string</span></code></td><td>The name of this System.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/System.resources.html" class="public inherited property"><code>resources</code></a><span class="tableEntryAnnotation">[get]</span>
+						</td>
+						<td class="typecol"><code class="prettyprint lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code></td><td>Retreive the World's <code class="lang-d"><a href="../../teraflop/ecs/Resources.html"><span class="typ">Resources</span></a></code>.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section><h2>Methods</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th><th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/System.from.html" class="public inherited">
+								<code>from</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Dynamically generate a new <code class="lang-d"><a href="../../teraflop/ecs/System.html"><span class="typ">System</span></a></code> instance given a function.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/System.query.html" class="public inherited">
+								<code>query</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Query the <code class="lang-d"><a href="../../teraflop/ecs/World.html"><span class="typ">World</span></a></code> for Entities containing Components of the given types.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a href="../../teraflop/ecs/System.run.html" class="public inherited">
+								<code>run</code>
+							</a>
+							<span class="tableEntryAnnotation">()</span>
+						</td>
+						<td>Operate this System on Resources and Components in the <code class="lang-d"><a href="../../teraflop/ecs/World.html"><span class="typ">World</span></a></code>.
+</td>
+					</tr>
+				</table>
+			</section>
 			
 			<footer>
 				<table class="license-info">
