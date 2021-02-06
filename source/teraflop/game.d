@@ -136,6 +136,7 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
+    import teraflop.systems : ResourceGarbageCollector;
 
     scope(exit) terminateGlfw();
     initialize();
@@ -201,6 +202,7 @@ abstract class Game {
     }
 
     device.waitIdle();
+    new ResourceGarbageCollector(world, device).run();
     destroy(pipelinePreparer);
 
     device.waitIdle();
