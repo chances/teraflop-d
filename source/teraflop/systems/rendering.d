@@ -91,9 +91,7 @@ final class PipelinePreparer : System {
     import std.range : tail;
     import std.typecons : No, Yes;
     import teraflop.components : Transform;
-
-    const window = this.resources.get!Window;
-    auto surfaceSize = window.framebufferSize;
+    import teraflop.platform : SurfaceSizeProvider;
 
     // Aggregate graphics pipelines
     foreach (entity; this.query()) {
@@ -196,6 +194,7 @@ final class PipelinePreparer : System {
         device.updateDescriptorSets(descriptorWrites, []);
       }
 
+      const surfaceSize = this.resources.get!SurfaceSizeProvider.surfaceSize;
       PipelineInfo info = {
         shaders: material.shaders,
         inputBindings: [mesh.bindingDescription],

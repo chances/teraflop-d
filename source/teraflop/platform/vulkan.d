@@ -163,11 +163,14 @@ package (teraflop) Image createStencilImage(Device device, Size size) {
   return createImage(device, size, findStencilFormat(device.physicalDevice), ImageUsage.depthStencilAttachment);
 }
 
+///
+interface SurfaceSizeProvider {
+  const(Size) surfaceSize() @property const;
+}
+
 /// Data that is duplicated for every frame in the swapchain.
 /// This typically includes a framebuffer and command pool.
 abstract class FrameData : AtomicRefCounted {
-  import teraflop.math : Size;
-
   /// To keep track of when command processing is done.
   Rc!Fence fence;
   ///
