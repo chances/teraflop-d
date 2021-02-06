@@ -56,12 +56,7 @@ auto @property quad(Flag!"normals" normals = Yes.normals)() {
 
 unittest {
   import std.algorithm : equal;
-
-  foreach (f; 0 .. 6) {
-    immutable f6 = f*6;
-    immutable f4 = f*4;
-    assert(quad.indices[f6 .. f6+6].equal([f4, f4+1, f4+2, f4, f4+2, f4+3]));
-  }
+  assert(quad.indices[0 .. 6].equal([0, 1, 2, 0, 2, 3]));
 }
 
 /// Generate a cube of a normalized size, i.e. all axes bounded by `[-1, 1]`.
