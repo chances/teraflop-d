@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Resources.remove - Teraflop</title>
+		<title>Function MaterialDirtied.shaderChanged - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -69,8 +69,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view collapsed">
-					<div class="package ">
+				<li class="tree-view ">
+					<div class="package selected">
 						<a href="../../teraflop/graphics.html">graphics</a>
 					</div>
 			<ul class="tree-view">
@@ -133,7 +133,7 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../teraflop/ecs.html">ecs</a>
 					</div>
 				</li>
@@ -162,22 +162,24 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Resources.remove</h1><p>Remove a Resource.
+			<h1>Function MaterialDirtied.shaderChanged</h1><p>Whether a <code class="lang-d"><a href="../../teraflop/graphics/Material.html"><span class="typ">Material</span></a></code> was dirtied because one of its <code class="lang-d"><a href="../../teraflop/graphics/Shader.html"><span class="typ">Shader</span></a></code> changed.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="typ">void</span> <span class="pln">remove</span>(T)
-			<span class="pun">(</span>
-			<br/>
-			&nbsp;&nbsp;<span class="kwd">const </span><span class="pln">T</span> <span class="pln">resource</span>
-			<br/>
-			<span class="pun">)</span><span class="pun">;</span>
+			<span class="typ">bool</span> <span class="pln">shaderChanged</span><span class="pun">(</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">@property const</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			
+			<section><h2>See Also</h2>
+<p>$UL(
+<li><code class="lang-d"><span class="typ">Material<wbr/></span><span class="pun">.</span><span class="pln">shaders</span></code></li>
+<li><code class="lang-d"><a href="../../teraflop/graphics/Material.dirtied.html"><span class="typ">Material<wbr/></span><span class="pun">.</span><span class="pln">dirtied</span></a></code></li>
+)
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

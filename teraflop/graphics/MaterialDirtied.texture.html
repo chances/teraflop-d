@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Resources.remove - Teraflop</title>
+		<title>Variable MaterialDirtied.texture - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -69,8 +69,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view collapsed">
-					<div class="package ">
+				<li class="tree-view ">
+					<div class="package selected">
 						<a href="../../teraflop/graphics.html">graphics</a>
 					</div>
 			<ul class="tree-view">
@@ -133,7 +133,7 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 				</li>
 				<li>
-					<div class="module selected">
+					<div class="module ">
 						<a href="../../teraflop/ecs.html">ecs</a>
 					</div>
 				</li>
@@ -162,22 +162,34 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Resources.remove</h1><p>Remove a Resource.
+			<h1>Variable MaterialDirtied.texture</h1><p>The <code class="lang-d"><a href="../../teraflop/graphics/Texture.html"><span class="typ">Texture</span></a></code> that changed.
 </p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="typ">void</span> <span class="pln">remove</span>(T)
-			<span class="pun">(</span>
+			<span class="kwd">struct</span> <a href="../../teraflop/graphics/MaterialDirtied.html"><span class="typ">MaterialDirtied</span></a>
 			<br/>
-			&nbsp;&nbsp;<span class="kwd">const </span><span class="pln">T</span> <span class="pln">resource</span>
+			<span class="pun">
+				{
+				<br/>
+			</span>
+			&nbsp;&nbsp;<span class="com">// ...</span>
 			<br/>
-			<span class="pun">)</span><span class="pun">;</span>
+			&nbsp;&nbsp;<a href="../../teraflop/graphics/Texture.html"><span class="typ">Texture</span></a> <span class="pln">texture</span>
+			<span class="pun">;</span>
+			<br/>
+			&nbsp;&nbsp;<span class="com">// ...</span>
+			<br/>
+			<span class="pun">}</span>
 					</div>
 				</code>
 			</div>
 			
-			
+			<section><h2>See Also</h2>
+<p><code class="lang-d"><a href="../../teraflop/graphics/Material.textured.html"><span class="typ">Material<wbr/></span><span class="pun">.</span><span class="pln">textured</span></a></code>
+</p>
+</section>
+
 			<footer>
 				<table class="license-info">
 					<tr>

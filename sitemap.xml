@@ -111,6 +111,7 @@
 <url><loc>http://127.0.0.1/teraflop/platform/vulkan/OneTimeCmdBufPool.get.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/vulkan/OneTimeCmdBufPool.submit.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/vulkan/OneTimeCmdBufPool.this.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/platform/vulkan/SurfaceSizeProvider.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/vulkan/uniformAlignment.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.html</loc></url>
@@ -128,6 +129,7 @@
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.onUnhandledInput.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.show.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.size.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/platform/window/Window.surfaceSize.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/platform/window/Window.title.html</loc></url>
@@ -254,6 +256,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.bindingLocation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.dirty.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.onChanged.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.shaderStage.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.this.html</loc></url>
@@ -291,6 +294,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.frontFace.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.initialize.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.initialized.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/Material.texture.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.textured.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.this.html</loc></url>
@@ -299,8 +303,10 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.this.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Material.toHash.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.html</loc></url>
-<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.changedShader.html</loc></url>
-<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.formerMaterialHash.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.shader.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.shaderChanged.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.texture.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/MaterialDirtied.textureChanged.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Mesh.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Mesh.attributeDescriptions.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/Mesh.bindingDescription.html</loc></url>
@@ -345,6 +351,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/Texture.usage.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.bindingLocation.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.dirty.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.onChanged.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/BindingDescriptor.shaderStage.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/UniformBuffer.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/graphics/UniformBuffer.this.html</loc></url>
