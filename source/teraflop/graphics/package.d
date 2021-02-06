@@ -493,6 +493,12 @@ struct ModelViewProjection {
 ///   $(LI `teraflop.ecs.NamedComponent`)
 /// )
 abstract class BindingDescriptor : NamedComponent {
+  import teraflop.async : Event;
+
+  /// Fired when this BindingDescriptor's `data` changes.
+  /// See_Also: `BindingDescriptor.dirty`
+  Event!(const(ubyte)[]) onChanged;
+
   protected uint _bindingLocation;
   protected ShaderStage shaderStage_;
   protected DescriptorType bindingType_;
@@ -513,8 +519,10 @@ abstract class BindingDescriptor : NamedComponent {
   bool dirty() @property const {
     return dirty_;
   }
-  package (teraflop) void dirty(bool value) @property {
-    dirty_ = value;
+  package (teraflop) void dirty(bool value) @property const {
+    auto self = (cast(BindingDescriptor) this);
+    self.dirty_ = value;
+    if (value) self.onChanged(data);
   }
 
   /// Descriptor binding location, e.g. `layout(binding = 0)` in GLSL.
