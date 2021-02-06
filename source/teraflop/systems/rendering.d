@@ -103,12 +103,12 @@ final class PipelinePreparer : System {
       const mesh = entity.get!MeshBase()[0];
       if (!mesh.initialized) continue;
 
-      const materialDirtied = material.dirty;
+      const materialDirtied = material.dirty && material.dirtied.shaderChanged;
       const key = materialDirtied
-        ? this.key((cast(Material) material).dirtied, mesh)
+        ? this.key(material.dirtied, mesh)
         : this.key(material, mesh);
 
-      // Prune dirtied Materials
+      // Prune dirtied Materials, i.e. Materials whose shaders have changed
       if (materialDirtied && (key in pipelines) !is null) {
         _materialsChanged = true;
         device.waitIdle();
@@ -128,6 +128,8 @@ final class PipelinePreparer : System {
       _bindingGroups[material] = new BindingGroup[0];
       const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();
 
+      // Bind the Material's Texture, if any
+      if (material.textured) bindings ~= material.texture;
       // Bind the World's primary camera mvp uniform, if any
       const(BindingDescriptor)[] transformBindings;
       const hasWorldCamera = this.resources.contains!Camera;
@@ -150,7 +152,7 @@ final class PipelinePreparer : System {
 
       auto pipelineBindings = new PipelineLayoutBinding[0];
       foreach (i, binding; transformBindings) pipelineBindings ~= PipelineLayoutBinding(
-        i.to!uint, DescriptorType.uniformBuffer, 1, binding.shaderStage
+        i.to!uint, binding.bindingType, 1, binding.shaderStage
       );
       pipelineBindings ~= bindings.map!(binding =>
         PipelineLayoutBinding(binding.bindingLocation, binding.bindingType, 1, binding.shaderStage)

@@ -1126,7 +1126,11 @@ class Material : ObservableFileCollection, IResource {
     return shaderSet;
   }
 
+  /// Whether this Material is textured.
+  ///
+  /// Be sure to check `Material.textured` before accessing this property.
   Texture texture() @property const {
+    assert(textured, "This Material is not textured!\n\tHint: Check `Material.textured` beforehand.");
     return cast(Texture) _texture;
   }
   /// Whether this Material is textured.
