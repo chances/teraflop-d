@@ -55,6 +55,15 @@ final class World {
   }
 }
 
+version (unittest) {
+  class MockScene {
+    protected World world = new World();
+
+    /// Called when the Scene should initialize its `World`.
+    protected abstract void initializeWorld(scope World world);
+  }
+}
+
 /// Detect whether `T` is the `Resources` struct.
 enum bool isResources(T) = __traits(isSame, T, Resources);
 

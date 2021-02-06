@@ -882,7 +882,7 @@ class Texture : BindingDescriptor, IResource {
   }
 
   /// Resize this Texture.
-  void resize(Size size) {
+  void resize(const Size size) {
     import std.algorithm : joiner, map;
     import std.array : array;
     import std.math : round;
@@ -1226,7 +1226,7 @@ class Material : ObservableFileCollection, IResource {
   }
 
   /// Initialize this Material.
-  void initialize(scope Device device) {
+  override void initialize(scope Device device) {
     foreach (shader; _shaders) shader.initialize(device);
     if (_texture !is null)
       texture.initialize(device);
@@ -1270,133 +1270,201 @@ version (GPU) {
   import teraflop.platform.vulkan;
 }
 
-unittest {
+version (unittest) {
   version (GPU) {
-    import gfx.core : none;
-    import std.conv : to;
+    import teraflop.ecs : MockScene, System, World;
+    import teraflop.systems;
 
-    assert(initVulkan("test-triangle"));
-    const graphicsQueueIndex = selectGraphicsQueue();
-    enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
-    auto device = selectGraphicsDevice(graphicsQueueIndex);
-    auto graphicsQueue = device.getQueue(graphicsQueueIndex, 0);
+    class MockTriangleScene : MockScene, SurfaceSizeProvider {
 
-    // Render a blank scene to a single image
-    auto renderTargetSize = Size(400, 400);
-    auto renderTarget = createImage(device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
-    auto renderTargetTexture = new Texture(Size(renderTargetSize.width / 2, renderTargetSize.width / 2));
-    renderTargetTexture.initialize(device);
-    assert(renderTargetTexture.initialized);
-    renderTargetTexture.resize(renderTargetSize);
-    assert(!renderTargetTexture.initialized);
-    renderTargetTexture.initialize(device);
-    assert(renderTargetTexture.initialized);
+      const Size renderTargetSize;
 
-    const attachments = [AttachmentDescription(Format.bgra8_sRgb, 1,
-      AttachmentOps(LoadOp.clear, StoreOp.store),
-      AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
-      trans(ImageLayout.undefined, ImageLayout.presentSrc),
-      No.mayAlias
-    )];
-    const subpasses = [SubpassDescription(
-      [], [ AttachmentRef(0, ImageLayout.colorAttachmentOptimal) ],
-      none!AttachmentRef, []
-    )];
-    auto renderPass = device.createRenderPass(attachments, subpasses, []);
-    auto frameBuffer = new TestFrameData(device, graphicsQueueIndex, renderTarget, renderPass);
+      private Device _device;
+      private Queue graphicsQueue;
+      private Image _renderTarget;
+      private Texture _renderTargetTexture;
+      private Rc!RenderPass renderPass;
+      private TestFrameData frameBuffer;
+      private PipelinePreparer pipelinePreparer;
+      private auto systems = new System[0];
 
-    auto triangle = new Mesh!VertexPosColor([
-      VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
-      VertexPosColor(vec3f(0.5f, 0.5f, 0), Color.green.vec3f),
-      VertexPosColor(vec3f(-0.5f, 0.5f, 0), Color.blue.vec3f),
-    ], [0, 1, 2]);
-    triangle.initialize(device);
-    assert(triangle.initialized);
-    assert(triangle.dirty);
-    assert(triangle.vertexCount == 3);
-    assert(triangle.indices == [0, 1, 2]);
+      private MeshBase _triangle;
+      private Material _material;
 
-    auto vert = new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv");
-    auto frag = new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv");
-    auto material = new Material([vert, frag], No.depthTest);
-    assert( material.frontFace == FrontFace.clockwise);
-    assert( material.cullMode == CullMode.back);
-    assert(!material.textured);
-    assert(!material.dirty);
-    material.initialize(device);
-    assert(vert.initialized && frag.initialized);
-    assert(material.initialized);
+      this(Size renderTargetSize = Size(400, 400)) {
+        import gfx.core : none;
 
-    Pipeline[Material] pipelines;
-    DescriptorSetLayout[] descriptors;
-    PipelineInfo info = {
-      shaders: material.shaders,
-      inputBindings: [triangle.bindingDescription],
-      inputAttribs: triangle.attributeDescriptions,
-      assembly: InputAssembly(Primitive.triangleList, No.primitiveRestart),
-      rasterizer: Rasterizer(
-        PolygonMode.fill, material.cullMode, material.frontFace, No.depthClamp,
-        none!DepthBias, 1f
-      ),
-      viewports: [
-        ViewportConfig(
-          Viewport(0, 0, renderTargetSize.width.to!float, renderTargetSize.height.to!float),
-          Rect(0, 0, renderTargetSize.width, renderTargetSize.height)
-        )
-      ],
-      blendInfo: ColorBlendInfo(
-        none!LogicOp, [
-          ColorBlendAttachment(No.enabled,
-            BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
-            BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
-            ColorMask.all
-          )
-        ],
-        [ 0f, 0f, 0f, 0f ]
-      ),
-      layout: device.createPipelineLayout(descriptors.length ? descriptors : [], []),
-      renderPass: renderPass,
-      subpassIndex: 0
-    };
-    pipelines[material] = device.createPipelines([info])[0];
+        assert(initVulkan("test-triangle"));
+        const graphicsQueueIndex = selectGraphicsQueue();
+        enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
+        _device = selectGraphicsDevice(graphicsQueueIndex);
+        graphicsQueue = _device.getQueue(graphicsQueueIndex, 0);
 
-    auto commands = frameBuffer.cmdPool.allocatePrimary(1)[0];
-    commands.begin(CommandBufferUsage.oneTimeSubmit);
-    const clearColor = Color.black.toVulkan;
-    commands.beginRenderPass(
-      renderPass, frameBuffer.frameBuffer,
-      Rect(0, 0, renderTargetSize.width, renderTargetSize.height),
-      [ClearValues(clearColor)]
-    );
-    commands.bindPipeline(pipelines[material]);
-    commands.bindVertexBuffers(0, [VertexBinding(triangle.vertexBuffer, 0)]);
-    commands.bindIndexBuffer(triangle.indexBuffer, 0, IndexType.u32);
-    commands.drawIndexed(triangle.indices.length.to!uint, 1, 0, 0, 0);
-    commands.endRenderPass();
-    commands.end();
-    // TODO: Diff with a PPM file (https://github.com/aquaratixc/ppmformats), e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
+        this.renderTargetSize = renderTargetSize;
+        _renderTarget = createImage(_device, renderTargetSize, Format.bgra8_sRgb, ImageUsage.colorAttachment);
+        _renderTargetTexture = new Texture(Size(renderTargetSize.width / 2, renderTargetSize.width / 2));
+        _renderTargetTexture.initialize(_device);
 
-    auto submissions = [Submission([], [], [commands])];
-    graphicsQueue.submit(submissions, null);
+        // Setup render pass
+        const attachments = [AttachmentDescription(renderTarget.info.format, 1,
+          AttachmentOps(LoadOp.clear, StoreOp.store),
+          AttachmentOps(LoadOp.dontCare, StoreOp.dontCare),
+          trans(ImageLayout.undefined, ImageLayout.presentSrc),
+          No.mayAlias
+        )];
+        const subpasses = [SubpassDescription(
+          [], [ AttachmentRef(0, ImageLayout.colorAttachmentOptimal) ],
+          none!AttachmentRef, []
+        )];
+        renderPass = _device.createRenderPass(attachments, subpasses, []);
+        frameBuffer = new TestFrameData(_device, graphicsQueueIndex, renderTarget, renderPass);
 
-    // Render one frame
-    device.waitIdle();
+        // Setup pipeline preparer
+        pipelinePreparer = new PipelinePreparer(world, _device, renderPass.obj);
 
-    // Gracefully teardown GPU resources
-    destroy(material);
-    destroy(triangle);
+        // Setup built-in Systems
+        systems ~= new ResourceInitializer(world, _device);
+        systems ~= new TextureUploader(world, new OneTimeCmdBufPool(_device, graphicsQueue));
+      }
+      ~this() {
+        // Gracefully release GPU and other unmanaged resources
+        new ResourceGarbageCollector(world, _device).run();
+        foreach (system; systems) destroy(system);
+        _device.waitIdle();
+        destroy(world);
 
-    foreach (pipeline; pipelines.values) {
-      device.waitIdle();
-      pipeline.dispose();
+        destroy(pipelinePreparer);
+
+        _device.waitIdle();
+        destroy(_renderTargetTexture);
+        // TODO: Figure out why releasing these objects crashes
+        // _renderTarget.release();
+        // renderPass.dispose();
+        frameBuffer.dispose();
+
+        _device.waitIdle();
+        _device.release();
+        unloadVulkan();
+      }
+
+      const(Size) surfaceSize() @property const {
+        return renderTargetSize;
+      }
+
+      @property Device device() {
+        return _device;
+      }
+      @property Image renderTarget() {
+        return _renderTarget;
+      }
+      @property Texture renderTargetTexture() {
+        return _renderTargetTexture;
+      }
+      @property MeshBase triangle() {
+        return _triangle;
+      }
+      @property Material material() {
+        return _material;
+      }
+
+      void initializeWorld() {
+        initializeWorld(world);
+      }
+
+      protected override void initializeWorld(scope World world) {
+        world.resources.add(this);
+
+        _triangle = new Mesh!VertexPosColor([
+          VertexPosColor(vec3f(0.0f, -0.5f, 0), Color.red.vec3f),
+          VertexPosColor(vec3f(0.5f, 0.5f, 0), Color.green.vec3f),
+          VertexPosColor(vec3f(-0.5f, 0.5f, 0), Color.blue.vec3f),
+        ], [0, 1, 2]);
+        _material = new Material([
+          new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv"),
+          new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv")
+        ], No.depthTest);
+
+        world.spawn(_triangle, _material);
+      }
+
+      void update() {
+        import std.exception : assertNotThrown;
+        import teraflop.ecs : SystemException;
+
+        pipelinePreparer.run();
+
+        foreach (system; systems)
+          assertNotThrown!SystemException(system.run());
+      }
+
+      void renderFrame() {
+        update();
+
+        auto commands = frameBuffer.cmdPool.allocatePrimary(1)[0];
+        commands.begin(CommandBufferUsage.oneTimeSubmit);
+        const clearColor = Color.black.toVulkan;
+        commands.beginRenderPass(
+          renderPass, frameBuffer.frameBuffer,
+          Rect(0, 0, renderTargetSize.width, renderTargetSize.height),
+          [ClearValues(clearColor)]
+        );
+        foreach (renderable; pipelinePreparer.renderables) {
+          commands.bindPipeline(cast(Pipeline) renderable.pipeline);
+          commands.bindVertexBuffers(0, [VertexBinding(renderable.mesh.vertexBuffer, 0)]);
+          commands.bindIndexBuffer(renderable.mesh.indexBuffer, 0, IndexType.u32);
+          if (renderable.descriptorSet !is null) commands.bindDescriptorSets(
+            PipelineBindPoint.graphics, cast(PipelineLayout) renderable.layout, 0,
+            cast(DescriptorSet[]) [renderable.descriptorSet], []
+          );
+          foreach (i, pushConstant; renderable.pushBindings) commands.pushConstants(
+            cast(PipelineLayout) renderable.layout, pushConstant.shaderStage, i, pushConstant.size, pushConstant.data.ptr
+          );
+          commands.drawIndexed(renderable.mesh.indices.length.to!uint, 1, 0, 0, 0);
+        }
+        commands.endRenderPass();
+        commands.end();
+
+        auto submissions = [Submission([], [], [commands])];
+        graphicsQueue.submit(submissions, null);
+        // Wait for frame to finish rendering
+        device.waitIdle();
+      }
     }
-    device.waitIdle();
-    destroy(renderTargetTexture);
-    renderPass.dispose();
-    frameBuffer.dispose();
+  }
 
-    device.waitIdle();
-    device.release();
-    unloadVulkan();
+  unittest {
+    version (GPU) {
+      import std.conv : to;
+
+      auto scene = new MockTriangleScene();
+      assert(scene.renderTargetTexture.initialized);
+
+      // Resize render target
+      scene.renderTargetTexture.resize(scene.renderTargetSize);
+      assert(!scene.renderTargetTexture.initialized);
+
+      scene.renderTargetTexture.initialize(scene.device);
+      assert(scene.renderTargetTexture.initialized);
+
+      // Render a triangle scene to a single image
+      scene.initializeWorld();
+      assert( scene.material.frontFace == FrontFace.clockwise);
+      assert( scene.material.cullMode == CullMode.back);
+      assert(!scene.material.textured);
+      assert(!scene.material.dirty);
+      assert(scene.triangle.dirty);
+      assert(scene.triangle.vertexCount == 3);
+      assert(scene.triangle.indices == [0, 1, 2]);
+
+      scene.update();
+      assert(scene.material.initialized);
+      assert(scene.triangle.initialized);
+
+      scene.renderFrame();
+      // TODO: Diff with a PPM file (https://github.com/aquaratixc/ppmformats), e.g. https://github.com/mruby/mruby/blob/master/benchmark/bm_ao_render.rb#L308
+
+      // Gracefully teardown GPU resources
+      destroy(scene);
+    }
   }
 }

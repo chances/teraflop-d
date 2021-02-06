@@ -40,14 +40,13 @@ cube: bin/cube
 .PHONY: cube
 
 test:
-	dub test --parallel --config=unittest-gpu
+	dub test --coverage --config=unittest-gpu
+	./scripts/delete-junk-lst-files.sh
 .PHONY: test
 
 scripts/upload-coverage.sh:
 	echo "See 'Upload Coverage to Codecov' task in .github/workflows/ci.yml"
-cover: $(SOURCES) scripts/upload-coverage.sh
-	dub test --parallel --coverage --config=unittest-gpu
-	./scripts/delete-junk-lst-files.sh
+cover: $(SOURCES) scripts/upload-coverage.sh test
 	./scripts/upload-coverage.sh
 
 docs/sitemap.xml: $(SOURCES)
