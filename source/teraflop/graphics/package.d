@@ -38,14 +38,18 @@ struct Color {
   /// Alpha component.
   double a;
 
-  /// Solid opaque red.
+  /// Opaque red.
   static const red = Color(1.0, 0, 0, 1.0);
-  /// Solid opaque green.
+  /// Opaque green.
   static const green = Color(0, 1.0, 0, 1.0);
-  /// Solid opaque blue.
+  /// Opaque blue.
   static const blue = Color(0, 0, 1.0, 1.0);
-  /// Solid opaque black.
+  /// Opaque black.
   static const black = Color(0, 0, 0, 1.0);
+  /// Opaque white.
+  static const white = Color(1.0, 1.0, 1.0, 1.0);
+  /// Fully transparent black.
+  static const transparent = Color(0, 0, 0, 0);
 
   /// Instantiate a `Color` given double components in the range `0.0` through `1.0`.
   /// Throws: A `RangeError` if any of the given color components are outside the range `0.0` through `1.0`.
