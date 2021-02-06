@@ -883,6 +883,11 @@ class Texture : BindingDescriptor, IResource {
 
   /// Resize this Texture.
   void resize(Size size) {
+    import std.algorithm : joiner, map;
+    import std.array : array;
+    import std.math : round;
+    import std.range : repeat;
+
     this._data = [];
     this._size = size;
     if (stagingBuffer !is null) {
@@ -900,7 +905,13 @@ class Texture : BindingDescriptor, IResource {
       _sampler.dispose();
       _sampler = null;
     }
-    dirty = false;
+    // Fill the texture with transparent pixels
+    update(Color.transparent.repeat(size.width * size.height).map!(pixel => [
+      round(pixel.b * 255.0f).to!ubyte,
+      round(pixel.g * 255.0f).to!ubyte,
+      round(pixel.r * 255.0f).to!ubyte,
+      round(pixel.a * 255.0f).to!ubyte
+    ]).joiner.array);
   }
 
   /// Update this Texture's data.
