@@ -832,9 +832,18 @@ class Texture : BindingDescriptor, IResource {
     dirty = true;
   }
   ~this() {
-    if (stagingBuffer !is null) stagingBuffer.dispose();
-    if (_image !is null) _image.dispose();
-    if (_sampler !is null) _sampler.dispose();
+    if (stagingBuffer !is null) {
+      stagingBuffer.dispose();
+      stagingBuffer = null;
+    }
+    if (_image !is null) {
+      _image.dispose();
+      _image = null;
+    }
+    if (_sampler !is null) {
+      _sampler.dispose();
+      _sampler = null;
+    }
   }
 
   ///
@@ -1130,6 +1139,7 @@ class Material : ObservableFileCollection, IResource {
   ~this() {
     foreach (shader; _shaders)
       destroy(shader);
+    if (textured) destroy(texture);
   }
 
   /// Whether this Shader has been successfully initialized.
