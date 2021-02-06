@@ -520,6 +520,7 @@ var symbols = [
 {name: 'teraflop.math.Size', kind: "structdeclaration", path: './teraflop/math/Size.html', attributes: []},
 {name: 'teraflop.math.Size.height', kind: "variabledeclaration", path: './teraflop/math/Size.height.html', attributes: []},
 {name: 'teraflop.math.Size.width', kind: "variabledeclaration", path: './teraflop/math/Size.width.html', attributes: []},
+{name: 'teraflop.math.translate', kind: "functiondeclaration", path: './teraflop/math/translate.html', attributes: []},
 {name: 'teraflop.math.translationOf', kind: "functiondeclaration", path: './teraflop/math/translationOf.html', attributes: ["property"]},
 {name: 'teraflop.math.unproject', kind: "functiondeclaration", path: './teraflop/math/unproject.html', attributes: []},
 {name: 'teraflop.math.up', kind: "enummemberdeclaration", path: './teraflop/math/up.html', attributes: []},
