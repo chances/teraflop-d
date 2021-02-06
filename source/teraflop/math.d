@@ -130,14 +130,33 @@ unittest {
 }
 
 ///
+vec3f translate(vec3f a, vec3f offset) {
+  return vec3f(a.x + offset.x, a.y + offset.y, a.z + offset.z);
+}
+
+unittest {
+  assert(vec3f(0).translate(vec3f(1)) == vec3f(1));
+}
+
+///
 vec3f scale(vec3f a, float scale) {
   return vec3f(a.x * scale, a.y * scale, a.z * scale);
+}
+
+unittest {
+  assert(vec3f(1).scale(4) == vec3f(4));
+  assert(vec3f(1).scale(1 / 2.0) == vec3f(0.5f));
 }
 
 ///
 vec3f abs(vec3f a) @property {
   import std.math : abs;
   return vec3f(abs(a.x), abs(a.y), abs(a.z));
+}
+
+unittest {
+  assert(vec3f(1).abs == vec3f(1));
+  assert(vec3f(-1).abs == vec3f(1));
 }
 
 /// Projects a Vector from screen space into object space.
