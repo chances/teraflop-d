@@ -1347,9 +1347,8 @@ version (unittest) {
 
         _device.waitIdle();
         destroy(_renderTargetTexture);
-        // TODO: Figure out why releasing these objects crashes
-        // _renderTarget.release();
-        // renderPass.dispose();
+        _renderTarget.dispose();
+        renderPass.unload();
         frameBuffer.dispose();
 
         _device.waitIdle();
