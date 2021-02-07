@@ -204,9 +204,8 @@ abstract class Game {
     renderPass.unload();
     foreach (frameBuffer; frameBuffers) frameBuffer.release();
 
-    device.waitIdle();
     assert(
-      device.release(),
+      device.refCount == 0,
       format!"Vulkan device was not released! %d remaining handle(s)."(device.refCount)
     );
     unloadVulkan();

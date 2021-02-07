@@ -1337,6 +1337,8 @@ version (unittest) {
         systems ~= new TextureUploader(world, new OneTimeCmdBufPool(_device, graphicsQueue));
       }
       ~this() {
+        import std.string : format;
+
         // Gracefully release GPU and other unmanaged resources
         new ResourceGarbageCollector(world, _device).run();
         foreach (system; systems) destroy(system);
@@ -1351,8 +1353,10 @@ version (unittest) {
         renderPass.unload();
         frameBuffer.dispose();
 
-        _device.waitIdle();
-        _device.release();
+        assert(
+          device.refCount == 0,
+          format!"Vulkan device was not released! %d remaining handle(s)."(device.refCount)
+        );
         unloadVulkan();
       }
 

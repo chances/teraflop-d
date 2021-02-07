@@ -207,7 +207,7 @@ abstract class FrameData : AtomicRefCounted {
 /// Generally used for transfer operations, or image layout change.
 final class OneTimeCmdBufPool {
   private Queue graphicsQueue;
-  private CommandPool pool;
+  private Rc!CommandPool pool;
 
   ///
   this(Device device, Queue graphicsQueue) {
@@ -215,7 +215,7 @@ final class OneTimeCmdBufPool {
     pool = device.createCommandPool(graphicsQueue.index);
   }
   ~this() {
-    // TODO: Figure out why this is broken: pool.dispose();
+    pool.unload();
   }
 
   /// Get a newly created command buffer.
