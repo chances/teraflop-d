@@ -49,7 +49,7 @@ package (teraflop) bool initVulkan(string appName) {
   return true;
 }
 package (teraflop) void unloadVulkan() {
-  debug import std.string : format;
+  import std.string : format;
   assert(
     instance.release(),
     format!"Vulkan instance was not released! %d remaining handle(s)."(instance.refCount)
