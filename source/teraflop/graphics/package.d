@@ -392,6 +392,8 @@ package (teraflop) abstract class MeshBase : NamedComponent, IResource {
     import std.algorithm.mutation : copy;
     import teraflop.platform.vulkan : createDynamicBuffer;
 
+    assert(!initialized);
+
     _vertexBuffer = device.createDynamicBuffer(size, BufferUsage.vertex);
     auto vertexBuf = vertexBuffer.boundMemory.map.view!(ubyte[])[];
     assert(data.copy(vertexBuf).length == vertexBuf.length - size);
@@ -882,6 +884,8 @@ class Texture : BindingDescriptor, IResource {
   void initialize(scope Device device) {
     import teraflop.platform.vulkan : createDynamicBuffer, createImage;
 
+    assert(!initialized);
+
     this.device = device;
     stagingBuffer = device.createDynamicBuffer(size, BufferUsage.transferSrc);
     _image = createImage(device, dimensions, format, usage);
@@ -1008,6 +1012,7 @@ class Shader : ObservableFile, IResource {
 
   /// Initialize this Shader.
   void initialize(scope Device device) {
+    assert(!initialized);
     this.device = device;
     this._shaderModule = device.createShaderModule(cast(uint[]) contents, "main");
   }
@@ -1237,8 +1242,8 @@ class Material : ObservableFileCollection, IResource {
 
   /// Initialize this Material.
   override void initialize(scope Device device) {
-    foreach (shader; _shaders) shader.initialize(device);
-    if (_texture !is null)
+    foreach (shader; _shaders) if (!shader.initialized) shader.initialize(device);
+    if (_texture !is null && !_texture.initialized)
       texture.initialize(device);
   }
 }
@@ -1337,6 +1342,8 @@ version (unittest) {
         systems ~= new TextureUploader(world, new OneTimeCmdBufPool(_device, graphicsQueue));
       }
       ~this() {
+        import std.string : format;
+
         // Gracefully release GPU and other unmanaged resources
         new ResourceGarbageCollector(world, _device).run();
         foreach (system; systems) destroy(system);
@@ -1347,13 +1354,14 @@ version (unittest) {
 
         _device.waitIdle();
         destroy(_renderTargetTexture);
-        // TODO: Figure out why releasing these objects crashes
-        // _renderTarget.release();
-        // renderPass.dispose();
+        _renderTarget.dispose();
+        renderPass.unload();
         frameBuffer.dispose();
 
-        _device.waitIdle();
-        _device.release();
+        assert(
+          device.refCount == 0,
+          format!"Vulkan device was not released! %d remaining handle(s)."(device.refCount)
+        );
         unloadVulkan();
       }
 

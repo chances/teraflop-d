@@ -49,7 +49,11 @@ package (teraflop) bool initVulkan(string appName) {
   return true;
 }
 package (teraflop) void unloadVulkan() {
-  assert(!instance.release(), "Vulkan instance is already released!");
+  import std.string : format;
+  assert(
+    instance.release(),
+    format!"Vulkan instance was not released! %d remaining handle(s)."(instance.refCount)
+  );
 }
 
 private PhysicalDevice selectedPhysicalDevice;
@@ -203,7 +207,7 @@ abstract class FrameData : AtomicRefCounted {
 /// Generally used for transfer operations, or image layout change.
 final class OneTimeCmdBufPool {
   private Queue graphicsQueue;
-  private CommandPool pool;
+  private Rc!CommandPool pool;
 
   ///
   this(Device device, Queue graphicsQueue) {
@@ -211,7 +215,7 @@ final class OneTimeCmdBufPool {
     pool = device.createCommandPool(graphicsQueue.index);
   }
   ~this() {
-    // TODO: Figure out why this is broken: pool.dispose();
+    pool.unload();
   }
 
   /// Get a newly created command buffer.

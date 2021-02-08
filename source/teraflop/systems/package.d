@@ -25,9 +25,9 @@ final class ResourceInitializer : System {
   }
 
   override void run() {
-    auto resources = query().map!(entity => entity.getMut!IResource).joiner
-      .filter!(c => !c.initialized).array;
-    foreach (resource; resources) resource.initialize(device);
+    auto resources = query().map!(entity => entity.getMut!IResource).joiner.array;
+    foreach (resource; resources)
+      if (!resource.initialized) resource.initialize(device);
   }
 }
 

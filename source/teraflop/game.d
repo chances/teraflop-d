@@ -58,8 +58,8 @@ abstract class Game {
   private bool[const Window] swapchainNeedsRebuild;
   private Queue[const Window] graphicsQueue;
   private Queue[const Window] presentQueue;
-  private Rc!Semaphore[const Window] imageAvailable;
-  private Rc!Semaphore[const Window] renderingFinished;
+  private Semaphore[const Window] imageAvailable;
+  private Semaphore[const Window] renderingFinished;
   private FrameData[] frameBuffers;
   private Rc!RenderPass renderPass;
   private PipelinePreparer pipelinePreparer;
@@ -135,10 +135,10 @@ abstract class Game {
   void run() {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
+    import std.string : format;
     import teraflop.platform.window : initGlfw, terminateGlfw;
     import teraflop.systems : ResourceGarbageCollector;
 
-    scope(exit) terminateGlfw();
     initialize();
     active_ = true;
 
@@ -188,8 +188,10 @@ abstract class Game {
 
     foreach (window; windows_) {
       device.waitIdle();
-      imageAvailable[window].unload();
-      renderingFinished[window].unload();
+      imageAvailable[window].dispose();
+      assert(!device.release(), "Device was improperly disposed!");
+      renderingFinished[window].dispose();
+      assert(!device.release(), "Device was improperly disposed!");
       swapChains[window].dispose();
 
       destroy(window);
@@ -199,11 +201,15 @@ abstract class Game {
 
     device.waitIdle();
     renderPass.unload();
+    device.retain(); // Retain device through frame buffer destruction
     foreach (frameBuffer; frameBuffers) frameBuffer.release();
 
-    device.waitIdle();
-    device.release();
+    assert(
+      device.refCount == 0,
+      format!"Vulkan device was not released! %d remaining handle(s)."(device.refCount)
+    );
     unloadVulkan();
+    terminateGlfw();
   }
 
   /// Initialize this Game.
@@ -231,6 +237,7 @@ abstract class Game {
       const graphicsQueueIndex = selectGraphicsQueue();
       enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
       device = selectGraphicsDevice(graphicsQueueIndex, mainWindow.surface);
+      device.retain();
       // TODO: Create a separate presentation queue?
       graphicsQueue[mainWindow] = presentQueue[mainWindow] = device.getQueue(graphicsQueueIndex, 0);
     } catch (Exception ex) {
@@ -434,7 +441,7 @@ abstract class Game {
       if (window.minimized) continue;
 
       auto swapChain = swapChains[window];
-      const acq = swapChain.acquireNextImage(imageAvailable[window].obj);
+      const acq = swapChain.acquireNextImage(imageAvailable[window]);
       swapchainNeedsRebuild[window] = acq.swapchainNeedsRebuild;
 
       if (acq.hasIndex) {
@@ -469,7 +476,7 @@ abstract class Game {
 
         try {
           presentQueue[window].present(
-            [ renderingFinished[window].obj ],
+            [ renderingFinished[window] ],
             [ PresentRequest(swapChains[window], acq.index) ]
           );
         }
@@ -495,7 +502,7 @@ abstract class Game {
   final Submission[] simpleSubmission(Window window, PrimaryCommandBuffer[] cmdBufs) {
     return [Submission(
       [ StageWait(imageAvailable[window], PipelineStage.transfer) ],
-      [ renderingFinished[window].obj ], cmdBufs
+      [ renderingFinished[window] ], cmdBufs
     )];
   }
 

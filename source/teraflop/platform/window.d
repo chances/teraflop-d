@@ -15,12 +15,13 @@ private uint lastWindowId = 0;
 
 /// A native window.
 class Window : SurfaceSizeProvider, InputNode {
-  import teraflop.async : Event;
-  import teraflop.graphics : Color;
-  import teraflop.math : Size, vec2d;
   import gfx.core.rc : atomicRcCode;
   import gfx.graal : Device, Instance, Surface;
   import gfx.vulkan : VkSurfaceKHR;
+  import teraflop.async : Event;
+  import teraflop.graphics : Color;
+  import teraflop.math : Size, vec2d;
+  import teraflop.platform.vulkan : instance;
 
   private GLFWwindow* window;
   private Surface _surface;
@@ -63,7 +64,6 @@ class Window : SurfaceSizeProvider, InputNode {
     string title, Color clearColor, int width = 960, int height = 720, bool initiallyFocused = true
   ) {
     import gfx.vulkan.wsi : createVulkanGlfwSurface;
-    import teraflop.platform.vulkan : instance;
 
     id = lastWindowId += 1;
     _title = title;
@@ -83,6 +83,7 @@ class Window : SurfaceSizeProvider, InputNode {
       return;
     }
     _surface = createVulkanGlfwSurface(instance, window);
+    _surface.retain();
 
     glfwSetWindowUserPointer(window, &data);
     glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
@@ -104,7 +105,7 @@ class Window : SurfaceSizeProvider, InputNode {
   }
   ~this() {
     if (valid) glfwDestroyWindow(window);
-    // TODO: This segfaults... Fix it? _surface.dispose();
+    assert(_surface.release(), "Surface was not released!");
   }
 
   // Swap chains are keyed on their windows
