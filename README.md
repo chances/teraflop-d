@@ -8,6 +8,8 @@ An ECS game engine on a [Vulkan](https://github.com/rtbo/gfx-d#readme) foundatio
 
 Ported from its original [C# implementation](https://github.com/chances/teraflop).
 
+> **Unstable API**: Expect breaking changes. If you find a bug or have a feature request please [create an issue](https://github.com/chances/teraflop-d/issues/new).
+
 ## Usage
 
 ```json
