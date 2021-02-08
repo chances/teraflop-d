@@ -139,7 +139,6 @@ abstract class Game {
     import teraflop.platform.window : initGlfw, terminateGlfw;
     import teraflop.systems : ResourceGarbageCollector;
 
-    scope(exit) terminateGlfw();
     initialize();
     active_ = true;
 
@@ -202,6 +201,7 @@ abstract class Game {
 
     device.waitIdle();
     renderPass.unload();
+    device.retain(); // Retain device through frame buffer destruction
     foreach (frameBuffer; frameBuffers) frameBuffer.release();
 
     assert(
@@ -209,6 +209,7 @@ abstract class Game {
       format!"Vulkan device was not released! %d remaining handle(s)."(device.refCount)
     );
     unloadVulkan();
+    terminateGlfw();
   }
 
   /// Initialize this Game.
@@ -236,6 +237,7 @@ abstract class Game {
       const graphicsQueueIndex = selectGraphicsQueue();
       enforce(graphicsQueueIndex >= 0, "Try upgrading your graphics drivers.");
       device = selectGraphicsDevice(graphicsQueueIndex, mainWindow.surface);
+      device.retain();
       // TODO: Create a separate presentation queue?
       graphicsQueue[mainWindow] = presentQueue[mainWindow] = device.getQueue(graphicsQueueIndex, 0);
     } catch (Exception ex) {
