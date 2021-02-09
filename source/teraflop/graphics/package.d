@@ -554,21 +554,38 @@ abstract class BindingDescriptor : NamedComponent {
     };
     switch (bindingType_) {
       case DescriptorType.uniformBuffer:
+      case DescriptorType.uniformBufferDynamic:
         assert(uniformBuffer !is null);
         if (uniformSize == 0) uniformSize = uniformBuffer.size;
         descriptorSet.write = DescriptorWrite.make(
           bindingType_, BufferDescriptor(uniformBuffer, bufferOffset, uniformSize)
         );
         break;
-      case DescriptorType.sampler:
       case DescriptorType.sampledImage:
+      case DescriptorType.storageImage:
+      case DescriptorType.inputAttachment:
+        assert(image !is null);
+        descriptorSet.write = DescriptorWrite.make(
+          bindingType_,
+          ImageDescriptor(
+            image.createView(image.info.type, ImageSubresourceRange(), Swizzle.identity),
+            ImageLayout.shaderReadOnlyOptimal
+          )
+        );
+        break;
+      case DescriptorType.sampler:
+        assert(sampler !is null);
+        descriptorSet.write = DescriptorWrite.make(bindingType_, SamplerDescriptor(sampler));
+        break;
+      case DescriptorType.combinedImageSampler:
+        assert(image !is null);
         assert(sampler !is null);
         descriptorSet.write = DescriptorWrite.make(
           bindingType_,
           ImageSamplerDescriptor(
-            image !is null ? image.createView(image.info.type, ImageSubresourceRange(), Swizzle.identity) : null,
+            image.createView(image.info.type, ImageSubresourceRange(), Swizzle.identity),
             ImageLayout.shaderReadOnlyOptimal,
-            sampler,
+            sampler
           )
         );
         break;
@@ -580,13 +597,13 @@ abstract class BindingDescriptor : NamedComponent {
   size_t size() @property const {
     return 0;
   }
-  const(ubyte[]) data() @property const {
+  const(ubyte[]) data() @property inout {
     return [];
   }
-  package (teraflop) Sampler sampler() @property inout {
+  Sampler sampler() @property inout {
     return null;
   }
-  package (teraflop) Image image() @property inout {
+  Image image() @property inout {
     return null;
   }
 }
@@ -789,7 +806,7 @@ class Texture : BindingDescriptor, IResource {
     ShaderStage shaderStage = ShaderStage.fragment
   ) {
     super(bindingLocation);
-    bindingType_ = DescriptorType.sampledImage;
+    bindingType_ = DescriptorType.combinedImageSampler;
     shaderStage_ = shaderStage;
 
     this._size = size;
@@ -805,7 +822,7 @@ class Texture : BindingDescriptor, IResource {
     ShaderStage shaderStage = ShaderStage.fragment
   ) {
     super(name, bindingLocation);
-    bindingType_ = DescriptorType.sampledImage;
+    bindingType_ = DescriptorType.combinedImageSampler;
     shaderStage_ = shaderStage;
 
     this._size = size;
@@ -870,13 +887,13 @@ class Texture : BindingDescriptor, IResource {
     return _data;
   }
 
-  package (teraflop) Buffer buffer() @property const {
+  Buffer buffer() @property inout {
     return cast(Buffer) stagingBuffer;
   }
-  package (teraflop) Sampler sampler() @property inout {
+  override Sampler sampler() @property inout {
     return cast(Sampler) _sampler;
   }
-  package (teraflop) Image image() @property inout {
+  override Image image() @property inout {
     return cast(Image) _image;
   }
 
@@ -1243,7 +1260,7 @@ class Material : ObservableFileCollection, IResource {
   /// Initialize this Material.
   override void initialize(scope Device device) {
     foreach (shader; _shaders) if (!shader.initialized) shader.initialize(device);
-    if (_texture !is null && !_texture.initialized)
+    if (textured && !_texture.initialized)
       texture.initialize(device);
   }
 }
