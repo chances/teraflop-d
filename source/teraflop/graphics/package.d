@@ -1153,10 +1153,13 @@ class Material : ObservableFileCollection, IResource {
       }();
     }
 
-    if (textured) texture.onChanged ~= (const(ubyte)[] _) => {
+    if (textured) {
       _dirtied = new MaterialDirtied(this, _formerMaterialHash, null, texture);
-      _formerMaterialHash = this.toHash;
-    }();
+      texture.onChanged ~= (const(ubyte)[] _) => {
+        _dirtied = new MaterialDirtied(this, _formerMaterialHash, null, texture);
+        _formerMaterialHash = this.toHash;
+      }();
+    }
   }
   ~this() {
     foreach (shader; _shaders)
