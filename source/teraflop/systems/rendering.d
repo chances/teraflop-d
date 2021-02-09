@@ -207,8 +207,8 @@ final class PipelinePreparer : System {
         )],
         blendInfo: ColorBlendInfo(
             none!LogicOp, [
-                ColorBlendAttachment(No.enabled,
-                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+                ColorBlendAttachment(Yes.enabled,
+                    BlendState(trans(BlendFactor.srcAlpha, BlendFactor.oneMinusSrcAlpha), BlendOp.add),
                     BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
                     ColorMask.all
                 )
