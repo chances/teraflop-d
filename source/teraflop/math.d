@@ -130,6 +130,20 @@ unittest {
 }
 
 ///
+vec3f transform(vec3f a, mat4f transformation) {
+  auto result = vec3f(0);
+  float x = a.x;
+  float y = a.y;
+  float z = a.z;
+
+  result.x = transformation.v[0] * x + transformation.v[1] * y + transformation.v[2] * z + transformation.v[3];
+  result.y = transformation.v[4] * x + transformation.v[5] * y + transformation.v[6] * z + transformation.v[7];
+  result.z = transformation.v[8] * x + transformation.v[9] * y + transformation.v[10] * z + transformation.v[11];
+
+  return result;
+}
+
+///
 vec3f translate(vec3f a, vec3f offset) {
   return vec3f(a.x + offset.x, a.y + offset.y, a.z + offset.z);
 }
