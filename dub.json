@@ -31,7 +31,9 @@
     "gfx:genmesh": "~master",
     "gfx:graal": "~master",
     "gfx:vulkan": "~master",
-    "libasync": "~>0.8.6"
+    "libasync": "~>0.8.6",
+    "msgpack-d": "~>1.0.3",
+    "wasmer": "0.2.0"
   },
   "subConfigurations": {
     "bindbc-glfw": "static",

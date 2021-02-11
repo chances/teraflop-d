@@ -10,18 +10,21 @@ module teraflop.components.transform;
 import teraflop.ecs : Entity;
 import teraflop.graphics : UniformBuffer;
 import teraflop.math;
+import teraflop.scripting;
 
 /// A 3D transformation matrix uniform buffer object.
 ///
 /// See_Also: `teraflop.graphics.UniformBuffer`
-class Transform : UniformBuffer!mat4f {
+class Transform : UniformBuffer!mat4f, IScriptable!mat4fArr {
   import teraflop.graphics : ShaderStage;
+
+  private ScriptableComponent!mat4fArr _script;
 
   alias value this;
 
   ///
   this(ShaderStage shaderStage = ShaderStage.vertex) {
-    super(0 /* bindingLocation */, shaderStage, mat4f.identity);
+    this(mat4f.identity, shaderStage);
   }
   ///
   this(mat4f value = mat4f.identity, ShaderStage shaderStage = ShaderStage.vertex) {
@@ -63,6 +66,11 @@ class Transform : UniformBuffer!mat4f {
     matrix.c[1][1] = value.y;
     matrix.c[2][2] = value.z;
     super.value = matrix;
+  }
+
+  ///
+  ScriptableComponent!mat4fArr script() @property const {
+    return cast(ScriptableComponent!mat4fArr) _script;
   }
 }
 

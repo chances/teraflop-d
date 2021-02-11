@@ -1,0 +1,22 @@
+{
+  "extends": "assemblyscript/std/portable.json",
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": ["DOM"],
+    "declaration": true,
+    "types": [
+      "assemblyscript",
+      "node"
+    ]
+  },
+  "include": [
+    "./index.ts",
+    "./lib/**/*.ts"
+  ],
+  "typedocOptions": {
+    "entryPoints": ["./index.ts"],
+    "out": "docs"
+  }
+}
