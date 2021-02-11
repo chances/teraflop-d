@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Class Input - Teraflop</title>
+		<title>Function transform - Teraflop</title>
 		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script><script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
@@ -81,8 +81,8 @@ $('#symbolSearchPane').show();</script>
 				</li>
 			</ul>
 				</li>
-				<li class="tree-view ">
-					<div class="package selected">
+				<li class="tree-view collapsed">
+					<div class="package ">
 						<a href="../../teraflop/input.html">input</a>
 					</div>
 			<ul class="tree-view">
@@ -143,7 +143,7 @@ $('#symbolSearchPane').show();</script>
 					</div>
 				</li>
 				<li>
-					<div class="module ">
+					<div class="module selected">
 						<a href="../../teraflop/math.html">math</a>
 					</div>
 				</li>
@@ -162,133 +162,22 @@ $('#symbolSearchPane').show();</script>
 			</ul>
 		</nav>
 		<div id="main-contents">
-			<h1>Class Input</h1><p></p>
+			<h1>Function transform</h1><p></p>
 			<div class="prototype">
 				<code class="lang-d">
 					<div class="single-prototype">
-			<span class="kwd">class</span> <span class="typ">Input</span>
-			<span class="pun">;</span>
+			<span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">vector<wbr/></span><span class="pun">.</span><span class="typ">Vector</span>!(float,3) <span class="pln">transform</span>
+			<span class="pun">(</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">vector<wbr/></span><span class="pun">.</span><span class="typ">Vector</span>!(float,3) <span class="pln">a</span><span class="pun">,</span>
+			<br/>
+			&nbsp;&nbsp;<span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">matrix<wbr/></span><span class="pun">.</span><span class="typ">Matrix</span>!(float,4,4) <span class="pln">transformation</span>
+			<br/>
+			<span class="pun">)</span><span class="pun">;</span>
 					</div>
 				</code>
 			</div>
 			
-			<section><h2>Fields</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.nodes.html" class="public"><code>nodes</code></a>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">const</span><span class="pun">(</span><a href="../../teraflop/input/event/InputEventHandlers.html"><span class="typ">InputEventHandlers</span></a><span class="pun">)</span><span class="pun">[]</span></code></td><td></td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Properties</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Type</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.isKeyDown.html" class="public property"><code>isKeyDown</code></a><span class="tableEntryAnnotation">[set]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.isKeyReleased.html" class="public property"><code>isKeyReleased</code></a><span class="tableEntryAnnotation">[set]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.lastMouseButtons.html" class="public property"><code>lastMouseButtons</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">int</span></code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.lastMousePosition.html" class="public property"><code>lastMousePosition</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">vector<wbr/></span><span class="pun">.</span><span class="typ">Vector</span>!(double,2)</code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.mouseButtons.html" class="public property"><code>mouseButtons</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">int</span></code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.mousePosition.html" class="public property"><code>mousePosition</code></a><span class="tableEntryAnnotation">[get]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="pln">gfm<wbr/></span><span class="pun">.</span><span class="pln">math<wbr/></span><span class="pun">.</span><span class="pln">vector<wbr/></span><span class="pun">.</span><span class="typ">Vector</span>!(double,2)</code></td><td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.wasKeyDown.html" class="public property"><code>wasKeyDown</code></a><span class="tableEntryAnnotation">[set]</span>
-						</td>
-						<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td><td></td>
-					</tr>
-				</table>
-			</section>
-			<section><h2>Methods</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th><th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.addHandlers.html" class="public">
-								<code>addHandlers</code>
-							</a>
-							<span class="tableEntryAnnotation">(handlers)</span>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.addNode.html" class="public">
-								<code>addNode</code>
-							</a>
-							<span class="tableEntryAnnotation">(node)</span>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.ignoreActions.html" class="public">
-								<code>ignoreActions</code>
-							</a>
-							<span class="tableEntryAnnotation">()</span>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.ignoreUnhandledInputs.html" class="public">
-								<code>ignoreUnhandledInputs</code>
-							</a>
-							<span class="tableEntryAnnotation">()</span>
-						</td>
-						<td></td>
-					</tr>
-					<tr>
-						<td>
-							<a href="../../teraflop/input/Input.on.html" class="public">
-								<code>on</code>
-							</a>
-							<span class="tableEntryAnnotation">(action, handler, markInputHandled)</span>
-						</td>
-						<td></td>
-					</tr>
-				</table>
-			</section>
 			
 			<footer>
 				<table class="license-info">

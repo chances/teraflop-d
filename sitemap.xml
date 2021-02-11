@@ -382,6 +382,7 @@
 <url><loc>http://127.0.0.1/teraflop/graphics/VertexPosTintTex.uv.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/input/Input.addHandlers.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.addNode.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.ignoreActions.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/input/Input.ignoreUnhandledInputs.html</loc></url>
@@ -414,6 +415,7 @@
 <url><loc>http://127.0.0.1/teraflop/math/Size.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/Size.height.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/Size.width.html</loc></url>
+<url><loc>http://127.0.0.1/teraflop/math/transform.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/translate.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/translationOf.html</loc></url>
 <url><loc>http://127.0.0.1/teraflop/math/unproject.html</loc></url>
