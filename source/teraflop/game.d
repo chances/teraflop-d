@@ -299,7 +299,6 @@ abstract class Game {
     import teraflop.ecs : SystemException;
     import teraflop.input : InputEventAction, InputEventKeyboard, InputEventMouse;
 
-    windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
     foreach (window; windows_) {
       window.update();
       // Wait for hidden and minimized windows to restore

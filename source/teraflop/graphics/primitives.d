@@ -42,10 +42,10 @@ auto @property quad(Flag!"normals" normals = Yes.normals)() {
   // }
 
   auto face = gfx.genmesh.poly.quad(
-    Vertex( vec3f([-1, -1, 1]) /* Z+ */, vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
-    Vertex( vec3f([1, -1, 1]) /* Z+ */, vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
-    Vertex( vec3f([1, 1, 1]) /* Z+ */, vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
-    Vertex( vec3f([-1, 1, 1]) /* Z+ */, vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
+    Vertex( vec3f([-1, -1, 0]), vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
+    Vertex( vec3f([1, -1, 0]), vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
+    Vertex( vec3f([1, 1, 0]), vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
+    Vertex( vec3f([-1, 1, 0]), vec3f([0,  0,  normals == Yes.normals ? 1 : 0]) /* Z+ */ ),
   );
 
   return only(face)

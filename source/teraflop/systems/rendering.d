@@ -84,13 +84,14 @@ final class PipelinePreparer : System {
 
   override void run() {
     import gfx.core : none;
-    import std.algorithm : canFind, countUntil, filter, map, sum;
+    import std.algorithm : canFind, countUntil, filter, map, remove, sort, sum;
     import std.array : array;
     import std.conv : to;
     import std.exception : enforce;
     import std.range : tail;
     import std.typecons : No, Yes;
     import teraflop.components : Transform;
+    import teraflop.math : mat4f;
     import teraflop.platform : SurfaceSizeProvider;
 
     // Aggregate graphics pipelines
@@ -124,38 +125,35 @@ final class PipelinePreparer : System {
 
       if (hasPipeline(key)) continue;
       _bindingGroups[material] = new BindingGroup[0];
-      const(BindingDescriptor)[] bindings = entity.get!BindingDescriptor();
+      BindingDescriptor[] bindings = entity.getMut!BindingDescriptor();
 
       // Bind the Material's Texture, if any
       if (material.textured) bindings ~= material.texture;
       // Bind the World's primary camera mvp uniform, if any
-      const(BindingDescriptor)[] transformBindings;
       const hasWorldCamera = this.resources.contains!Camera;
       if (hasWorldCamera) {
-        transformBindings ~= this.resources.get!Camera.uniform;
+        bindings ~= cast(UniformBuffer!mat4f) this.resources.get!Camera.uniform;
       }
-      // Bind the Entity's `Transform` uniform, if any, as a push constant
+      bindings.sort!((BindingDescriptor a, BindingDescriptor b) => a.bindingLocation < b.bindingLocation);
+
+      // Push constants
       PushConstantRange[] pushConstants;
+      // Bind the Entity's `Transform` uniform, if any, as a push constant
       const transformIndex = bindings.countUntil!(BindingDescriptor.findBinding)(typeid(Transform));
       if (transformIndex >= 0) {
         auto binding = bindings[transformIndex];
         pushConstants ~= PushConstantRange(binding.shaderStage, pushConstants.length.to!uint, binding.size.to!uint);
         // Remove the uniform from general array of bindings
-        bindings = bindings[0 .. transformIndex] ~ bindings.tail(transformIndex);
+        bindings = bindings.remove(transformIndex);
       }
       enforce(
         pushConstants.map!(pushConstant => pushConstant.size).sum <= device.physicalDevice.limits.maxPushConstantsSize,
         "Exceeded maximum push constants size!"
       );
 
-      auto pipelineBindings = new PipelineLayoutBinding[0];
-      foreach (i, binding; transformBindings) pipelineBindings ~= PipelineLayoutBinding(
-        i.to!uint, binding.bindingType, 1, binding.shaderStage
-      );
-      pipelineBindings ~= bindings.map!(binding =>
+      auto pipelineBindings = bindings.map!(binding =>
         PipelineLayoutBinding(binding.bindingLocation, binding.bindingType, 1, binding.shaderStage)
       ).array;
-      bindings = transformBindings ~ bindings;
       // TODO: Support more than one binding set
       DescriptorSetLayout[] descriptorSetLayouts;
 
@@ -181,7 +179,7 @@ final class PipelinePreparer : System {
           _uniformBuffers[material] = device.createDynamicBuffer(size, BufferUsage.uniform);
         }
         WriteDescriptorSet[] descriptorWrites;
-        for (auto i = 0, offset = 0; i < pipelineBindings.length; i += 1) {
+        for (auto i = 0, offset = 0; i < bindings.length; i += 1) {
           const size = bindings[i].size;
           descriptorWrites ~= bindings[i].descriptorWrite(
             descriptorSets[key], i,
@@ -209,8 +207,8 @@ final class PipelinePreparer : System {
         )],
         blendInfo: ColorBlendInfo(
             none!LogicOp, [
-                ColorBlendAttachment(No.enabled,
-                    BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
+                ColorBlendAttachment(Yes.enabled,
+                    BlendState(trans(BlendFactor.srcAlpha, BlendFactor.oneMinusSrcAlpha), BlendOp.add),
                     BlendState(trans(BlendFactor.one, BlendFactor.zero), BlendOp.add),
                     ColorMask.all
                 )

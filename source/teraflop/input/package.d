@@ -90,6 +90,10 @@ final class Input {
   void addNode(InputNode node) inout {
     (cast(Input) this).nodes ~= InputEventHandlers(&node.actionInput, &node.unhandledInput);
   }
+  ///
+  void addHandlers(InputEventHandlers handlers) inout {
+    (cast(Input) this).nodes ~= handlers;
+  }
 
   ///
   void on(T) (
