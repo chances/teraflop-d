@@ -385,6 +385,10 @@ class Window : SurfaceSizeProvider, InputNode {
 }
 
 version(OSX) {
+  // https://developer.apple.com/documentation/coregraphics/cgdirectdisplayid
+  alias CGDirectDisplayID = uint;
+  // https://developer.apple.com/documentation/objectivec/id?language=occ
+  alias id = void*;
   // Mixin function declarations and loader
   mixin(bindGLFW_Cocoa);
 }
