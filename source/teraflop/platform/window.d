@@ -407,6 +407,7 @@ package (teraflop) bool initGlfw() {
     loadResult = loadGLFW_Windows();
   }
 
+  /* TODO: Does mac OS need loadGLFW_Cocoa?
   version(OSX) {
     loadResult = loadGLFW_Cocoa();
     if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
@@ -424,6 +425,7 @@ package (teraflop) bool initGlfw() {
     //   return false;
     // }
   }
+  */
 
   if (!glfwInit()) {
 		return false;
