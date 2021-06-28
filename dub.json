@@ -40,6 +40,9 @@
   "lflags-linux": [
     "-Llib/glfw-3.3.2/src"
   ],
+  "lflags-OSX": [
+    "-Llib/glfw-3.3.2/src"
+  ],
   "libs": ["glfw3"],
   "libs-linux": [
     "X11"

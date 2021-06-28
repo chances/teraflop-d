@@ -18,7 +18,7 @@
     "glslc assets/shaders/triangle.vs.glsl -o assets/shaders/triangle.vs.spv",
     "glslc assets/shaders/triangle.fs.glsl -o assets/shaders/triangle.fs.spv"
   ],
-  "lflags-linux": [
+  "lflags-OSX": [
     "-L../../lib/glfw-3.3.2/src"
   ]
 }
