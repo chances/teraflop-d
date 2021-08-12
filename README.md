@@ -25,6 +25,10 @@ Ported from its original [C# implementation](https://github.com/chances/teraflop
 - [`dub run teraflop:triangle`](https://github.com/chances/teraflop-d/blob/master/examples/triangle/source/app.d)
 - [`dub run teraflop:cube`](https://github.com/chances/teraflop-d/blob/master/examples/cube/source/app.d)
 
+### macOS and Linux
+
+Download and install the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home).
+
 ## License
 
 Teraflop's [ECS](https://en.wikipedia.org/wiki/Entity_component_system) implementation was inspired by [Bevy ECS](https://bevyengine.org/learn/book/getting-started/ecs) and [entt](https://github.com/skypjack/entt).
