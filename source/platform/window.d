@@ -9,6 +9,7 @@ import bindbc.glfw;
 import libasync.notifier : AsyncNotifier;
 import std.conv : to;
 import std.string : toStringz;
+import teraflop.platform.wgpu;
 import wgpu.api : Device, Surface, SwapChain, SwapChainDescriptor;
 
 private int lastWindowId = 0;
@@ -54,12 +55,7 @@ class Window {
     data.update(window);
 
     // Initialize GPU surface and swap chain descriptor
-    version (linux) {
-      auto display = glfwGetX11Display();
-      auto x11Window = glfwGetX11Window(window);
-      if (display != null && x11Window > 0)
-        surface_ = Surface.fromXlib(cast(const(void)**) display, x11Window);
-    }
+    surface_ = createPlatformSurface(window);
     valid_ = surface_.id > 0;
     if (!valid) {
       glfwDestroyWindow(window);
@@ -191,10 +187,6 @@ package (teraflop) bool initGlfw() {
 
   version (Windows) {
     loadResult = loadGLFW_Windows();
-  }
-
-  version(OSX) {
-    loadResult = loadGLFW_Cocoa();
 
     if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
         errorCallback(0, toStringz("GLFW shared library failed to load."));
@@ -205,7 +197,7 @@ package (teraflop) bool initGlfw() {
       errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
     }
 
-    // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
+    // TODO: Fix this for Windows? Or just use the static lib everywhere?
     // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
     //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
     //   return false;

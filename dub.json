@@ -21,8 +21,13 @@
   "subConfigurations": {
     "bindbc-glfw": "static"
   },
-  "lflags-linux": [
+  "lflags-posix": [
     "-Llib/glfw-3.3.2/src"
+  ],
+  "lflags-osx": [
+    "-framework", "AppKit",
+    "-framework", "QuartzCore",
+    "-framework", "Foundation"
   ],
   "libs": ["glfw3"],
   "libs-linux": [
