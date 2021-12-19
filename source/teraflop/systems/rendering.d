@@ -139,7 +139,9 @@ final class PipelinePreparer : System {
       // Push constants
       PushConstantRange[] pushConstants;
       // Bind the Entity's `Transform` uniform, if any, as a push constant
-      const transformIndex = bindings.countUntil!(BindingDescriptor.findBinding)(typeid(Transform));
+      const transformIndex = bindings.countUntil!(BindingDescriptor.findTaggedBinding)(
+        typeid(Transform), pushConstantTag
+      );
       if (transformIndex >= 0) {
         auto binding = bindings[transformIndex];
         pushConstants ~= PushConstantRange(binding.shaderStage, pushConstants.length.to!uint, binding.size.to!uint);

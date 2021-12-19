@@ -27,6 +27,12 @@ interface IResource {
   void initialize(scope Device device);
 }
 
+/// A Component that is tagged with one or more classifiers.
+interface ITagged {
+  /// Classifications this component belongs to.
+  string[] tags() @property const;
+}
+
 /// A file either read from the user's disk or from an in-memory buffer.
 /// See_Also: `ObservableFile`
 abstract class File : NamedComponent {

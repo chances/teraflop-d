@@ -7,14 +7,15 @@
 /// License: 3-Clause BSD License
 module teraflop.components.transform;
 
+import teraflop.components : ITagged;
 import teraflop.ecs : Entity;
-import teraflop.graphics : UniformBuffer;
+import teraflop.graphics : pushConstantTag, UniformBuffer;
 import teraflop.math;
 
 /// A 3D transformation matrix uniform buffer object.
 ///
 /// See_Also: `teraflop.graphics.UniformBuffer`
-class Transform : UniformBuffer!mat4f {
+class Transform : UniformBuffer!mat4f, ITagged {
   import teraflop.graphics : ShaderStage;
 
   alias value this;
@@ -33,6 +34,12 @@ class Transform : UniformBuffer!mat4f {
   /// The result is corrected for the Vulkan coordinate system.
   override mat4f value() @property const {
     return super.value.transposed;
+  }
+
+  /// Returns: Classifications this component belongs to.
+  /// SeeAlso: `teraflop.components.ITagged`
+  string[] tags() @property const {
+    return [pushConstantTag];
   }
 
   ///

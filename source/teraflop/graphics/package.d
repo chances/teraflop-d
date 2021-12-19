@@ -13,7 +13,7 @@ import std.typecons : Flag, No, Yes;
 
 import std.conv : to;
 import std.exception : enforce;
-import teraflop.components : IResource, ObservableFile, ObservableFileCollection;
+import teraflop.components : IResource, ITagged, ObservableFile, ObservableFileCollection;
 import teraflop.ecs : NamedComponent;
 import teraflop.math;
 import teraflop.traits : isStruct;
@@ -488,13 +488,17 @@ struct ModelViewProjection {
   mat4f mvp;
 }
 
-/// A GPU descriptor binding, e.g. uniform buffer or texture sampler.
+const string pushConstantTag = "TERAFLOP_PUSH_CONSTANT";
+
+/// A GPU descriptor binding, e.g. uniform buffer, texture sampler, or push constant.
 /// See_Also:
 /// $(UL
 ///   $(LI `teraflop.graphics.UniformBuffer`)
 ///   $(LI `teraflop.ecs.NamedComponent`)
 /// )
 abstract class BindingDescriptor : NamedComponent {
+  import std.algorithm : canFind;
+
   import teraflop.async : Event;
 
   /// Fired when this BindingDescriptor's `data` changes.
@@ -543,6 +547,10 @@ abstract class BindingDescriptor : NamedComponent {
 
   package (teraflop) static auto findBinding =
     (const BindingDescriptor binding, TypeInfo_Class type) => binding.classinfo.isBaseOf(type);
+
+  package (teraflop) static auto findTaggedBinding =
+    (const BindingDescriptor binding, TypeInfo_Class type, string tag) =>
+      typeid(ITagged).isBaseOf(type) && (cast(ITagged) binding).tags.canFind!(tag) && binding.classinfo.isBaseOf(type);
 
   package (teraflop) WriteDescriptorSet descriptorWrite(
     DescriptorSet set, uint bindingLocation, Buffer uniformBuffer, size_t bufferOffset = 0, size_t uniformSize = 0
