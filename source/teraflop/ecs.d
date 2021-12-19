@@ -871,7 +871,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       enum string diagnosticNameOf = "parameter " ~ text(indexOf!T + 1) ~ paramName ~
       " of type `" ~ fullyQualifiedName!(Unqual!T) ~ "`";
     }
-    enum string diagnosticHintOf(T) = "`" ~ text(typeid(Unqual!T).name, " ", ParamName!T) ~ "` parameter";
+    enum string diagnosticHintOf(T) = "`" ~ text(fullyQualifiedName!(Unqual!T), " ", ParamName!T) ~ "` parameter";
     enum string diagnosticBadPractice =
       "Teraflop considers it bad practice to modify the World, Resources, an Entity, or this System when it's running.";
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";

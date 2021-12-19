@@ -17,6 +17,8 @@ layout(location = 1) out vec3 fragColor;
 
 void main() {
   gl_Position = camera.mvp * model.transform * vec4(inPosition, 1.0);
+  // TODO: Apply view and/or model transformations to fragment normals?
+  // fragNormal = (model.transform * vec4(inNormal, 0.0)).xyz;
   fragNormal = inNormal;
   fragColor = inColor;
 }
