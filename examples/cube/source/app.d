@@ -90,7 +90,7 @@ private final class Cube : Game {
     );
   }
 
-  static void rotate(scope Time time, scope Camera camera) {
+  static void rotate(scope const Time time, scope Camera camera) {
     import std.math : PI;
 
     // 6 RPM at 60 FPS
