@@ -23,6 +23,8 @@ public {
 
   static import gfx.graal.pipeline;
   alias Pipeline = gfx.graal.pipeline.Pipeline;
+
+  import teraflop.graphics.rendering;
 }
 
 /// RGBA double precision color.
@@ -662,6 +664,11 @@ class UniformBuffer(T) : BindingDescriptor if (isStruct!T) {
   void update(T value) {
     this._value = value;
     this.dirty = true;
+  }
+
+  ///
+  UniformBuffer!T dup() const {
+    return new UniformBuffer!T(name, bindingLocation, shaderStage, _value);
   }
 }
 
