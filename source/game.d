@@ -8,7 +8,7 @@ import teraflop.platform.window;
 /// Derive this class for your game application.
 abstract class Game {
   import core.time : msecs;
-  import libasync.events : EventLoop, getThreadEventLoop;
+  import teraflop.async: EventLoop;
   import teraflop.ecs : isSystem, System, SystemGenerator, World;
   import teraflop.time : Time;
   import wgpu.api : Adapter, Device, SwapChain;
@@ -22,8 +22,7 @@ abstract class Game {
   private Adapter adapter;
   private Device device;
   private Window[] windows_;
-  private SwapChain[const Window] swapChains;
-  private EventLoop eventLoop;
+  private Window mainWindow_;
 
   private auto world = new World();
   private auto systems = new System[0];
@@ -91,7 +90,7 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
-    import wgpu.api : PowerPreference, RequestAdapterOptions;
+    import wgpu.api : Instance, PowerPreference;
 
     // Setup main window
     if (!initGlfw()) {
@@ -99,20 +98,18 @@ abstract class Game {
     }
     scope(exit) terminateGlfw();
 
-    windows_ ~= new Window(name);
-    auto mainWindow = windows_[0];
-    if (!mainWindow.valid) return;
+    windows_ ~= mainWindow_ = new Window(name);
+    if (!mainWindow_.valid) return;
 
     // Setup root graphics resources
-    adapter = Adapter(RequestAdapterOptions(PowerPreference.Default, mainWindow.surface.id));
+    // TODO: Select `PowerPreference.lowPower` on laptops and whatnot
+    auto adapter = Instance.requestAdapter(mainWindow_.surface, PowerPreference.highPerformance);
     assert(adapter.ready);
     device = adapter.requestDevice(adapter.limits);
     assert(device.ready);
 
     initialize();
     active_ = true;
-
-    eventLoop = getThreadEventLoop();
 
     auto stopwatch = StopWatch(AutoStart.yes);
     while (active) {
@@ -150,80 +147,55 @@ abstract class Game {
 
     foreach (window; windows_)
       destroy(window);
-
-    eventLoop.exit();
   }
 
   /// Called when the Game should update itself.
   private void update() {
     import core.time : Duration;
     import std.string : format;
+    import teraflop.async : ExitReason;
 
-    windows_[0].title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
-    foreach (window; windows_) {
-      window.update();
-      updateSwapChain(window);
-    }
-
-    // Raise callbacks on the event loop
-    if (!eventLoop.loop(Duration.zero)) {
-      // TODO: Log that there was an unrecoverable error
-      active_ = false;
-      return;
-    }
+    mainWindow_.title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
+    foreach (window; windows_) window.update();
 
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
-    foreach (system; systems)
-      system.run();
-  }
+    foreach (system; systems) system.run();
 
-  private void updateSwapChain(const Window window) {
-    // TODO: Release existing swap chain, if any
-    // TODO: Add a `dirty` flag to `Window` when to help signal a new swap chain, i.e. resizing, fullscreen, etc.
-    if ((window in swapChains) is null)
-      // Fails... 😒️ https://github.com/gfx-rs/wgpu-native/issues/56
-      swapChains[window] = device.createSwapChain(window.surface, window.swapChainDescriptor);
-    else if (window.dirty) {
-      // TODO: Destroy old swap chain
-      // auto oldSwapChain = swapChains[window];
-      // oldSwapChain.destroy();
-      swapChains[window] = device.createSwapChain(window.surface, window.swapChainDescriptor);
+    // Raise callbacks on the event loop
+    // TODO: Log if there was an unrecoverable error processing events
+    final switch (!mainWindow_.eventLoop.processEvents(Duration.zero)) {
+      case ExitReason.exited:
+        active_ = false;
+        return;
+      case ExitReason.outOfWaiters:
+        import std.traits : fullyQualifiedName;
+        assert(0, "What does `" ~ fullyQualifiedName!(ExitReason.outOfWaiters) ~ "` mean?");
+      case ExitReason.idle: goto case;
+      case ExitReason.timeout:
+        // Nothing happened, that's fine
     }
   }
 
   /// Called when the Game should render itself.
   private void render() {
     import std.string : toStringz;
-    import wgpu.api : Color, CommandEncoderDescriptor, LoadOp, PassChannel_Color,
-      RenderPassColorAttachmentDescriptor, RenderPassDescriptor, StoreOp;
+    import wgpu.api : Color, RenderPass;
 
-    auto frame = swapChains[windows_[0]].getNextTexture();
-    if (!frame.success) {
-      // TODO: Log an error
-      return;
-    }
-    auto encoder = device.createCommandEncoder(CommandEncoderDescriptor(toStringz(name)));
-    auto colorAttachment = RenderPassColorAttachmentDescriptor(
-      frame.view.id,
-      0, // Resolve target
-      PassChannel_Color(
-        LoadOp.Clear,
-        StoreOp.Store,
-        Color(255 / 100, 255 / 149, 255 / 237, 1), // Cornflower Blue #6495ed
-        false // Is *not* read only
-      )
+    auto frame = mainWindow_.swapChain.getNextTexture();
+    // TODO: Add `wgpu.api.TextureView.valid` property
+    // TODO: assert(frame.valid !is null, "Could not get next swap chain texture");
+    auto encoder = device.createCommandEncoder(name);
+    encoder.beginRenderPass(
+      RenderPass.colorAttachment(frame, /* Cornflower Blue #6495ed */ Color(255 / 100, 255 / 149, 255 / 237, 1))
     );
-    encoder.beginRenderPass(RenderPassDescriptor(
-      &colorAttachment,
-      1,
-      null // depth stencil attachment
-    ));
 
     foreach (entity; world.entities) {
       // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
     }
 
-    device.queue.submit(encoder.finish());
+    auto commandBuffer = encoder.finish();
+    device.queue.submit(commandBuffer);
+    mainWindow_.swapChain.present();
   }
 
   /// Stop the game loop and exit the Game.

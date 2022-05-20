@@ -3,11 +3,11 @@
 	"versions": {
 		"bindbc-glfw": "0.10.1",
 		"bindbc-loader": "0.3.2",
+		"eventcore": "0.9.20",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",
+		"taggedalgebraic": "0.11.22",
 		"teraflop": {"path":"../../"},
-		"wgpu-d": "~master",
-		"xcb-d": "2.1.1+1.11.1",
-		"xkbcommon-d": "0.5.1"
+		"wgpu-d": "0.1.0+commit.12.g2aa4be8"
 	}
 }

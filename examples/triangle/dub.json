@@ -8,17 +8,13 @@
   "copyright": "Copyright © 2020, Chance Snow",
   "targetType": "executable",
   "targetPath": "../../bin",
-  "systemDependencies": "glfw >= 3.2.0, wgpu-native == 0.6.0",
+  "systemDependencies": "glfw >= 3.2.0",
   "dependencies": {
     "teraflop": {
       "path": "../../"
     }
   },
-  "lflags": [
-    "-L../../bin/wgpu-64-debug",
-    "-L../../bin/wgpu-64-release"
-  ],
-  "lflags-linux": [
-    "-L../../lib/glfw-3.3.2/src"
+  "postBuildCommands-linux": [
+    "patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/../../bin/triangle"
   ]
 }

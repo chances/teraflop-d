@@ -9,6 +9,8 @@
 /// License: 3-Clause BSD License
 module teraflop.ecs;
 
+public import teraflop.ecs.components;
+
 import std.conv : to;
 import std.string : format;
 import std.meta : templateOr;

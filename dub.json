@@ -12,11 +12,14 @@
   "subPackages": [
     "examples/triangle"
   ],
-  "systemDependencies": "glfw >= 3.2, wgpu-native == 0.6.0",
+  "systemDependencies": "glfw >= 3.2, ",
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
-    "libasync": "~>0.8.6",
-		"wgpu-d": "~master"
+    "eventcore": "~>0.9.20",
+		"wgpu-d": {
+      "repository": "git+https://github.com/chances/wgpu-d.git",
+      "version": "~master"
+    }
   },
   "subConfigurations": {
     "bindbc-glfw": "static"
@@ -32,6 +35,9 @@
   "libs": ["glfw3"],
   "libs-linux": [
     "X11"
+  ],
+  "postBuildCommands-linux": [
+    "patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/bin/teraflop-test-library"
   ],
   "copyFiles-linux": [
     "lib/glfw-3.3.2/src/libglfw3.a"

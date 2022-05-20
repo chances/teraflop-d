@@ -4,32 +4,46 @@ import bindbc.glfw;
 import wgpu.api : Device, Surface, SwapChain, SwapChainDescriptor;
 
 ///
-Surface createPlatformSurface(GLFWwindow* window) {
+Surface createPlatformSurface(GLFWwindow* window, string label = null) {
+  import std.conv : to;
+
   version (linux) {
     auto display = glfwGetX11Display();
     auto x11Window = glfwGetX11Window(window);
     if (display != null && x11Window > 0)
-      return Surface.fromXlib(cast(const(void)**) display, x11Window);
-  }
-  version (OSX) {
+      return Surface.fromXlib(display, x11Window.to!uint, label);
+  } else version (OSX) {
     auto cocoaWindow = cast(NSWindow) glfwGetCocoaWindow(window);
     cocoaWindow.contentView.wantsLayer = true;
     assert(cocoaWindow.contentView.wantsLayer);
     cocoaWindow.contentView.layer = CAMetalLayer.layer;
-    return Surface.fromMetalLayer(cast(void*) cocoaWindow.contentView.layer);
+    return Surface.fromMetalLayer(cast(void*) cocoaWindow.contentView.layer, label);
+  }
+
+  assert(0, "Unsupported target platform!");
+}
+
+package:
+
+import std.meta : Alias;
+
+version (linux) {
+  alias Display = Alias!(void*);
+  alias Window = ulong;
+
+  // https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/bindstatic.d#L224
+  extern(C) @nogc nothrow {
+    private Display glfwGetX11Display();
+    private ulong glfwGetX11Window(GLFWwindow*);
   }
 }
 
 version (OSX) {
   import core.attribute : selector;
-  import std.meta : Alias;
 
   alias id = Alias!(void*);
 
-  extern (C) {
-    ///
-    id glfwGetCocoaWindow(GLFWwindow* window);
-  }
+  extern (C) id glfwGetCocoaWindow(GLFWwindow* window);
 
   extern (Objective-C) {
     /// An object that manages image-based content and allows you to perform animations on that content.

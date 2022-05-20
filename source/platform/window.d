@@ -6,25 +6,29 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
-import libasync.notifier : AsyncNotifier;
 import std.conv : to;
 import std.string : toStringz;
+import teraflop.async : EventLoop;
+import teraflop.ecs : Resource;
 import teraflop.platform.wgpu;
-import wgpu.api : Device, Surface, SwapChain, SwapChainDescriptor;
 
 private int lastWindowId = 0;
 
 /// A native window.
-class Window {
+class Window : Resource {
+  import wgpu.api : Adapter, Device, Surface, SwapChain;
+
   /// Window identifier
   const int id;
 
   private GLFWwindow* window;
-  private WindowData data;
+  private Device device_;
   private Surface surface_;
-  private SwapChainDescriptor swapChainDescriptor_;
+  private SwapChain swapChain_;
+  private const EventLoop eventLoop_;
   private bool valid_ = false;
   private string title_;
+  private WindowData data;
 
   /// Initialize a new Window.
   ///
@@ -34,10 +38,11 @@ class Window {
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
   this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
-    import wgpu.api : PresentMode, TextureFormat, TextureUsage;
+    import teraflop.async : createEventLoop;
 
     id = lastWindowId += 1;
     title_ = title;
+    eventLoop_ = createEventLoop();
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
     glfwWindowHint(GLFW_RESIZABLE, true);
@@ -56,18 +61,12 @@ class Window {
 
     // Initialize GPU surface and swap chain descriptor
     surface_ = createPlatformSurface(window);
-    valid_ = surface_.id > 0;
+    valid_ = surface_.id != null;
     if (!valid) {
       glfwDestroyWindow(window);
       errorCallback(0, toStringz("Failed to initialize a new GPU surface"));
       return;
     }
-
-    swapChainDescriptor_ = SwapChainDescriptor(
-      TextureUsage.outputAttachment, TextureFormat.Bgra8UnormSrgb,
-      data.width, data.height,
-      PresentMode.Fifo
-    );
   }
 
   ~this() {
@@ -99,14 +98,35 @@ class Window {
     return valid_;
   }
 
-  package (teraflop) Surface surface() @property const {
-    return surface_;
+  ///
+  EventLoop eventLoop() @trusted @property const {
+    return cast(EventLoop) this.eventLoop_;
+  }
+
+  package (teraflop) Surface surface() @trusted @property const {
+    return cast(Surface) surface_;
   }
   package (teraflop) bool dirty() @property const {
     return data.dirty;
   }
-  package (teraflop) SwapChainDescriptor swapChainDescriptor() @property const {
-    return swapChainDescriptor_;
+  package (teraflop) SwapChain swapChain() @trusted @property const {
+    return cast(SwapChain) swapChain_;
+  }
+
+  /// See_Also: `Resource`
+  void initialize(Adapter adapter, Device device) {
+    import wgpu.api : PresentMode, TextureUsage;
+
+    this.device_ = device;
+
+    auto swapChainFormat = surface.preferredFormat(adapter);
+    swapChain_ = device.createSwapChain(
+      surface, data.width, data.height, swapChainFormat,
+      // TODO: Remove this redundant texture usage parameter
+      TextureUsage.renderAttachment,
+      PresentMode.fifo,
+      title
+    );
   }
 
   package (teraflop) void update() {
@@ -117,16 +137,21 @@ class Window {
     }
 
     data.update(window);
-    if (data.dirty) updateSwapChainDesc();
+    if (data.dirty) updateSwapChain();
 
     glfwSetWindowTitle(window, toStringz(title_));
 
     // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
   }
 
-  private void updateSwapChainDesc() {
-    swapChainDescriptor_.width = data.width;
-    swapChainDescriptor_.height = data.height;
+  private void updateSwapChain() {
+    import std.typecons : Yes;
+    import wgpu.utils : resize;
+
+    // Force wait to flush GPU queue and pump callbacks
+    device_.poll(Yes.forceWait);
+    swapChain_ = swapChain_.resize(device_, data.width, data.height);
+    data.dirty = false;
   }
 
   // https://github.com/dkorpel/glfw-d/blob/master/example/app.d
@@ -160,16 +185,6 @@ class Window {
 // VkSurfaceKHR*
 // TODO: Stub these dependent types with aliases? Do I even need to if I'm giving the window handle from below to wgpu?
 // mixin(bindGLFW_Vulkan);
-
-version (linux) {
-  import std.meta : Alias;
-  alias Display = Alias!(void*);
-  // https://github.com/BindBC/bindbc-glfw/blob/5bed82e7bdd18afb0e810aeb173e11d38e18075b/source/bindbc/glfw/bindstatic.d#L224
-  extern(C) @nogc nothrow {
-    private Display* glfwGetX11Display();
-    private ulong glfwGetX11Window(GLFWwindow*);
-  }
-}
 
 version (OSX) {
   mixin(bindGLFW_Cocoa);

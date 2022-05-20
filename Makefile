@@ -23,7 +23,7 @@ ifeq ($(TARGET_OS),Linux)
 	TRIANGLE_SOURCES := $(TRIANGLE_SOURCES) lib/glfw-3.3.2/src/libglfw3.a
 endif
 
-bin/triangle: $(SOURCES) $(TRIANGLE_SOURCES)
+bin/triangle: examples/triangle/dub.json $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
 
 triangle: bin/triangle
@@ -31,7 +31,7 @@ triangle: bin/triangle
 .PHONY: triangle
 
 test:
-	dub test --parallel
+	dub test --parallel --build=debug
 .PHONY: test
 
 cover: $(SOURCES)
