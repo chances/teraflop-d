@@ -17,6 +17,8 @@ lib/glfw-3.3.2/src/libglfw3.a: lib/glfw-3.3.2/CMakeLists.txt
 	@echo "Sanity check for static lib:"
 	ld -Llib/glfw-3.3.2/src -l glfw3
 	@echo "👍️"
+glfw: lib/glfw-3.3.2/src/libglfw3.a
+.PHONY: glfw
 
 TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
 ifeq ($(TARGET_OS),Linux)
@@ -30,11 +32,11 @@ triangle: bin/triangle
 	env LD_LIBRARY_PATH=bin/wgpu-64-debug bin/triangle
 .PHONY: triangle
 
-test:
+test: glfw
 	dub test --parallel
 .PHONY: test
 
-cover: $(SOURCES)
+cover: glfw $(SOURCES)
 	dub test --parallel --coverage
 
 docs/sitemap.xml: $(SOURCES)

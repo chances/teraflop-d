@@ -16,10 +16,24 @@ jobs:
       uses: dlang-community/setup-dlang@v1
       with:
         compiler: ldc-latest
-    # TODO: Consider disabling this `apt-get install` task to save time
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev
+      run: sudo apt-get install --quiet -y libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
+    - name: Cache DUB Artifacts (Posix)
+      # if: runner.os == 'Linux' || runner.os == 'macOS'
+      uses: actions/cache@v2
+      with:
+        path: ~/.dub
+        key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+        restore-keys: |
+          ${{ runner.os }}-dub-
+    - name: Cache GLFW
+      id: cache-glfw
+      # if: runner.os == 'Linux'
+      uses: actions/cache@v2
+      with:
+        path: lib/glfw-3.3.2
+        key: ${{ runner.os }}-glfw
     - name: Lint
       run: dub lint --config .dscanner.ini
     - name: Test
