@@ -9,14 +9,13 @@ public import eventcore.driver : ExitReason;
 ///
 alias EventLoop = EventDriverCore;
 
-/// Free the current thread's event loop.
+// Free the current thread's event loop.
 static ~this() {
   import core.time : Duration;
 
-  auto eventDriver = tryGetEventDriver();
-  if (eventDriver is null) return;
+  if (tryGetEventDriver() is null) return;
 
-  auto eventLoop = eventDriver.core;
+  auto eventLoop = eventDriver().core;
   eventLoop.processEvents(Duration.zero);
   eventLoop.exit();
   // TODO: Does `eventLoop.exit` dispose the event loop? eventLoop.dispose();

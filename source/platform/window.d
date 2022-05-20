@@ -197,7 +197,7 @@ version (Windows) {
   mixin(bindGLFW_Windows);
 }
 
-package (teraflop) bool initGlfw() {
+package (teraflop) bool initGlfw() @trusted {
   const GLFWSupport loadResult;
 
   version (Windows) {

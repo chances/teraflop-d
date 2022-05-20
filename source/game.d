@@ -145,8 +145,7 @@ abstract class Game {
       render();
     }
 
-    foreach (window; windows_)
-      destroy(window);
+    foreach (window; windows_) destroy(window);
   }
 
   /// Called when the Game should update itself.

@@ -16,11 +16,12 @@ jobs:
       uses: dlang-community/setup-dlang@v1
       with:
         compiler: ldc-latest
+    # TODO: Consider disabling this `apt-get install` task to save time
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev
     - name: Lint
-      run: dub lint
+      run: dub lint --config .dscanner.ini
     - name: Test
       run: make cover
     - name: Upload Coverage to Codecov
