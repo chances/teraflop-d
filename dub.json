@@ -16,6 +16,7 @@
   "dependencies": {
     "bindbc-glfw": "~>0.10.1",
     "eventcore": "~>0.9.20",
+    "gfm:math": "~>8.0",
 		"wgpu-d": {
       "repository": "git+https://github.com/chances/wgpu-d.git",
       "version": "~master"

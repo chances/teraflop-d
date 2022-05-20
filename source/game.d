@@ -179,7 +179,7 @@ abstract class Game {
   /// Called when the Game should render itself.
   private void render() {
     import std.typecons : Yes;
-    import teraflop.graphics : Color;
+    import teraflop.graphics.color : Color;
     import wgpu.api : RenderPass;
 
     auto frame = mainWindow_.swapChain.getNextTexture();
