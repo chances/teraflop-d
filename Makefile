@@ -31,7 +31,7 @@ triangle: bin/triangle
 .PHONY: triangle
 
 test:
-	dub test --parallel --build=debug
+	dub test --parallel
 .PHONY: test
 
 cover: $(SOURCES)

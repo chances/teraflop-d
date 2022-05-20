@@ -255,12 +255,12 @@ final class Entity {
     auto entity = new Entity();
     auto seven = Number(7);
     const name = "teraflop.ecs.Number";
-    const key = "teraflop.ecs.Structure!(Number).Structure:" ~ name;
+    const key = "teraflop.ecs.Structure!(teraflop.ecs.Number).Structure:" ~ name;
     assert(entity.components.length == 0);
 
     entity.add(seven);
     assert(entity.components.length == 1);
-    assert(entity.components_.keys[0] == key);
+    assert(entity.components_.keys[0] == key, entity.components_.keys[0]);
     assert(entity.components[0].to!(const NamedComponent).name == name);
     assert(entity.contains(name));
     assert(entity.contains!Number());
@@ -349,7 +349,7 @@ private final class Structure(T) : NamedComponent if (isStruct!T) {
 unittest {
   auto one = Number(1);
   auto component = new Structure!Number(one);
-  assert(component.type == "teraflop.ecs.Structure!(Number).Structure");
+  assert(component.type == "teraflop.ecs.Structure!(teraflop.ecs.Number).Structure", component.type);
   assert(component.name == "teraflop.ecs.Number");
 }
 
@@ -747,7 +747,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       enum string diagnosticNameOf = "parameter " ~ text(indexOf!T + 1) ~ paramName ~
       " of type `" ~ fullyQualifiedName!(Unqual!T) ~ "`";
     }
-    enum string diagnosticHintOf(T) = text(typeid(Unqual!T).name, ParamName!T) ~ "` parameter";
+    enum string diagnosticHintOf(T) = text(fullyQualifiedName!(Unqual!T), ParamName!T) ~ "` parameter";
     enum string diagnosticBadPractice =
       "Teraflop considers it bad practice to modify the World, Resources, an Entity, or this System when it's running.";
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";

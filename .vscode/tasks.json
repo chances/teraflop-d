@@ -2,22 +2,19 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "dub",
-			"test": true,
-			"cwd": "${workspaceFolder}",
-			"compiler": "$current",
-			"archType": "$current",
-			"buildType": "$current",
-			"configuration": "$current",
-			"problemMatcher": [
-				"$dmd"
-			],
-			"group": {
-				"kind": "test",
-				"isDefault": true
-			},
-			"label": "dub: Test teraflop",
-			"detail": "dub test --compiler=ldc2 -a=x86_64 -b=debug -c=library"
-		}
+      "type": "shell",
+      "label": "dub: Test teraflop",
+      "command": "dub test --parallel --coverage",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [
+        "$dmd"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+    }
 	]
 }
