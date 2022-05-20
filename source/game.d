@@ -108,6 +108,7 @@ abstract class Game {
     device = adapter.requestDevice(adapter.limits);
     assert(device.ready);
 
+    mainWindow_.initialize(adapter, device);
     initialize();
     active_ = true;
 
@@ -178,23 +179,30 @@ abstract class Game {
   /// Called when the Game should render itself.
   private void render() {
     import std.string : toStringz;
+    import std.typecons : Yes;
     import wgpu.api : Color, RenderPass;
 
     auto frame = mainWindow_.swapChain.getNextTexture();
     // TODO: Add `wgpu.api.TextureView.valid` property
     // TODO: assert(frame.valid !is null, "Could not get next swap chain texture");
     auto encoder = device.createCommandEncoder(name);
-    encoder.beginRenderPass(
-      RenderPass.colorAttachment(frame, /* Cornflower Blue #6495ed */ Color(255 / 100, 255 / 149, 255 / 237, 1))
+    auto renderPass = encoder.beginRenderPass(
+      // RenderPass.colorAttachment(frame, /* Cornflower Blue #6495ed */ Color(255 / 100, 255 / 149, 255 / 237, 1))
+      RenderPass.colorAttachment(frame, /* Red */ Color(1, 0, 0, 1))
     );
 
     foreach (entity; world.entities) {
       // TODO: Add a `Renderable` component with data needed to render an Entity with wgpu
     }
 
+    renderPass.end();
+
     auto commandBuffer = encoder.finish();
     device.queue.submit(commandBuffer);
     mainWindow_.swapChain.present();
+
+    // Force wait for a frame to render and pump callbacks
+    device.poll(Yes.forceWait);
   }
 
   /// Stop the game loop and exit the Game.
