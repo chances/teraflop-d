@@ -178,17 +178,17 @@ abstract class Game {
 
   /// Called when the Game should render itself.
   private void render() {
-    import std.string : toStringz;
     import std.typecons : Yes;
-    import wgpu.api : Color, RenderPass;
+    import teraflop.graphics : Color;
+    import wgpu.api : RenderPass;
 
     auto frame = mainWindow_.swapChain.getNextTexture();
     // TODO: Add `wgpu.api.TextureView.valid` property
     // TODO: assert(frame.valid !is null, "Could not get next swap chain texture");
     auto encoder = device.createCommandEncoder(name);
     auto renderPass = encoder.beginRenderPass(
-      // RenderPass.colorAttachment(frame, /* Cornflower Blue #6495ed */ Color(255 / 100, 255 / 149, 255 / 237, 1))
-      RenderPass.colorAttachment(frame, /* Red */ Color(1, 0, 0, 1))
+      RenderPass.colorAttachment(frame, Color.cornflowerBlue.wgpu)
+      // RenderPass.colorAttachment(frame, /* Red */ Color(1, 0, 0, 1))
     );
 
     foreach (entity; world.entities) {
