@@ -121,13 +121,13 @@ abstract class Game {
 
       auto elapsed = stopwatch.peek();
       time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
-      auto deltaSeconds = time.deltaSeconds;
 
       const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
-      while (limitFrameRate && deltaSeconds < desiredFrameTimeSeconds) {
-        elapsed = stopwatch.peek();
-        time_ = Time(time.total + elapsed, elapsed);
-        deltaSeconds += time.deltaSeconds;
+      auto underBudget = time.deltaSeconds < desiredFrameTimeSeconds;
+      stopwatch.reset();
+      while (limitFrameRate && underBudget) {
+        time_ = time_.add(stopwatch.peek());
+        underBudget = time.deltaSeconds < desiredFrameTimeSeconds;
         stopwatch.reset();
 
         // Don't gobble up all available CPU cycles while waiting
@@ -137,7 +137,8 @@ abstract class Game {
       }
 
       import std.typecons : Yes;
-      if (deltaSeconds > desiredFrameTimeSeconds * 1.25) Time(time_, Yes.runningSlowly);
+      auto deltaSeconds = time.deltaSeconds;
+      if (deltaSeconds > desiredFrameTimeSeconds * 1.25) time_ = Time(time_, Yes.runningSlowly);
 
       // TODO: Calculate average FPS given deltaSeconds
 

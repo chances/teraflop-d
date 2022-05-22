@@ -1,3 +1,5 @@
+/// Time primitives.
+///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
@@ -64,6 +66,10 @@ struct Time {
   /// game loop can be considered to be running too slowly and should do something to "catch up."
   bool runningSlowly() const @property {
     return runningSlowly_;
+  }
+
+  package (teraflop) Time add(Duration delta = Duration.zero) {
+    return Time(total_ + delta, delta_ + delta);
   }
 }
 
