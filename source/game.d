@@ -9,7 +9,7 @@ import teraflop.platform.window;
 abstract class Game {
   import core.time : msecs;
   import teraflop.async: EventLoop;
-  import teraflop.ecs : isSystem, System, SystemGenerator, World;
+  import teraflop.ecs : System, SystemGenerator, World;
   import teraflop.time : Time;
   import wgpu.api : Adapter, Device, SwapChain;
 
