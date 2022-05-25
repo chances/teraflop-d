@@ -22,7 +22,7 @@ import teraflop.traits : isClass, inheritsFrom, isStruct;
 /// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
 
-/// A collection of Entities, their `Component`s, and `Resource`s. `System`s operate on those
+/// A collection of Entities, their Components, and `Resource`s. `System`s operate on those
 /// components and mutate the World.
 final class World {
   private Entity[UUID] entities_;
@@ -40,7 +40,7 @@ final class World {
   }
 
   /// A collection of resource instances identified by their type.
-  Resources resources() const @property {
+  Resources resources() const @trusted @property {
     return Resources(
       cast(ResourceCollection*) &resources_,
       cast(ResourceTracker*) &resourceChanged
@@ -48,7 +48,7 @@ final class World {
   }
 
   import std.meta : allSatisfy;
-  /// Spawn a new entity given a set of `Component` instances.
+  /// Spawn a new entity given a set of Component instances.
   void spawn(T...)(T components) if (components.length && allSatisfy!(storableAsComponent, T)) {
     auto entity = new Entity();
     foreach (component; components) entity.add(component);
@@ -146,7 +146,7 @@ final class Entity {
 
   /// Add a new Component given its type and, optionally, a default value and its name
   ///
-  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs constructed with `component` for Component data.
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
   void add(T)(T data = T.init, string name = null) if (storableAsComponent!T) {
     if (name !is null) namedComponents_[name] = data;
     else {
@@ -334,7 +334,7 @@ abstract class System {
   ///       $(LI Apply a constant reference to the generated System for `System` parameters)
   ///       $(LI Try to find a matching Entity Component to apply given a parameter's type and name:)
   ///         $(UL
-  ///           $(LI `struct` and `Component` parameter names must match an Entity's Component name)
+  ///           $(LI `struct` and Component parameter names must match an Entity's Component name)
   ///         )
   ///       $(LI Try to find a matching World Resource to apply given the parameter's type is one of:)
   ///         $(UL
@@ -346,7 +346,7 @@ abstract class System {
   ///       $(LI Or, if a parameter could not be applied, continue to the next Entity)
   ///     </ol>
   ///   $(LI Call the user-provided function for Entities if and only if <i>all</i> parameters were be applied)
-  ///   $(LI For all `struct` and `Component` parameters with the `ref` storage class, update the Component)
+  ///   $(LI For all `struct` and Component parameters with the `ref` storage class, update the Component)
   /// )
   /// Returns: A newly instantiated `SystemGenerator`, a function that initializes a new generated `System` given a `World` reference.
   /// See_Also:
@@ -399,6 +399,7 @@ import std.traits : ConstOf, ImmutableOf, Parameters, ParameterIdentifierTuple, 
 /// `isCallableAsSystem` parameter requirements helper templates
 private enum bool hasConstStorage(T) = __traits(isSame, QualifierOf!T, ConstOf);
 private enum bool hasImmutableStorage(T) = __traits(isSame, QualifierOf!T, ImmutableOf);
+private enum bool hasOutStorage(alias T) = (T & ParameterStorageClass.out_) == ParameterStorageClass.out_;
 private enum bool hasRefStorage(alias T) = (T & ParameterStorageClass.ref_) == ParameterStorageClass.ref_;
 private enum bool hasScopeStorage(alias T) = (T & ParameterStorageClass.scope_) == ParameterStorageClass.scope_;
 private alias isIllegalReference = templateOr!(isWorld, isEntity, isResources);
@@ -423,6 +424,7 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
   alias Func = void function(Resources);
   static assert(!hasConstStorage!(Parameters!Func[0]));
   static assert(!hasImmutableStorage!(Parameters!Func[0]));
+  static assert(!hasOutStorage!(PSCT!Func[0]));
   static assert(!hasRefStorage!(PSCT!Func[0]));
   static assert(!hasScopeStorage!(PSCT!Func[0]));
   static assert( isIllegallyMutable!(Parameters!Func[0]));
@@ -432,16 +434,29 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
   const Func_RefResources f_ref = (ref Resources) {};
   static assert(!hasConstStorage!(Parameters!f_ref[0]));
   static assert(!hasImmutableStorage!(Parameters!f_ref[0]));
+  static assert(!hasOutStorage!(PSCT!f_ref[0]));
   static assert( hasRefStorage!(PSCT!f_ref[0]));
   static assert(!hasScopeStorage!(PSCT!f_ref[0]));
   static assert( isIllegalReference!(Parameters!f_ref[0]));
   static assert( isIllegallyMutable!(Parameters!f_ref[0]));
   static assert( illegallyEscapesScope!(Parameters!f_ref[0], PSCT!f_ref[0]));
 
+  alias Func_OutResources = void function(out Resources);
+  const Func_OutResources f_out = (out Resources) {};
+  static assert(!hasConstStorage!(Parameters!f_out[0]));
+  static assert(!hasImmutableStorage!(Parameters!f_out[0]));
+  static assert( hasOutStorage!(PSCT!f_out[0]));
+  static assert(!hasRefStorage!(PSCT!f_out[0]));
+  static assert(!hasScopeStorage!(PSCT!f_out[0]));
+  static assert( isIllegalReference!(Parameters!f_out[0]));
+  static assert( isIllegallyMutable!(Parameters!f_out[0]));
+  static assert( illegallyEscapesScope!(Parameters!f_out[0], PSCT!f_out[0]));
+
   alias Func_ScopeRef = void function(scope ref Resources);
   const Func_ScopeRef f_scopeRef = (ref Resources) {};
   static assert(!hasConstStorage!(Parameters!f_scopeRef[0]));
   static assert(!hasImmutableStorage!(Parameters!f_scopeRef[0]));
+  static assert(!hasOutStorage!(PSCT!f_scopeRef[0]));
   static assert( hasRefStorage!(PSCT!f_scopeRef[0]));
   static assert( hasScopeStorage!(PSCT!f_scopeRef[0]));
   static assert( isIllegalReference!(Parameters!f_scopeRef[0]));
@@ -468,17 +483,17 @@ import std.traits : isCallable, ReturnType;
 ///       $(LI `World`)
 ///       $(LI `Resources`)
 ///       $(LI `Entity`)
-///       $(LI `Component` or any of its derivations)
 ///       $(LI `System`)
 ///     )
+///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `out` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>.)
 ///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `immutable` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>. <p>Use `const` instead.</p>)
 ///   $(LI <i>Certain</i> parameters <b>MUST</b> use specific Storage Classes:)
 ///     $(UL
-///       $(LI `World`, `Resources`, `Entity`, `Component`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
+///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
 ///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `const` Storage Class)
 ///       $(LI The `ref` Storage Class <b>MUST NOT</b> be used with the `const` Storage Class)
 ///     )
-///   $(LI `struct` and `Component` parameters <b>MAY</b> use the `ref` Storage Class)
+///   $(LI `struct` Component parameters <b>MAY</b> use the `ref` Storage Class)
 /// )
 /// See_Also:
 /// $(UL
@@ -574,6 +589,16 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     }
   }
 
+  unittest {
+    import std.algorithm : equal;
+
+    auto diagnostic = Diagnostic("Foobar");
+    assert(diagnostic.toString.equal("Unknown: Foobar"));
+
+    diagnostic = Diagnostic("Failure", "Shader");
+    assert(diagnostic.toString.equal("Shader: Failure"));
+  }
+
   private alias Replacements = Variant[string];
   private alias FuncApplicationResults = Tuple!(Replacements, "replacements", Diagnostic[], "diagnostics");
   private FuncApplicationResults tryApplyFunc(const Entity entity) inout {
@@ -600,7 +625,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       enum string diagnosticNameOf = "parameter " ~ text(indexOf!T + 1) ~ paramName ~
       " of type `" ~ fullyQualifiedName!(Unqual!T) ~ "`";
     }
-    enum string diagnosticHintOf(T) = text(fullyQualifiedName!(Unqual!T), ParamName!T) ~ "` parameter";
+    enum string diagnosticHintOf(T) = "`" ~ text(fullyQualifiedName!(Unqual!T), ParamName!T) ~ "` parameter";
     enum string diagnosticBadPractice =
       "Teraflop considers it bad practice to modify the World, Resources, an Entity, or this System when it's running.";
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";
@@ -616,6 +641,10 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
           "\n\t" ~ diagnosticDlangFuncParams ~
           "\n\n\tHint: Use `const` qualifier instead." ~
           "\n");
+      // Guard against output parameters
+      static if (hasOutStorage!(FuncParamStorage[indexOf!Param]))
+        static assert(0, "Output qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
       // Guard against `ref World`, `ref Entity`, `ref Resources`, and `ref System` parameter
       static if (hasRefStorage!(FuncParamStorage[indexOf!Param]) && isIllegalReference!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
@@ -630,68 +659,72 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
         static assert(0, "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
           "\n\t" ~ diagnosticBadPractice ~
           "\n\t" ~ diagnosticDlangFuncParams ~
-          "\n\n\tHint: Add `const` qualifier to `" ~ diagnosticHintOf!Param ~ "." ~
+          "\n\n\tHint: Add `const` qualifier to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
-      // Require the `scope` storage class qualifier on `World`, `Resources`, `Entity`, `Component`, and `System` parameters
+      // Require the `scope` storage class qualifier on `World`, `Resources`, `Entity`, and `System` parameters
       static if (illegallyEscapesScope!(Param, FuncParamStorage[indexOf!Param]))
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
           "\n\tWorld, Resources, Entity, Component, and System references cannot escape a running System." ~
           "\n\t" ~ diagnosticDlangFuncParams ~
-          "\n\n\tHint: Add `scope` storage class to `" ~ diagnosticHintOf!Param ~ "." ~
+          "\n\n\tHint: Add `scope` storage class to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
 
-      static if (!isWorld!Param && !isResources!Param && !isEntity!Param) {
-        // Run the system function only if this entity contains instances of all the expected Resource and Component types
-        componentExists = storableAsComponent!Param && entity.contains!(Unqual!Param)(ParamName!Param);
-        if (!componentExists && (isResources!Param || isResourceData!Param)) {
-          isResource = isResources!Param || world.resources.contains!(Unqual!Param);
-        } else if (!isResource && !componentExists) {
-          diagnosticMessages ~= format!("Could not apply %s to %s" ~
-            "\n\tThere must exist a Resource of type `%s` or a Component named '%s' in the World.")(
-              diagnosticNameOf!Param,
-              GeneratedSystemName,
-              fullyQualifiedName!(Unqual!Param),
-              ParamName!Param);
-          goto L_continueApplyingParams; // Hack to workaround lack of `continue` support in `static foreach` 😒️
-        }
-      }
-      // TODO: Use `T.init` for `out` parameters
-      // Otherwise, get the World, Resources, Entity, Resource, or Component data
+      // Get the World, Resources, Entity, if applicable
       static if (isWorld!Param) {
         params[indexOf!Param] = world;
       } else static if (isResources!Param) {
         params[indexOf!Param] = world.resources;
       } else static if (isEntity!Param) {
         params[indexOf!Param] = cast(Entity) entity;
-      } else static if (storableAsComponent!Param) {
-        if (componentExists) {
-          params[indexOf!Param] = entity.get!(Unqual!Param)(ParamName!Param);
-        } else if (isIllegallyMutable!Param) {
-          // Guard against illegally mutable Resources
-          if (!isStruct!Param && hasRefStorage!(FuncParamStorage[indexOf!Param])) {
-            diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-              "\n\t" ~ diagnosticBadPractice ~
-              "\n\t" ~ diagnosticDlangFuncParams ~
-              "\n\n\tHint: Use `const` qualifier instead." ~
-              "\n";
-          } else if (!isStruct!Param) {
-            diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-              "\n\t" ~ diagnosticBadPractice ~
-              "\n\t" ~ diagnosticDlangFuncParams ~
-              "\n\n\tHint: Add `const` qualifier to `" ~ diagnosticHintOf!Param ~ "." ~
-              "\n";
+      }
+      static if (isWorld!Param && isResources!Param && isEntity!Param) {
+        goto L_continueApplyingParams; // Hack to workaround lack of `continue` support in `static foreach` 😒️
+      }
+
+      static if (!isWorld!Param && !isResources!Param && !isEntity!Param) {
+        componentExists = storableAsComponent!Param && entity.contains!(Unqual!Param)(ParamName!Param);
+        isResource = !componentExists && isResourceData!Param && world.resources.contains!(Unqual!Param);
+
+        // Run the system function only if this entity contains instances of all the expected Resource and Component types
+        if (!isResource && !componentExists) {
+          diagnosticMessages ~= format!("Could not apply %s to %s" ~
+            "\n\tThere must exist a Resource of type `%s` or a Component named '%s' in the World.")(
+              diagnosticNameOf!Param,
+              GeneratedSystemName,
+              fullyQualifiedName!(Unqual!Param),
+              ParamName!Param);
+          goto L_continueApplyingParams;
+        }
+
+        // Otherwise, get the Resource or Component data
+        static if (storableAsComponent!Param && !isResources!Param) {
+          if (!componentExists && isIllegallyMutable!Param) {
+            // Guard against illegally mutable Resources
+            if (!isStruct!Param && hasRefStorage!(FuncParamStorage[indexOf!Param])) {
+              diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
+                "\n\t" ~ diagnosticBadPractice ~
+                "\n\t" ~ diagnosticDlangFuncParams ~
+                "\n\n\tHint: Use `const` qualifier instead." ~
+                "\n";
+            } else if (!isStruct!Param) {
+              diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
+                "\n\t" ~ diagnosticBadPractice ~
+                "\n\t" ~ diagnosticDlangFuncParams ~
+                "\n\n\tHint: Add `const` qualifier to " ~ diagnosticHintOf!Param ~ "." ~
+                "\n";
+            }
+            goto L_systemDoesNotApply;
           }
-          goto L_systemDoesNotApply;
-        } else {
-          // Otherwise carry on with Resource(s) parameter assignment
-          static if (isResources!Param) {
-            params[indexOf!Param] = world.resources;
+
+          if (componentExists) {
+            params[indexOf!Param] = entity.get!(Unqual!Param)(ParamName!Param);
           } else {
+            // Otherwise retreive the Resource for parameter assignment
             params[indexOf!Param] = world.resources.get!(Unqual!Param);
           }
+        } else static if (!isResources!Param) {
+          static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
         }
-      } else {
-        static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
       }
 
       // Only define this label once
@@ -705,11 +738,12 @@ L_continueApplyingParams:
 
     results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
 
-    // Run the system, applying dependent `Component` instance arguments
+    // Run the system, applying collected argument parameters
     Func(params.expand);
 
+    // TODO: Document Component replacement as applicable for each parameter storage class
     static foreach (Param; FuncParams) {
-      static if (hasRefStorage!(FuncParamStorage[indexOf!Param])) {
+      static if (hasOutStorage!(FuncParamStorage[indexOf!Param]) || hasRefStorage!(FuncParamStorage[indexOf!Param])) {
         replacements[ParamName!Param] = params[indexOf!Param];
       }
     }
@@ -719,6 +753,11 @@ L_systemDoesNotApply:
     results.replacements = replacements;
     return results;
   }
+}
+
+unittest {
+  const outputSystem = __traits(compiles, System.from!((out Number number) {}));
+  assert(!outputSystem, "System parameters MUST NOT use output qualifiers.");
 }
 
 unittest {
@@ -738,9 +777,12 @@ unittest {
   const numberResource = world.resources.get!Number;
   assert(numberResource.value == 0, "Systems MUST NOT mutate Resources when running.");
   // TODO: Add a `Commands` interface so that Systems can queue Entity spawns and Resource changes
+}
+
+unittest {
+  auto world = new World();
 
   // Counter System with a Component
-  world = new World();
   world.spawn(Number(0).named("number"));
   assert(world.entities.length == 1);
 
