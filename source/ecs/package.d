@@ -25,7 +25,7 @@ enum bool isWorld(T) = __traits(isSame, T, World);
 /// A collection of Entities, their Components, and `Resource`s. `System`s operate on those
 /// components and mutate the World.
 final class World {
-  private Entity[UUID] entities_;
+  package (teraflop) Entity[UUID] entities_;
   private ResourceCollection resources_;
   private ResourceTracker resourceChanged;
 
@@ -120,6 +120,94 @@ unittest {
   }
   world.resources.add(Foo());
   assert(world.resources.get!Foo.bar == "hello");
+}
+
+private struct KeyedVariant {
+  string fqn;
+  Variant data;
+}
+private alias Variants = KeyedVariant[];
+
+/// List of operations that modify a `teraflop.ecs.World`, performed after the system that invoked them
+/// finishes iterating matching Entities.
+/// See_Also: <a href="https://docs.rs/bevy/0.7.0/bevy/ecs/system/struct.Commands.html">`bevy::ecs::system::Commands`</a>
+struct Commands {
+  import std.meta : allSatisfy;
+
+  package Entity[] additions = [];
+  package Variants[UUID] componentInsertions;
+  package size_t[UUID] componentRemovals;
+  ///
+  Resources resources;
+
+  @disable this();
+  package this(World world) {
+    resources = world.resources;
+  }
+
+  /// Spawn a new entity given a set of Component instances.
+  void spawn(T...)(T components) if (components.length && allSatisfy!(storableAsComponent, T)) {
+    auto entity = new Entity();
+    foreach (component; components) entity.add(component);
+    additions ~= entity;
+  }
+
+  /// Inserts a set of Component instances into the given `entity`.
+  void insertInto(T)(const Entity entity, T component) if (storableAsComponent!T) {
+    if ((entity.id in componentInsertions) is null)
+      componentInsertions[entity.id] = [];
+    componentInsertions[entity.id] ~= KeyedVariant(fullyQualifiedName!T, component.to!Variant);
+  }
+
+  /// Remove a Component from the given `entity` given the Component's type, `T`.
+  void remove(T)(const Entity entity) if (storableAsComponent!T) {
+    componentRemovals[entity.id] = Entity.key(fullyQualifiedName!T);
+  }
+
+  package (teraflop) void execute(World world) {
+    foreach (entity; additions) world.entities_[entity.id] = entity;
+    foreach (id; componentInsertions.keys) foreach (c; componentInsertions[id])
+      world.entities_[id].components_[Entity.key(c.fqn)] = c.data;
+    foreach (id; componentRemovals.keys) world.entities_[id].remove(componentRemovals[id]);
+  }
+}
+
+unittest {
+  import std.conv : text;
+
+  auto world = new World();
+  auto commands = new Commands(world);
+
+  commands.spawn(Number(1), Vector(0, 1, 2));
+  assert(commands.additions.length && commands.additions[0].components_.length == 2);
+  commands.execute(world);
+  assert(world.entities.length);
+  assert(world.entities[0].components.length == 2);
+
+  commands = new Commands(world);
+  commands.remove!Vector(world.entities[0]);
+  commands.execute(world);
+  assert(world.entities[0].components.length == 1, world.entities[0].components.length.text);
+}
+
+unittest {
+  import std.algorithm : equal;
+  import std.conv : text;
+
+  auto world = new World();
+  auto commands = new Commands(world);
+
+  world.spawn(Number(1));
+  const entity = world.entities[0];
+  commands.insertInto(entity, Vector(0, 1, 2));
+  commands.execute(world);
+
+  const insertions = commands.componentInsertions;
+  assert((entity.id in insertions) !is null);
+  assert(insertions[entity.id][0].data.type == typeid(Vector), insertions[entity.id][0].fqn);
+  assert(insertions[entity.id][0].fqn.equal(fullyQualifiedName!Vector), insertions[entity.id][0].fqn);
+  assert(world.entities[0].contains!Vector);
+  assert(world.entities[0].get!Vector == Vector(0, 1, 2));
 }
 
 /// Detect whether `T` is the `Entity` class.
@@ -229,8 +317,23 @@ final class Entity {
     else components_[component.toHash] = component;
   }
 
+  /// Remove a Component given its type, `T`, and its name.
+  void remove(T)(string name = null) if (storableAsComponent!T) {
+    if (name !is null && (name in namedComponents_) !is null) namedComponents_.remove(name);
+    components_.remove(key!T);
+  }
+  /// Remove a Component given its `key`.
+  package void remove(size_t key) {
+    components_.remove(key);
+  }
+
+  /// Component storage key of `T`.
   private static size_t key(T)() if (storableAsComponent!T) {
     return hashOf(fullyQualifiedName!T);
+  }
+  /// Component storage key of `fqn`.
+  private static size_t key(string fqn) {
+    return hashOf(fqn);
   }
 
   unittest {
@@ -371,10 +474,7 @@ abstract class System {
   /// Operate this System on Resources and Components in the `World`.
   abstract void run() inout;
 
-  /// Query the `World` for Entities containing Components of the given types.
-  const(Entity[]) query(ComponentT...)() const {
-    static if (ComponentT.length == 0) return world.entities;
-  }
+  // TODO: https://docs.rs/bevy/latest/bevy/ecs/system/struct.Query.html
 }
 
 unittest {
@@ -776,7 +876,6 @@ unittest {
   resourceSystem(world).run();
   const numberResource = world.resources.get!Number;
   assert(numberResource.value == 0, "Systems MUST NOT mutate Resources when running.");
-  // TODO: Add a `Commands` interface so that Systems can queue Entity spawns and Resource changes
 }
 
 unittest {
