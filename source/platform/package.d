@@ -1,7 +1,7 @@
 /// Native platform integrations.
 ///
 /// $(UL
-///   $(LI <a href="platform/vulkan.html">Vulkan</a>: Utilities for <a href="https://github.com/rtbo/gfx-d#readme">gfx</a> graphics library integration.)
+///   $(LI <a href="platform/wgpu.html">WebGPU</a>: Utilities for <a href="https://chances.github.io/wgpu-d">WebGPU</a> graphics library integration.)
 ///   $(LI <a href="platform/window.html">Window</a>: Native window primitives.)
 /// )
 ///

@@ -1,6 +1,6 @@
 {
   "name": "teraflop",
-	"description": "An ECS game engine on a Vulkan foundation",
+	"description": "An ECS game engine on a WebGPU foundation",
 	"authors": [
 		"Chance Snow"
   ],
@@ -24,8 +24,7 @@
     }
   },
   "subConfigurations": {
-    "bindbc-glfw": "static",
-    "gfx:vulkan": "glfw"
+    "bindbc-glfw": "static"
   },
   "lflags-posix": [
     "-Llib/glfw-3.3.2/src"
