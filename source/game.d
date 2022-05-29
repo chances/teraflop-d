@@ -79,11 +79,11 @@ abstract class Game {
   }
 
   private void initialize() {
-    initializeWorld();
+    initializeWorld(world);
   }
 
   /// Called when the Game should initialize its `World`.
-  protected abstract void initializeWorld();
+  protected abstract void initializeWorld(scope World world);
 
   /// Run the game
   void run() {

@@ -1,8 +1,8 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"bindbc-glfw": "0.10.1",
-		"bindbc-loader": "0.3.2",
+		"bindbc-glfw": "1.0.1",
+		"bindbc-loader": "1.0.1",
 		"eventcore": "0.9.20",
 		"gfm": "8.0.6",
 		"intel-intrinsics": "1.10.2",

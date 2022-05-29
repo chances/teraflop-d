@@ -84,11 +84,17 @@ struct Resources {
   }
 
   /// Returns a Resource from the collection given its type.
-  immutable(T) get(T)() const {
+  const(T) get(T)() const {
     assert(contains!T(), "Could not find Resource!");
     auto variant = (*resources)[typeid(T).toHash];
     assert(variant.peek!T !is null);
     return variant.get!T;
+  }
+
+  T getMut(T)() @trusted const {
+    import teraflop.async : isEvent;
+    static if (isEvent!T) return get!T.dup;
+    else return cast(Unqual!T) get!T;
   }
 
   /// Replace a Resource.
@@ -288,7 +294,7 @@ final class Entity {
   }
 
   /// Get Component data given its type and optionally its name.
-  immutable(T) get(T)(string name = null) @trusted const if (storableAsComponent!T) {
+  const(T) get(T)(string name = null) const if (storableAsComponent!T) {
     import std.algorithm.searching : find;
 
     assert(this.contains!T(name));
@@ -297,6 +303,12 @@ final class Entity {
     return namedComponents_.values.find!(
       (Variant value, TypeInfo t) => value.type == t
     )(typeid(T))[0].get!T;
+  }
+
+  package T getMut(T)(string name = null) @trusted const if (storableAsComponent!T) {
+    import teraflop.async : isEvent;
+    static if (isEvent!T) return get!T(name).dup;
+    else return cast(Unqual!T) get!T(name);
   }
 
   private enum string replacementError = "A Component must first be added before replacement.";
@@ -375,6 +387,19 @@ private enum isNamedComponent(T) = __traits(isSame, T, NamedComponent);
 NamedComponent named(T)(T component, string name) if (storableAsComponent!T) {
   Variant value = component;
   return NamedComponent(value, name);
+}
+
+/// An opaque wrapper of some class type.
+struct ClassComponent(T) if (isClass!T) {
+  T data;
+  alias data this;
+}
+/// ditto
+alias ClassOf = ClassComponent;
+
+/// Containerize a given class instance as a Component.
+ClassComponent!T component(T)(T component) if (isClass!T) {
+  return ClassComponent(component);
 }
 
 /// Detect whether `T` is the `System` class or inherits from `System`.
@@ -627,6 +652,21 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
   static assert(isCallableAsSystem!((Number _) {}));
 }
 
+unittest {
+  class C {
+    import std.typecons : Flag, Yes;
+    import teraflop.async : Event;
+    import teraflop.input;
+
+    alias ExitEvent = Event!(Flag!"force");
+    static void exitOnEscape(scope const ClassOf!InputEventAction event, scope ExitEvent exit) {
+      if (event.action == "exit") exit(Yes.force);
+    }
+  }
+
+  static assert(isCallableAsSystem!(C.exitOnEscape));
+}
+
 private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!Func) {
   import std.traits : Parameters, ParameterIdentifierTuple, ParameterStorageClassTuple;
   import std.typecons : Tuple, tuple;
@@ -695,7 +735,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
 
   private alias Replacements = Variant[string];
   private alias FuncApplicationResults = Tuple!(Replacements, "replacements", Diagnostic[], "diagnostics");
-  private FuncApplicationResults tryApplyFunc(const Entity entity) inout {
+  private FuncApplicationResults tryApplyFunc(const Entity entity) @trusted inout {
     import std.algorithm.iteration : map;
     import std.array : array;
     import std.conv : text;
@@ -811,10 +851,10 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
           }
 
           if (componentExists) {
-            params[indexOf!Param] = entity.get!(Unqual!Param)(ParamName!Param);
+            params[indexOf!Param] = entity.getMut!(Unqual!Param)(ParamName!Param);
           } else {
             // Otherwise retreive the Resource for parameter assignment
-            params[indexOf!Param] = world.resources.get!(Unqual!Param);
+            params[indexOf!Param] = world.resources.getMut!(Unqual!Param);
           }
         } else static if (!isResources!Param) {
           static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);

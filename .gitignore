@@ -1,6 +1,11 @@
 .envrc
 
 lib/glfw-3.3.2/
+scripts/upload-coverage.sh
+
+# RenderDoc Capture Settings and Files
+cube.cap
+*.rdc
 
 # Compiled Object files
 *.o
@@ -18,10 +23,15 @@ lib/glfw-3.3.2/
 # Executables
 *.exe
 bin/teraflop-test-library
+bin/teraflop-test-unittest
+bin/teraflop-test-unittest-gpu
+bin/teraflop_triangle
+bin/teraflop_cube
 bin/triangle
+bin/cube
 
 # DUB
-dub.selections.json
+/dub.selections.json
 .dub
 docs.json
 __dummy.html

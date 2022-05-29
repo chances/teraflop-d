@@ -4,9 +4,156 @@
 module teraflop.graphics;
 
 import teraflop.math;
-import wgpu.api;
-
+import teraflop.traits : isStruct;
 public import teraflop.graphics.color;
+public import teraflop.graphics.primitives;
+public import wgpu.api : ShaderStage;
+
+/// A shaded material for geometry encapsulating its `Shader`s, graphics pipeline state, and optionally a `Texture`.
+/// See_Also: `teraflop.systems.rendering.PipelinePreparer`
+struct Material {
+  import std.typecons : Flag, No, Yes;
+  import wgpu.api : CullMode, FrontFace;
+
+  private bool _depthTest = true;
+  private FrontFace _frontFace = FrontFace.cw;
+  private CullMode _cullMode = CullMode.back;
+
+  package (teraflop) Shader*[] _shaders;
+  // TODO: package (teraflop) Texture _texture;
+
+  /// Initialize a new Material.
+  this(Shader*[] shaders, Flag!"depthTest" depthTest = Yes.depthTest) {
+    this(shaders, FrontFace.cw, CullMode.back, depthTest);
+  }
+  /// Initialize a new Material.
+  this(
+    Shader*[] shaders,
+    FrontFace frontFace = FrontFace.cw, CullMode cullMode = CullMode.back,
+    Flag!"depthTest" depthTest = Yes.depthTest
+  ) {
+    _shaders = shaders;
+    _frontFace = frontFace;
+    _cullMode = cullMode;
+    _depthTest = depthTest;
+  }
+
+  /// Whether to perform the depth test. If `true`, assumes the render target has a depth buffer attachment.
+  bool depthTest() @property const {
+    return _depthTest;
+  }
+  /// Specifies the vertex order for faces to be considered front-facing.
+  FrontFace frontFace() @property const {
+    return _frontFace;
+  }
+  /// Type of <a href="https://en.wikipedia.org/wiki/Back-face_culling">face culling</a> to use during graphic pipeline rasterization.
+  CullMode cullMode() @property const {
+    return _cullMode;
+  }
+}
+
+///
+struct Mesh(T) if (isStruct!T) {
+  ///
+  T[] vertices;
+  ///
+  size_t[] indices;
+}
+
+///
+enum SourceLanguage {
+  /// SPIR-V source bytecode.
+  spirv,
+  /// WGSL source text.
+  wgsl
+}
+
+///
+struct Shader {
+  import std.conv : to;
+  import std.exception : enforce;
+  import std.typecons : Flag, No, Yes;
+  import teraflop.ecs.components : ObservableFile;
+  import wgpu.api : Device, ShaderModule;
+  import wgpu.utils : valid;
+
+  private ObservableFile* _source;
+  private SourceLanguage _language;
+  private Device device;
+  private ShaderModule _shaderModule;
+
+  /// The stage in the graphics pipeline in which this Shader performs.
+  const ShaderStage stage;
+
+  /// Initialize a new Shader compiled from the given `filePath`.
+  ///
+  /// Params:
+  /// stage = The stage in the graphics pipeline in which this Shader performs.
+  /// filePath = Path to a file containing SPIR-V source bytecode.
+  /// hotReload = Whether to watch the given `filePath` for changes and to recompile this Shader at runtime.
+  this(
+    ShaderStage stage, string filePath,
+    SourceLanguage language = SourceLanguage.wgsl,
+    Flag!"hotReload" hotReload = No.hotReload
+  ) {
+    import std.string : format;
+
+    this.stage = stage;
+    _source = new ObservableFile(filePath, hotReload);
+    _language = language;
+    enforce(_source.exists, format!"File not found: %s"(filePath));
+    setupChangeDetection();
+  }
+  /// Initialize a new Shader.
+  ///
+  /// Params:
+  /// stage = The stage in the graphics pipeline in which this Shader performs.
+  /// wgsl = WGSL source text.
+  this(ShaderStage stage, string wgsl) {
+    this.stage = stage;
+    _source = new ObservableFile(wgsl);
+    _language = SourceLanguage.wgsl;
+    setupChangeDetection();
+  }
+  /// Initialize a new Shader.
+  ///
+  /// Params:
+  /// stage = The stage in the graphics pipeline in which this Shader performs.
+  /// spv = SPIR-V source bytecode.
+  this(ShaderStage stage, const ubyte[] spv) {
+    this.stage = stage;
+    _source = new ObservableFile(spv);
+    _language = SourceLanguage.spirv;
+    setupChangeDetection();
+  }
+  ~this() {
+    if (_shaderModule.valid) _shaderModule.destroy();
+  }
+
+  /// Whether this Shader has been successfully initialized.
+  bool initialized() @property const {
+    return _shaderModule.valid;
+  }
+
+  /// Initialize this Shader.
+  void initialize(scope Device device) {
+    assert(!initialized);
+    this.device = device;
+    this._shaderModule = _language == SourceLanguage.spirv
+      ? device.createShaderModule(_source.contents.to!(const byte[]))
+      : device.createShaderModule(_source.contents.to!string);
+  }
+
+  private void setupChangeDetection() {
+    _source.onChanged ~= (const(ubyte)[] _) {
+      if (_shaderModule.valid) {
+        // TODO: Log "Reloading shader: filePath"
+        device.poll(Yes.forceWait);
+        _shaderModule.destroy();
+      }
+    };
+  }
+}
 
 /// A world-space model view projection matrix. Suitable for use as a uniform buffer object.
 /// See_Also: <a href="https://dlang.org/spec/attribute.html#align" title="D Language reference">`align` Attribute</a>

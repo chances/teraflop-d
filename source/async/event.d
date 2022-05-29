@@ -3,12 +3,25 @@
 /// License: 3-Clause BSD License
 module teraflop.async.event;
 
+import std.traits : TemplateOf;
+
 // Adapted from https://forum.dlang.org/post/dcdtuqyrxpteuaxmvwft@forum.dlang.org
+
+/// Detect whether `T` is an instance of the `Event` struct.
+enum isEvent(T) = __traits(isSame, TemplateOf!T, Event);
 
 /// Abstraction over D $(D delegate), modelling the C# event paradigm.
 struct Event(Args) {
+  import std.traits : Unqual;
+
   alias Callback = void delegate(Args);
   private Callback[] callbacks;
+
+  private static Event!Args from(Args)(Callback[] callbacks) {
+    Event!Args ev;
+    ev.callbacks ~= callbacks;
+    return ev;
+  }
 
   /// Add or remove an event handler via compound assignment (`~=`, `+=`, `-=`).
   void opOpAssign(string op)(Callback handler) if (op == "~" || op == "+" || op == "-") {
@@ -32,6 +45,11 @@ struct Event(Args) {
   /// Whether or not this event has any assigned handlers.
   bool opCast(T)() const if (is(T == bool)) {
     synchronized return callbacks.length != 0;
+  }
+
+  /// Returns: Mutable copy of this event.
+  package (teraflop) Event!Args dup() @trusted const {
+    return Event.from!Args(cast(Callback[]) callbacks);
   }
 }
 
@@ -67,4 +85,11 @@ unittest {
 
   onChanged -= &func;
   onChanged(expectedArg += 1);
+}
+
+unittest {
+  Event!int onChanged;
+  onChanged += (int val) => assert(val == 1);
+  auto numChanged = onChanged.dup;
+  numChanged(1);
 }

@@ -4,7 +4,7 @@ TARGET_OS := $(shell uname -s)
 .DEFAULT_GOAL := docs
 all: docs
 
-EXAMPLES := bin/triangle
+EXAMPLES := bin/triangle bin/cube
 examples: $(EXAMPLES)
 .PHONY: examples
 
@@ -16,14 +16,12 @@ lib/glfw-3.3.2/src/libglfw3.a: lib/glfw-3.3.2/CMakeLists.txt
 	make
 	@echo "Sanity check for static lib:"
 	ld -Llib/glfw-3.3.2/src -l glfw3
+	rm -f a.out
 	@echo "👍️"
 glfw: lib/glfw-3.3.2/src/libglfw3.a
 .PHONY: glfw
 
-TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
-ifeq ($(TARGET_OS),Linux)
-	TRIANGLE_SOURCES := $(TRIANGLE_SOURCES) lib/glfw-3.3.2/src/libglfw3.a
-endif
+EXAMPLE_DEPS := glfw $(SOURCES)
 
 bin/triangle: examples/triangle/dub.json $(SOURCES) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
@@ -34,10 +32,30 @@ triangle: bin/triangle
 
 test: glfw
 	dub test --parallel
+	./scripts/delete-junk-lst-files.sh
 .PHONY: test
 
 cover: glfw $(SOURCES)
 	dub test --parallel --coverage
+
+TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
+bin/triangle: $(EXAMPLE_DEPS) $(TRIANGLE_SOURCES)
+	cd examples/triangle && dub build
+
+triangle: bin/triangle
+	bin/triangle
+.PHONY: triangle
+
+CUBE_SOURCES := $(shell find examples/cube/source -name '*.d')
+bin/cube: $(EXAMPLE_DEPS) $(CUBE_SOURCES)
+	cd examples/cube && dub build
+
+cube: bin/cube
+	bin/cube
+.PHONY: cube
+
+scripts/upload-coverage.sh:
+	echo "See 'Upload Coverage to Codecov' task in .github/workflows/ci.yml"
 
 docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox
@@ -58,11 +76,16 @@ docs/sitemap.xml: $(SOURCES)
 docs: docs/sitemap.xml
 .PHONY: docs
 
-clean:
+clean: clean-docs
 	rm -f bin/teraflop-test-library
+	rm -f bin/triangle
+	rm -f bin/cube
 	rm -f $(EXAMPLES)
+	rm -f -- *.lst
+.PHONY: clean
+
+clean-docs:
 	rm -f docs.json
 	rm -f docs/sitemap.xml docs/file_hashes.json
 	rm -rf `find docs -name '*.html'`
-	rm -f -- *.lst
-.PHONY: clean
+.PHONY: clean-docs

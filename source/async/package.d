@@ -5,6 +5,7 @@ module teraflop.async;
 
 import eventcore.core : EventDriverCore, eventDriver, tryGetEventDriver;
 public import eventcore.driver : ExitReason;
+public import teraflop.async.event;
 
 ///
 alias EventLoop = EventDriverCore;

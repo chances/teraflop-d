@@ -1,24 +1,29 @@
 # Teraflop
 
 [![DUB Package](https://img.shields.io/dub/v/teraflop.svg)](https://code.dlang.org/packages/teraflop)
-![Teraflop CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20CI/badge.svg?branch=master)
+[![Teraflop CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20CI/badge.svg?branch=master)](https://github.com/chances/teraflop-d/actions)
 [![codecov](https://codecov.io/gh/chances/teraflop-d/branch/master/graph/badge.svg?token=5YN3BU7KR3)](https://codecov.io/gh/chances/teraflop-d/)
 
-An ECS game engine on a [wgpu](https://github.com/gfx-rs/wgpu-native) foundation.
+An ECS game engine on a [Vulkan](https://github.com/rtbo/gfx-d#readme) foundation.
 
 Ported from its original [C# implementation](https://github.com/chances/teraflop).
+
+> **Unstable API**: Expect breaking changes. If you find a bug or have a feature request please [create an issue](https://github.com/chances/teraflop-d/issues/new).
 
 ## Usage
 
 ```json
 "dependencies": {
-    "teraflop": "0.1.0-pre-alpha-1"
+    "teraflop": "0.8.0"
 }
 ```
 
 [API Reference](https://chances.github.io/teraflop-d)
 
-TODO: Add a "Hello, World!" example
+## Examples
+
+- [`dub run teraflop:triangle`](https://github.com/chances/teraflop-d/blob/master/examples/triangle/source/app.d)
+- [`dub run teraflop:cube`](https://github.com/chances/teraflop-d/blob/master/examples/cube/source/app.d)
 
 ## License
 
