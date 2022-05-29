@@ -1,4 +1,4 @@
-/// Generative mesh primitives.
+/// Static and generative mesh primitives.
 ///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2022 Chance Snow. All rights reserved.

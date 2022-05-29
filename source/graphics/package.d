@@ -90,6 +90,7 @@ struct Shader {
   /// Params:
   /// stage = The stage in the graphics pipeline in which this Shader performs.
   /// filePath = Path to a file containing SPIR-V source bytecode.
+  /// language = Shading language of the given file's sources.
   /// hotReload = Whether to watch the given `filePath` for changes and to recompile this Shader at runtime.
   this(
     ShaderStage stage, string filePath,

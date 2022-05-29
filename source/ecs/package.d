@@ -1,4 +1,4 @@
-/// Teraflop's Entity Component System primitives.
+/// Entity Component System primitives.
 ///
 /// Inspired by <a href="https://bevyengine.org/learn/book/getting-started/ecs/">Bevy ECS</a> and <a href="https://github.com/skypjack/entt">entt</a>.
 ///
