@@ -4,7 +4,7 @@
 [![Teraflop CI](https://github.com/chances/teraflop-d/workflows/Teraflop%20CI/badge.svg?branch=master)](https://github.com/chances/teraflop-d/actions)
 [![codecov](https://codecov.io/gh/chances/teraflop-d/branch/master/graph/badge.svg?token=5YN3BU7KR3)](https://codecov.io/gh/chances/teraflop-d/)
 
-An ECS game engine on a [WebGPU](https://chances.github.io/wgpu-d/) foundation.
+An ECS game engine on a [WebGPU](https://chances.github.io/wgpu-d) foundation.
 
 Ported from its original [C# implementation](https://github.com/chances/teraflop).
 

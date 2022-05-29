@@ -15,7 +15,7 @@ jobs:
       - name: Install D compiler
         uses: dlang-community/setup-dlang@v1
         with:
-          compiler: dmd-latest
+          compiler: ldc-latest
       - name: Install *nix Dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get install --quiet -y libglfw3 libglfw3-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
