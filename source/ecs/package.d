@@ -391,6 +391,7 @@ NamedComponent named(T)(T component, string name) if (storableAsComponent!T) {
 
 /// An opaque wrapper of some class type.
 struct ClassComponent(T) if (isClass!T) {
+  ///
   T data;
   alias data this;
 }
@@ -656,7 +657,7 @@ unittest {
   class C {
     import std.typecons : Flag, Yes;
     import teraflop.async : Event;
-    import teraflop.input;
+    import teraflop.input : InputEventAction;
 
     alias ExitEvent = Event!(Flag!"force");
     static void exitOnEscape(scope const ClassOf!InputEventAction event, scope ExitEvent exit) {
