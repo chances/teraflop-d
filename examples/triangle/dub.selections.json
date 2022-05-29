@@ -4,6 +4,8 @@
 		"bindbc-glfw": "0.10.1",
 		"bindbc-loader": "0.3.2",
 		"eventcore": "0.9.20",
+		"gfm": "8.0.6",
+		"intel-intrinsics": "1.10.2",
 		"libasync": "0.8.6",
 		"memutils": "1.0.4",
 		"taggedalgebraic": "0.11.22",
