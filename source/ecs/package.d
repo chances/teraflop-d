@@ -404,18 +404,6 @@ unittest {
   assert(entity.get!(Tag)("foo") == [foo]);
 }
 
-// TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
-
-/// Whether *all* of an `Entity`'s GPU Resources have been initialized.
-static const Initialized = tag("Initialized");
-/// Whether *all* of an `Entity`'s `Asset` Components have been loaded.
-static const Loaded = tag("Loaded");
-
-unittest {
-  assert(Initialized.name == Initialized.stringof);
-  assert(Loaded.name == Loaded.stringof);
-}
-
 /// Detect whether `T` inherits from `System`.
 enum bool inheritsSystem(T) = inheritsFrom!(T, System);
 
