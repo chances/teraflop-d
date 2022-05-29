@@ -43,11 +43,12 @@ enum vec3f forward = vec3f(0, 0, 1);
 /// Backward unit vector, i.e. inverse of Z-forward.
 enum vec3f back = vec3f(0, 0, -1);
 
-/// Transformation matrix to correct for the Vulkan coordinate system.
-/// Vulkan clip space has inverted Y and half Z.
+/// Transformation matrix to correct for the WebGPU coordinate system.
+/// WebGPU clip space has inverted Y and half Z.
 /// Params:
 /// invertY = Whether the Y axis of the matrix is inverted.
-mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
+/// See_Also: https://github.com/gpuweb/gpuweb/issues/416
+mat4f wgpuClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
   return mat4f(
     1f, 0f, 0f, 0f,
     0f, invertY ? -1f : 1.0f, 0f, 0f,

@@ -32,12 +32,12 @@ class Camera {
 
   /// A combined model-view-projection matrix.
   ///
-  /// The result is corrected for the Vulkan coordinate system.
-  /// Vulkan clip space has inverted Y and half Z.
-  /// See_Also: `vulkanClipCorrection`
+  /// The result is corrected for the WebGPU coordinate system.
+  /// WebGPU clip space has inverted Y and half Z.
+  /// See_Also: `wgpuClipCorrection`
   mat4f mvp() @property const {
     import std.typecons : No, Yes;
-    const clip = vulkanClipCorrection(invertY ? Yes.invertY : No.invertY);
+    const clip = wgpuClipCorrection(invertY ? Yes.invertY : No.invertY);
     return (clip * projection * view * model).transposed;
   }
 
