@@ -27,6 +27,8 @@ jobs:
         key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
         restore-keys: |
           ${{ runner.os }}-dub-
+    - name: Lint
+      run: dub lint --config .dscanner.ini
     - name: Cache GLFW
       id: cache-glfw
       # if: runner.os == 'Linux'
@@ -34,8 +36,6 @@ jobs:
       with:
         path: lib/glfw-3.3.2
         key: ${{ runner.os }}-glfw
-    - name: Lint
-      run: dub lint --config .dscanner.ini
     - name: Test
       run: make cover
     - name: Upload Coverage to Codecov
