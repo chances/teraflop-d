@@ -16,14 +16,6 @@ jobs:
       uses: dlang-community/setup-dlang@v1
       with:
         compiler: ldc-latest
-    - name: Cache DUB Artifacts (Posix)
-      if: runner.os == 'Linux' || runner.os == 'macOS'
-      uses: actions/cache@v2
-      with:
-        path: ~/.dub
-        key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
-        restore-keys: |
-          ${{ runner.os }}-dub-
     - name: Install *nix Dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install --quiet -y libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev
@@ -32,9 +24,9 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.dub
-        key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
+        key: ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}-${{ github.run_attempt }}
         restore-keys: |
-          ${{ runner.os }}-dub-
+          ${{ runner.os }}-dub-${{ hashFiles('**/dub.json') }}
     - name: Lint
       run: dub lint --config .dscanner.ini
     - name: Cache GLFW
