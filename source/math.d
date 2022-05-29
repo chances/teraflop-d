@@ -57,6 +57,10 @@ mat4f wgpuClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
   );
 }
 
+unittest {
+  // TODO: Test wgpuClipCorrection
+}
+
 /// Extract the translation transformation from the given `matrix`.
 vec3f translationOf(mat4f matrix) @property {
   return vec3f(matrix.c[0][3], matrix.c[1][3], matrix.c[2][3]);
@@ -141,6 +145,10 @@ vec3f transform(vec3f a, mat4f transformation) {
   result.z = transformation.v[8] * x + transformation.v[9] * y + transformation.v[10] * z + transformation.v[11];
 
   return result;
+}
+
+unittest {
+  assert(vec3f(0, 0, 0).transform(mat4f.translation(vec3f(0, 1, 0))) == vec3f(0, 1, 0));
 }
 
 ///

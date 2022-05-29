@@ -178,14 +178,6 @@ class Window : Resource {
   }
 }
 
-// VkInstance
-// VkPhysicalDevice
-// VkResult
-// const(VkAllocationCallbacks)*
-// VkSurfaceKHR*
-// TODO: Stub these dependent types with aliases? Do I even need to if I'm giving the window handle from below to wgpu?
-// mixin(bindGLFW_Vulkan);
-
 version (OSX) {
   mixin(bindGLFW_Cocoa);
 }

@@ -68,7 +68,7 @@ struct Time {
     return runningSlowly_;
   }
 
-  package (teraflop) Time add(Duration delta = Duration.zero) {
+  package (teraflop) Time add(const Duration delta = Duration.zero) {
     return Time(total_ + delta, delta_ + delta);
   }
 }
@@ -102,6 +102,19 @@ unittest {
   import std.typecons : Yes;
   time = Time(time, Yes.runningSlowly);
   assert(time.runningSlowly);
+}
+
+unittest {
+  import core.time : dur;
+  import std.conv : text;
+
+  auto time = Time(dur!"seconds"(1), Duration.zero);
+  assert(time.add() == time);
+  const threeSeconds = dur!"seconds"(3);
+  assert(
+    time.add(dur!"seconds"(2)).total == threeSeconds,
+    time.total.text ~ ":" ~ time.deltaSeconds.text ~ " secs"
+  );
 }
 
 // TODO: Consider switching to libasync.timer (https://libasync.dpldocs.info/libasync.timer.AsyncTimer.html)
