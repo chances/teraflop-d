@@ -8,8 +8,10 @@ import teraflop.platform.window;
 /// Derive this class for your game application.
 abstract class Game {
   import core.time : msecs;
+  import std.typecons : Rebindable;
   import teraflop.async: EventLoop;
   import teraflop.ecs : System, SystemGenerator, World;
+  import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.time : Time;
   import wgpu.api : Adapter, Device, SwapChain;
 
@@ -22,7 +24,10 @@ abstract class Game {
   private Adapter adapter;
   private Device device;
   private Window[] windows_;
-  private Window mainWindow_;
+  private Window _mainWindow;
+  private Input[const Window] input;
+  // https://dlang.org/library/std/typecons/rebindable.html#2
+  private Rebindable!(const InputEvent)[InputDevice] newInput;
 
   private auto world = new World();
   private auto systems = new System[0];
@@ -69,6 +74,11 @@ abstract class Game {
     desiredFrameRateHertz_ = value;
   }
 
+  /// This Game's primary window.
+  Window mainWindow() @trusted const @property {
+    return cast(Window) _mainWindow;
+  }
+
   /// Add a System that operates on resources and Components in the game's `World`.
   void add(System system) {
     systems ~= system;
@@ -79,6 +89,21 @@ abstract class Game {
   }
 
   private void initialize() {
+    // Setup main window
+    input[mainWindow] = new Input(mainWindow);
+    input[mainWindow].addNode(mainWindow);
+    mainWindow.onUnhandledInput ~= (const InputEvent event) {
+      newInput[event.device] = event;
+      if (event.isKeyboardEvent)
+        world.resources.add(event.asKeyboardEvent);
+      if (event.isMouseEvent)
+        world.resources.add(event.asMouseEvent);
+      if (event.isActionEvent)
+        world.resources.add(event.asActionEvent);
+    };
+    world.resources.add(mainWindow);
+    world.resources.add(input[mainWindow]);
+
     initializeWorld(world);
   }
 
@@ -98,17 +123,17 @@ abstract class Game {
     }
     scope(exit) terminateGlfw();
 
-    windows_ ~= mainWindow_ = new Window(name);
-    if (!mainWindow_.valid) return;
+    windows_ ~= _mainWindow = new Window(name);
+    if (!_mainWindow.valid) return;
 
     // Setup root graphics resources
     // TODO: Select `PowerPreference.lowPower` on laptops and whatnot
-    auto adapter = Instance.requestAdapter(mainWindow_.surface, PowerPreference.highPerformance);
+    auto adapter = Instance.requestAdapter(_mainWindow.surface, PowerPreference.highPerformance);
     assert(adapter.ready);
     device = adapter.requestDevice(adapter.limits);
     assert(device.ready);
 
-    mainWindow_.initialize(adapter, device);
+    _mainWindow.initialize(adapter, device);
     initialize();
     active_ = true;
 
@@ -120,7 +145,7 @@ abstract class Game {
       }
 
       auto elapsed = stopwatch.peek();
-      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead?
+      time_ = Time(time.total + elapsed, elapsed); // TODO: Use glfwGetTime instead? (https://www.glfw.org/docs/latest/input_guide.html#time)
 
       const desiredFrameTimeSeconds = 1.0f / desiredFrameRateHertz;
       auto underBudget = time.deltaSeconds < desiredFrameTimeSeconds;
@@ -139,6 +164,7 @@ abstract class Game {
       import std.typecons : Yes;
       auto deltaSeconds = time.deltaSeconds;
       if (deltaSeconds > desiredFrameTimeSeconds * 1.25) time_ = Time(time_, Yes.runningSlowly);
+      world.resources.add(time_);
 
       // TODO: Calculate average FPS given deltaSeconds
 
@@ -155,16 +181,29 @@ abstract class Game {
     import core.time : Duration;
     import std.string : format;
     import teraflop.async : ExitReason;
+    import teraflop.ecs : SystemException;
+    import teraflop.input : InputEventAction, InputEventKeyboard, InputEventMouse;
 
-    mainWindow_.title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
-    foreach (window; windows_) window.update();
+    _mainWindow.title = format!"%s - Frame time: %02dms"(name_, time_.deltaMilliseconds);
+    foreach (window; windows_) {
+      window.update();
+      // Wait for hidden and minimized windows to restore
+      if (!window.visible || window.minimized) continue;
+      // Process window input
+      input[window].update(window);
+    }
 
     // TODO: Coordinate dependencies between Systems and parallelize those without conflicts
-    foreach (system; systems) system.run();
+    foreach (system; systems) {
+      try system.run();
+      catch (SystemException ex) {
+        // TODO: Log recoverable System errors
+      }
+    }
 
     // Raise callbacks on the event loop
     // TODO: Log if there was an unrecoverable error processing events
-    final switch (!mainWindow_.eventLoop.processEvents(Duration.zero)) {
+    final switch (!_mainWindow.eventLoop.processEvents(Duration.zero)) {
       case ExitReason.exited:
         active_ = false;
         return;
@@ -175,6 +214,23 @@ abstract class Game {
       case ExitReason.timeout:
         // Nothing happened, that's fine
     }
+
+    // Prune old input from the World
+    foreach (input; newInput.values) {
+      if (input.isKeyboardEvent) {
+        if (world.resources.contains!InputEventKeyboard)
+          world.resources.remove(input.asKeyboardEvent);
+      }
+      if (input.isMouseEvent) {
+        if (world.resources.contains!InputEventMouse)
+          world.resources.remove(input.asMouseEvent);
+      }
+      if (input.isActionEvent) {
+        if (world.resources.contains!InputEventAction)
+          world.resources.remove(input.asActionEvent);
+      }
+      newInput.remove(input.device);
+    }
   }
 
   /// Called when the Game should render itself.
@@ -183,7 +239,7 @@ abstract class Game {
     import teraflop.graphics.color : Color;
     import wgpu.api : RenderPass;
 
-    auto frame = mainWindow_.swapChain.getNextTexture();
+    auto frame = _mainWindow.swapChain.getNextTexture();
     // TODO: Add `wgpu.api.TextureView.valid` property
     // TODO: assert(frame.valid !is null, "Could not get next swap chain texture");
     auto encoder = device.createCommandEncoder(name);
@@ -200,7 +256,7 @@ abstract class Game {
 
     auto commandBuffer = encoder.finish();
     device.queue.submit(commandBuffer);
-    mainWindow_.swapChain.present();
+    _mainWindow.swapChain.present();
 
     // Force wait for a frame to render and pump callbacks
     device.poll(Yes.forceWait);

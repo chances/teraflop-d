@@ -8,14 +8,15 @@ module teraflop.platform.window;
 import bindbc.glfw;
 import std.conv : to;
 import std.string : toStringz;
-import teraflop.async : EventLoop;
+import teraflop.async : Event, EventLoop;
 import teraflop.ecs : Resource;
+import teraflop.input;
 import teraflop.platform.wgpu;
 
 private int lastWindowId = 0;
 
 /// A native window.
-class Window : Resource {
+class Window : InputNode, Resource {
   import teraflop.input : KeyboardKey, MouseButton;
   import teraflop.math : Size, vec2d;
   import wgpu.api : Adapter, Device, Surface, SwapChain;
@@ -31,6 +32,9 @@ class Window : Resource {
   private bool valid_ = false;
   private string title_;
   private WindowData data;
+
+  /// Fired when this window receives an unhandled `InputEvent`.
+  Event!(const InputEvent) onUnhandledInput;
 
   /// Initialize a new Window.
   ///
@@ -58,8 +62,22 @@ class Window : Resource {
       errorCallback(0, toStringz("Failed to initialize a new GLFW Window"));
       return;
     }
+
     glfwSetWindowUserPointer(window, &data);
-    data.update(window);
+    // TODO: glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
+    // TODO: glfwSetWindowIconifyCallback(window, &iconifyCallback);
+    // https://www.glfw.org/docs/latest/input_guide.html#input_mouse_button
+    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
+    // https://www.glfw.org/docs/latest/input_guide.html#scrolling
+    // TODO: For GUI scrolling: glfwSetScrollCallback(window, scroll_callback);
+    // https://www.glfw.org/docs/latest/input_guide.html#input_key
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
+    glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE);
+    // TODO: For text inputs in the GUI: glfwSetCharCallback(window, character_callback);
+    // TODO: For text input in the GUI; clipboard: https://www.glfw.org/docs/latest/input_guide.html#clipboard
+    // TODO: For cursor image changes in the GUI: https://www.glfw.org/docs/latest/input_guide.html#cursor_object
+    // TODO: For save games? https://www.glfw.org/docs/latest/input_guide.html#path_drop
+    // TODO: https://www.glfw.org/docs/latest/input_guide.html#joystick and https://www.glfw.org/docs/latest/input_guide.html#gamepad
 
     // Initialize GPU surface and swap chain descriptor
     surface_ = createPlatformSurface(window);
@@ -69,13 +87,17 @@ class Window : Resource {
       errorCallback(0, toStringz("Failed to initialize a new GPU surface"));
       return;
     }
+
+    data.update(window);
   }
 
   ~this() {
-    if (valid) glfwDestroyWindow(window);
+    if (!valid) return;
+    glfwDestroyWindow(window);
+    surface_.destroy();
   }
 
-  // Swap chains are keyed on their windows
+  // User input is keyed on the target window
   // https://dlang.org/spec/hash-map.html#using_classes_as_key
   override size_t toHash() @safe @nogc const pure {
     return id;
@@ -170,6 +192,21 @@ class Window : Resource {
     return data.framebufferSize;
   }
 
+  /// Whether this Window is currently visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.show`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool visible() const @property {
+    return data.visible;
+  }
+  /// ditto
+  void visible(bool value) @property {
+    if (this.visible && !value) hide();
+    else if (!this.visible && value) show();
+  }
+
   /// Whether this window is minimized.
   /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_iconify">Window iconification</a> in the GLFW documentation
   bool minimized() @property const {
@@ -217,6 +254,35 @@ class Window : Resource {
     return data.lastMouseButtons;
   }
 
+  /// Hides this Window if it was previously visible.
+  ///
+  /// If the window is already hidden or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool show() {
+    glfwShowWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return this.visible;
+  }
+  /// Makes this Window visible if it was previously hidden.
+  ///
+  /// If the window is already visible or is in full screen mode, this function does nothing.
+  /// Returns: Whether this Window is now hidden.
+  /// See_Also: $(UL
+  ///   $(LI `Window.visible`)
+  ///   $(LI `Window.show`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool hide() {
+    glfwHideWindow(window);
+    data.visible = glfwGetWindowAttrib(window, GLFW_VISIBLE) == GLFW_TRUE;
+    return !this.visible;
+  }
+
   /// See_Also: `Resource`
   void initialize(Adapter adapter, Device device) {
     import wgpu.api : PresentMode, TextureUsage;
@@ -231,6 +297,16 @@ class Window : Resource {
       PresentMode.fifo,
       title
     );
+  }
+
+  override void actionInput(const InputEventAction event) {
+    assert(event.action.length);
+    onUnhandledInput(event);
+  }
+
+  override bool unhandledInput(const InputEvent event) {
+    onUnhandledInput(event);
+    return true; // Mark handled
   }
 
   package (teraflop) void update() {
