@@ -42,7 +42,7 @@
     "cd $TERAFLOP_PACKAGE_DIR && make lib/glfw-3.3.2/src/libglfw3.a"
   ],
   "postBuildCommands-linux": [
-    "patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/bin/teraflop-test-library"
+    "test -f $PACKAGE_DIR/bin/teraflop-test-library && patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/bin/teraflop-test-library || echo $PACKAGE_DIR/bin/teraflop-test-library: does not exist"
   ],
   "copyFiles-linux": [
     "lib/glfw-3.3.2/src/libglfw3.a"
