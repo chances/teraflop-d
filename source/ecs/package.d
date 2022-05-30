@@ -83,6 +83,11 @@ struct Resources {
     return resources.keys.canFind(typeid(T).toHash);
   }
 
+  /// Whether the given Resource has been changed.
+  bool hasChanged(T)(T resource) const {
+    return (*resourceChanged)[key(resource)];
+  }
+
   /// Returns a Resource from the collection given its type.
   const(T) get(T)() const {
     assert(contains!T(), "Could not find Resource!");
@@ -875,7 +880,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
               GeneratedSystemName,
               fullyQualifiedName!(Unqual!Param),
               ParamName!Param);
-          goto L_continueApplyingParams;
+          goto L_systemDoesNotApply;
         }
 
         // Otherwise, get the Resource or Component data

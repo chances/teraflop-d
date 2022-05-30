@@ -94,7 +94,7 @@ struct Shader {
   /// hotReload = Whether to watch the given `filePath` for changes and to recompile this Shader at runtime.
   this(
     ShaderStage stage, string filePath,
-    SourceLanguage language = SourceLanguage.wgsl,
+    SourceLanguage language,
     Flag!"hotReload" hotReload = No.hotReload
   ) {
     import std.string : format;

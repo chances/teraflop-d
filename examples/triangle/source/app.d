@@ -15,7 +15,7 @@ private final class Triangle : Game {
   import std.typecons : Flag, No, Yes;
   import teraflop.async : Event;
   import teraflop.ecs : ClassOf, System, World;
-  import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, VertexPosColor;
+  import teraflop.graphics : Color, Material, Mesh, Shader, ShaderStage, SourceLanguage, VertexPosColor;
 
   alias ExitEvent = Event!(Flag!"force");
   ExitEvent onExit;
@@ -36,8 +36,8 @@ private final class Triangle : Game {
     this.add(System.from!exitOnEscape);
 
     auto shaders = [
-      new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv"),
-      new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv")
+      new Shader(ShaderStage.vertex, "examples/triangle/assets/shaders/triangle.vs.spv", SourceLanguage.spirv),
+      new Shader(ShaderStage.fragment, "examples/triangle/assets/shaders/triangle.fs.spv", SourceLanguage.spirv)
     ];
 
     world.spawn(Material(shaders, No.depthTest), Mesh!VertexPosColor([
