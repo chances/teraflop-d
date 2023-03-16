@@ -128,12 +128,12 @@ struct Shader {
     setupChangeDetection();
   }
   ~this() {
-    if (_shaderModule.valid) _shaderModule.destroy();
+    if (this.initialized) _shaderModule.destroy();
   }
 
   /// Whether this Shader has been successfully initialized.
   bool initialized() @property const {
-    return _shaderModule.valid;
+    return _shaderModule.id !is null;
   }
 
   /// Initialize this Shader.
