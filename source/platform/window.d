@@ -19,7 +19,7 @@ private int lastWindowId = 0;
 class Window : InputNode, Resource {
   import teraflop.input : KeyboardKey, MouseButton;
   import teraflop.math : Size, vec2d;
-  import wgpu.api : Adapter, Device, Surface, SwapChain;
+  import wgpu.api : Adapter, Device, Instance, Surface, TextureFormat;
 
   /// Window identifier
   const int id;
@@ -27,9 +27,8 @@ class Window : InputNode, Resource {
   private GLFWwindow* window;
   private Device device_;
   private Surface surface_;
-  private SwapChain swapChain_;
+  private TextureFormat swapChainFormat_;
   private const EventLoop eventLoop_;
-  private bool valid_ = false;
   private string title_;
   private WindowData data;
 
@@ -43,7 +42,7 @@ class Window : InputNode, Resource {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+  this(Instance instance, string title, int width = 800, int height = 600, bool initiallyFocused = true) {
     import teraflop.async : createEventLoop;
 
     id = lastWindowId += 1;
@@ -57,8 +56,7 @@ class Window : InputNode, Resource {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by wgpu
 
     window = glfwCreateWindow(width, height, toStringz(title), null, null);
-    valid_ = window !is null;
-    if (!valid_) {
+    if (!valid) {
       errorCallback(0, toStringz("Failed to initialize a new GLFW Window"));
       return;
     }
@@ -80,8 +78,7 @@ class Window : InputNode, Resource {
     // TODO: https://www.glfw.org/docs/latest/input_guide.html#joystick and https://www.glfw.org/docs/latest/input_guide.html#gamepad
 
     // Initialize GPU surface and swap chain descriptor
-    surface_ = createPlatformSurface(window);
-    valid_ = surface_.id != null;
+    surface_ = createPlatformSurface(instance, window);
     if (!valid) {
       glfwDestroyWindow(window);
       errorCallback(0, toStringz("Failed to initialize a new GPU surface"));
@@ -115,11 +112,14 @@ class Window : InputNode, Resource {
     title_ = value;
   }
 
-  /// Whether the native window handle is valid.
+  /// Whether the native window handle and backing GPU surface is valid.
   ///
-  /// May be `false` if Window initialization failed .
+  /// May be `false` if Window initialization failed.
   bool valid() @property const {
-    return valid_;
+    import wgpu.utils : valid;
+    if (window is null) return false;
+    if (surface is null) return false;
+    return surface_.valid;
   }
 
   ///
@@ -224,11 +224,17 @@ class Window : InputNode, Resource {
   package (teraflop) Surface surface() @trusted @property const {
     return cast(Surface) surface_;
   }
+  package (teraflop) TextureFormat surfaceFormat() @trusted @property const {
+    import std.conv : asOriginalType;
+    // TODO: Abstract this check back into a `Surface.valid` parameter
+    auto config = surface.config;
+    assert(config !is null, "Cannot create texture descriptor: This surface is not configured.");
+    if (config is null) throw new Exception("Cannot create texture descriptor: This surface is not configured.");
+
+    return config.format.asOriginalType.to!TextureFormat;
+  }
   package (teraflop) bool dirty() @property const {
     return data.dirty;
-  }
-  package (teraflop) SwapChain swapChain() @trusted @property const {
-    return cast(SwapChain) swapChain_;
   }
 
   bool isKeyDown(KeyboardKey key) @property const {
@@ -285,17 +291,15 @@ class Window : InputNode, Resource {
 
   /// See_Also: `Resource`
   void initialize(Adapter adapter, Device device) {
-    import wgpu.api : PresentMode, TextureUsage;
+    import wgpu.api : CompositeAlphaMode, PresentMode, TextureUsage;
 
     this.device_ = device;
 
-    auto swapChainFormat = surface.preferredFormat(adapter);
-    swapChain_ = device.createSwapChain(
-      surface, surfaceSize.width, surfaceSize.height, swapChainFormat,
-      // TODO: Remove this redundant texture usage parameter
+    this.swapChainFormat_ = surface.preferredFormat(adapter);
+    surface.configure(
+      device, surfaceSize.width, surfaceSize.height, surfaceFormat,
       TextureUsage.renderAttachment,
-      PresentMode.fifo,
-      title
+      PresentMode.fifo, CompositeAlphaMode.auto_
     );
   }
 
@@ -312,7 +316,7 @@ class Window : InputNode, Resource {
   package (teraflop) void update() {
     if (glfwWindowShouldClose(window)) {
       glfwDestroyWindow(window);
-      valid_ = false;
+      window = null;
       return;
     }
 
@@ -330,7 +334,7 @@ class Window : InputNode, Resource {
 
     // Force wait to flush GPU queue and pump callbacks
     device_.poll(Yes.forceWait);
-    swapChain_ = swapChain_.resize(device_, surfaceSize.width, surfaceSize.height);
+    surface.resize(surfaceSize.width, surfaceSize.height);
     data.dirty = false;
   }
 

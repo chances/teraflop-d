@@ -20,7 +20,7 @@
     "gfm:math": "~>8.0",
 		"wgpu-d": {
       "repository": "git+https://github.com/chances/wgpu-d.git",
-      "version": "~master"
+      "version": "dfe9ed89edf818a025c5368130cd728f3d8801c4"
     }
   },
   "subConfigurations": {

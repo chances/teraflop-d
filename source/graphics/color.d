@@ -4,8 +4,8 @@
 module teraflop.graphics.color;
 
 import std.conv : to;
-import wgpu.bindings : WGPUColor;
 static import teraflop.math;
+import wgpuApi = wgpu.api;
 
 ///
 struct Color {
@@ -86,13 +86,9 @@ struct Color {
     );
   }
 
-  package (teraflop) WGPUColor wgpu() const @property {
-    return WGPUColor(
-      r / ubyte.max.to!double,
-      g / ubyte.max.to!double,
-      b / ubyte.max.to!double,
-      a / ubyte.max.to!double
-    );
+  package (teraflop) wgpuApi.Color wgpu() const @property {
+    auto color = this.vec4f;
+    return wgpuApi.Color(color.r, color.g, color.b, color.a);
   }
 
   /// Adjust a `Color`s alpha channel, setting it to the given percentage.
@@ -135,7 +131,7 @@ unittest {
 
   // Cornflower Blue #6495ed
   const cornflowerBlue = Color(0x64, 0x95, 0xED);
-  const expected = WGPUColor(0.392, 0.584, 0.929, 1);
+  const expected = wgpuApi.Color(0.392, 0.584, 0.929, 1);
 
   assert(cornflowerBlue.wgpu.r.isClose(expected.r, 0.00075), text(cornflowerBlue.wgpu.r));
   assert(cornflowerBlue.wgpu.g.isClose(expected.g, 0.00075), text(cornflowerBlue.wgpu.g));

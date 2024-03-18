@@ -13,7 +13,7 @@ abstract class Game {
   import teraflop.ecs : System, SystemGenerator, World;
   import teraflop.input : Input, InputDevice, InputEvent;
   import teraflop.time : Time;
-  import wgpu.api : Adapter, Device, SwapChain;
+  import wgpu.api : Adapter, Device, Instance;
 
   private string name_;
   private bool active_;
@@ -21,6 +21,7 @@ abstract class Game {
   private bool limitFrameRate = true;
   private int desiredFrameRateHertz_ = 60;
 
+  private Instance instance;
   private Adapter adapter;
   private Device device;
   private Window[] windows_;
@@ -115,7 +116,7 @@ abstract class Game {
     import std.algorithm.searching : all;
     import std.datetime.stopwatch : AutoStart, StopWatch;
     import teraflop.platform.window : initGlfw, terminateGlfw;
-    import wgpu.api : Instance, PowerPreference;
+    import wgpu.api : PowerPreference;
 
     // Setup main window
     if (!initGlfw()) {
@@ -123,12 +124,13 @@ abstract class Game {
     }
     scope(exit) terminateGlfw();
 
-    windows_ ~= _mainWindow = new Window(name);
+    windows_ ~= _mainWindow = new Window(instance, name);
     if (!_mainWindow.valid) return;
 
-    // Setup root graphics resources
+    // Setup graphics resources
+    this.instance = Instance.create();
     // TODO: Select `PowerPreference.lowPower` on laptops and whatnot
-    auto adapter = Instance.requestAdapter(_mainWindow.surface, PowerPreference.highPerformance);
+    this.adapter = instance.requestAdapter(_mainWindow.surface, PowerPreference.highPerformance);
     assert(adapter.ready);
     device = adapter.requestDevice(adapter.limits);
     assert(device.ready);
@@ -238,8 +240,11 @@ abstract class Game {
     import std.typecons : Yes;
     import teraflop.graphics.color : Color;
     import wgpu.api : RenderPass;
+    import wgpu.utils : wrap;
 
-    auto frame = _mainWindow.swapChain.getNextTexture();
+    auto surface = _mainWindow.surface.getCurrentTexture();
+    auto surfaceTexture = surface.texture.wrap(_mainWindow.surface.descriptor);
+    auto frame = surfaceTexture.defaultView;
     // TODO: Add `wgpu.api.TextureView.valid` property
     // TODO: assert(frame.valid !is null, "Could not get next swap chain texture");
     auto encoder = device.createCommandEncoder(name);
@@ -256,7 +261,7 @@ abstract class Game {
 
     auto commandBuffer = encoder.finish();
     device.queue.submit(commandBuffer);
-    _mainWindow.swapChain.present();
+    _mainWindow.surface.present();
 
     // Force wait for a frame to render and pump callbacks
     device.poll(Yes.forceWait);

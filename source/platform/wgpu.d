@@ -1,23 +1,26 @@
 module teraflop.platform.wgpu;
 
 import bindbc.glfw;
-import wgpu.api : Device, Surface, SwapChain, SwapChainDescriptor;
+import wgpu.api : Device, Instance, Surface;
 
 ///
-Surface createPlatformSurface(GLFWwindow* window, string label = null) {
+Surface createPlatformSurface(Instance instance, GLFWwindow* window, string label = null) {
   import std.conv : to;
 
   version (linux) {
     auto display = glfwGetX11Display();
     auto x11Window = glfwGetX11Window(window);
     if (display != null && x11Window > 0)
-      return Surface.fromXlib(display, x11Window.to!uint, label);
+      return Surface.fromXlib(instance, display, x11Window.to!uint, label);
   } else version (OSX) {
     auto cocoaWindow = cast(NSWindow) glfwGetCocoaWindow(window);
     cocoaWindow.contentView.wantsLayer = true;
     assert(cocoaWindow.contentView.wantsLayer);
+    // FIXME: LDC doesn't support Objective-C linkage
     cocoaWindow.contentView.layer = CAMetalLayer.layer;
-    return Surface.fromMetalLayer(cast(void*) cocoaWindow.contentView.layer, label);
+    return Surface.fromMetalLayer(instance, cast(void*) cocoaWindow.contentView.layer, label);
+  } else version (Windows) {
+    return Surface.fromWindowsHwnd(instance, null, glfwGetWin32Window(window), label);
   }
 
   assert(0, "Unsupported target platform!");
