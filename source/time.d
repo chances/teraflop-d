@@ -67,6 +67,10 @@ struct Time {
   bool runningSlowly() const @property {
     return runningSlowly_;
   }
+
+  package (teraflop) Time add(const Duration delta = Duration.zero) {
+    return Time(total_ + delta, delta_ + delta);
+  }
 }
 
 unittest {
@@ -100,6 +104,19 @@ unittest {
   assert(time.runningSlowly);
 }
 
+unittest {
+  import core.time : dur;
+  import std.conv : text;
+
+  auto time = Time(dur!"seconds"(1), Duration.zero);
+  assert(time.add() == time);
+  const threeSeconds = dur!"seconds"(3);
+  assert(
+    time.add(dur!"seconds"(2)).total == threeSeconds,
+    time.total.text ~ ":" ~ time.deltaSeconds.text ~ " secs"
+  );
+}
+
 // TODO: Consider switching to libasync.timer (https://libasync.dpldocs.info/libasync.timer.AsyncTimer.html)
 /// A Timer that, when running, repeatedly ticks at a specific interval.
 final class Timer {
@@ -130,14 +147,13 @@ final class Timer {
 
   /// Start this timer.
   void start() {
-    import std.concurrency : send, spawn;
-
     startedAt = MonoTime.currTime;
     // Spawn a timer worker thread
+    import std.concurrency : send, spawn;
     worker = spawn(&timerWorker, interval);
     shared TickCallback cb = (Duration delta) {
       justTicked_ = delta >= interval;
-      if (justTicked_) onTick(this);
+      if (justTicked_ && onTick) onTick(this);
     };
     send(worker, TickCallbackMessage(cb));
   }

@@ -23,6 +23,21 @@ glfw: lib/glfw-3.3.2/src/libglfw3.a
 
 EXAMPLE_DEPS := glfw $(SOURCES)
 
+bin/triangle: examples/triangle/dub.json $(SOURCES) $(TRIANGLE_SOURCES)
+	cd examples/triangle && dub build
+
+triangle: bin/triangle
+	env LD_LIBRARY_PATH=bin/wgpu-64-debug bin/triangle
+.PHONY: triangle
+
+test: glfw
+	dub test --parallel
+	./scripts/delete-junk-lst-files.sh
+.PHONY: test
+
+cover: glfw $(SOURCES)
+	dub test --parallel --coverage
+
 TRIANGLE_SOURCES := $(shell find examples/triangle/source -name '*.d')
 bin/triangle: $(EXAMPLE_DEPS) $(TRIANGLE_SOURCES)
 	cd examples/triangle && dub build
@@ -39,15 +54,8 @@ cube: bin/cube
 	bin/cube
 .PHONY: cube
 
-test:
-	dub test --coverage --config=unittest-gpu
-	./scripts/delete-junk-lst-files.sh
-.PHONY: test
-
 scripts/upload-coverage.sh:
 	echo "See 'Upload Coverage to Codecov' task in .github/workflows/ci.yml"
-cover: $(SOURCES) scripts/upload-coverage.sh test
-	./scripts/upload-coverage.sh
 
 docs/sitemap.xml: $(SOURCES)
 	dub build -b ddox

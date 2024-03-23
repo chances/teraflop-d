@@ -1,5 +1,3 @@
-/// Abstraction over a D $(D delegate), modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
-///
 /// Authors: Chance Snow
 /// Copyright: Copyright © 2020 Chance Snow. All rights reserved.
 /// License: 3-Clause BSD License
@@ -12,10 +10,18 @@ import std.traits : TemplateOf;
 /// Detect whether `T` is an instance of the `Event` struct.
 enum isEvent(T) = __traits(isSame, TemplateOf!T, Event);
 
-/// Abstraction over a D $(D delegate), modelling the C# <a href="https://docs.microsoft.com/en-us/dotnet/standard/events/">event</a> paradigm.
+/// Abstraction over D $(D delegate), modelling the C# event paradigm.
 struct Event(Args) {
+  import std.traits : Unqual;
+
   alias Callback = void delegate(Args);
   private Callback[] callbacks;
+
+  private static Event!Args from(Args)(Callback[] callbacks) {
+    Event!Args ev;
+    ev.callbacks ~= callbacks;
+    return ev;
+  }
 
   /// Add or remove an event handler via compound assignment (`~=`, `+=`, `-=`).
   void opOpAssign(string op)(Callback handler) if (op == "~" || op == "+" || op == "-") {
@@ -37,8 +43,13 @@ struct Event(Args) {
   }
 
   /// Whether or not this event has any assigned handlers.
-  bool hasHandlers() const @property {
+  bool opCast(T)() const if (is(T == bool)) {
     synchronized return callbacks.length != 0;
+  }
+
+  /// Returns: Mutable copy of this event.
+  package (teraflop) Event!Args dup() @trusted const {
+    return Event.from!Args(cast(Callback[]) callbacks);
   }
 }
 
@@ -61,12 +72,12 @@ unittest {
   Event!int onChanged;
   const s = S(expectedSDotA);
 
-  assert(!onChanged.hasHandlers);
+  assert(!onChanged);
 
   onChanged += (int arg) { assert(arg == expectedArg, "Mismatched argument for lambda callback!"); };
   onChanged ~= &func;
   onChanged += &(cast(S) s).handler;
-  assert(onChanged.hasHandlers);
+  assert(onChanged);
   onChanged(expectedArg += 1);
 
   onChanged -= &(cast(S) s).handler;
@@ -74,4 +85,11 @@ unittest {
 
   onChanged -= &func;
   onChanged(expectedArg += 1);
+}
+
+unittest {
+  Event!int onChanged;
+  onChanged += (int val) => assert(val == 1);
+  auto numChanged = onChanged.dup;
+  numChanged(1);
 }

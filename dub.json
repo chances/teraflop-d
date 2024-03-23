@@ -1,6 +1,6 @@
 {
   "name": "teraflop",
-	"description": "An ECS game engine on a Vulkan foundation",
+	"description": "An ECS game engine on a WebGPU foundation",
 	"authors": [
 		"Chance Snow"
   ],
@@ -13,32 +13,26 @@
     "examples/triangle",
     "examples/cube"
   ],
-  "versions": ["GLFW_32"],
-  "configurations": [
-    {
-      "name": "unittest"
-    },
-    {
-      "name": "unittest-gpu",
-      "versions": ["GPU"]
-    }
-  ],
-  "systemDependencies": "glfw >= 3.2, vulkan >= 1.1.0",
+  "systemDependencies": "glfw >= 3.2, ",
   "dependencies": {
-    "bindbc-glfw": "~>0.10.1",
-    "concepts": "~>0.0.8",
+    "bindbc-glfw": "~>1.0.1",
+    "eventcore": "~>0.9.20",
     "gfm:math": "~>8.0",
-    "gfx:genmesh": "~master",
-    "gfx:graal": "~master",
-    "gfx:vulkan": "~master",
-    "libasync": "~>0.8.6"
+		"wgpu-d": {
+      "repository": "git+https://github.com/chances/wgpu-d.git",
+      "version": "dfe9ed89edf818a025c5368130cd728f3d8801c4"
+    }
   },
   "subConfigurations": {
-    "bindbc-glfw": "static",
-    "gfx:vulkan": "glfw"
+    "bindbc-glfw": "static"
   },
-  "lflags-linux": [
+  "lflags-posix": [
     "-Llib/glfw-3.3.2/src"
+  ],
+  "lflags-osx": [
+    "-framework", "AppKit",
+    "-framework", "QuartzCore",
+    "-framework", "Foundation"
   ],
   "libs": ["glfw3"],
   "libs-linux": [
@@ -46,5 +40,11 @@
   ],
   "preBuildCommands-linux": [
     "cd $TERAFLOP_PACKAGE_DIR && make lib/glfw-3.3.2/src/libglfw3.a"
+  ],
+  "postBuildCommands-linux": [
+    "test -f $PACKAGE_DIR/bin/teraflop-test-library && patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/bin/teraflop-test-library || echo $PACKAGE_DIR/bin/teraflop-test-library: does not exist"
+  ],
+  "copyFiles-linux": [
+    "lib/glfw-3.3.2/src/libglfw3.a"
   ]
 }

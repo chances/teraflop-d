@@ -1,4 +1,4 @@
-/// Teraflop's Entity Component System primitives.
+/// Entity Component System primitives.
 ///
 /// Inspired by <a href="https://bevyengine.org/learn/book/getting-started/ecs/">Bevy ECS</a> and <a href="https://github.com/skypjack/entt">entt</a>.
 ///
@@ -9,22 +9,23 @@
 /// License: 3-Clause BSD License
 module teraflop.ecs;
 
+public import teraflop.ecs.components;
+
 import std.conv : to;
 import std.string : format;
 import std.meta : templateOr;
 import std.traits : fullyQualifiedName, Unqual;
 import std.uuid : UUID;
 
-import teraflop.async : isEvent;
-import teraflop.traits : inheritsFrom, isClass, isInterface, isHeritable, isStruct;
+import teraflop.traits : isClass, inheritsFrom, isStruct;
 
 /// Detect whether `T` is the `World` class.
 enum bool isWorld(T) = __traits(isSame, T, World);
 
-/// A collection of Entities, their `Component`s, and `Resource`s. `System`s operate on those
+/// A collection of Entities, their Components, and `Resource`s. `System`s operate on those
 /// components and mutate the World.
 final class World {
-  private Entity[UUID] entities_;
+  package (teraflop) Entity[UUID] entities_;
   private ResourceCollection resources_;
   private ResourceTracker resourceChanged;
 
@@ -33,13 +34,13 @@ final class World {
   }
 
   /// Get an Entity given its unique ID.
-  const(Entity) get(UUID id) const {
+  inout(Entity) get(UUID id) inout {
     assert((id in entities_) !is null, "Could not find Entity!");
     return entities_[id];
   }
 
   /// A collection of resource instances identified by their type.
-  Resources resources() const @property {
+  Resources resources() const @trusted @property {
     return Resources(
       cast(ResourceCollection*) &resources_,
       cast(ResourceTracker*) &resourceChanged
@@ -47,7 +48,7 @@ final class World {
   }
 
   import std.meta : allSatisfy;
-  /// Spawn a new entity given a set of `Component` instances.
+  /// Spawn a new entity given a set of Component instances.
   void spawn(T...)(T components) if (components.length && allSatisfy!(storableAsComponent, T)) {
     auto entity = new Entity();
     foreach (component; components) entity.add(component);
@@ -55,16 +56,7 @@ final class World {
   }
 }
 
-version (unittest) {
-  class MockScene {
-    protected World world = new World();
-
-    /// Called when the Scene should initialize its `World`.
-    protected abstract void initializeWorld(scope World world);
-  }
-}
-
-/// Detect whether `T` is the `Resources` struct.
+/// Detect whether `T` is the `Resources` structure.
 enum bool isResources(T) = __traits(isSame, T, Resources);
 
 import std.traits : isBoolean, isNumeric, isSomeString;
@@ -76,27 +68,19 @@ private alias ResourceCollection = Variant[ResourceId];
 private alias ResourceTracker = bool[ResourceId];
 /// A collection of Resource instances identified by their type.
 struct Resources {
-  import teraflop.input : InputEvent;
-
   private ResourceCollection* resources;
   private ResourceTracker* resourceChanged;
 
-  private ResourceId key(T)(const T resource) {
-    auto key = typeid(T).toHash;
-    static if (isHeritable!T) {
-      key = hashOf(resource, key);
-    }
-    return key;
-  }
-
   /// Add a Resource to the collection.
   void add(T)(T resource) {
-    (*resources)[key(resource)] = resource;
+    Variant resourceVariant = resource;
+    (*resources)[resourceVariant.type.toHash] = resourceVariant;
   }
 
   /// Returns `true` if and only if the given Resource type can be found in the collection.
   bool contains(T)() const {
-    return getAll!T.length > 0;
+    import std.algorithm.searching : canFind;
+    return resources.keys.canFind(typeid(T).toHash);
   }
 
   /// Whether the given Resource has been changed.
@@ -104,29 +88,25 @@ struct Resources {
     return (*resourceChanged)[key(resource)];
   }
 
-  /// Returns the first Resource from the collection that is of the given type.
+  /// Returns a Resource from the collection given its type.
   const(T) get(T)() const {
-    assert(contains!T(), "Could not find Resource of type `" ~ fullyQualifiedName!T ~ "`!");
-    return getAll!T[0];
+    assert(contains!T(), "Could not find Resource!");
+    auto variant = (*resources)[typeid(T).toHash];
+    assert(variant.peek!T !is null);
+    return variant.get!T;
   }
-  /// Returns the Resources from the collection of the given type.
-  const(T)[] getAll(T)() const {
-    import std.algorithm : filter, map;
-    import std.array : array;
 
-    return resources.values.filter!(resource => {
-      // When T is heritable, whether T is a base class of the resource's class
-      static if (isHeritable!T) return typeid(resource.type) == typeid(TypeInfo_Class) &&
-        typeid(T).isBaseOf(resource.type.to!TypeInfo_Class);
-      // Otherwise, whether T matches the resource's type
-      else return resource.type == typeid(T);
-    }()).map!(variant => variant.get!T).array;
+  T getMut(T)() @trusted const {
+    import teraflop.async : isEvent;
+    static if (isEvent!T) return get!T.dup;
+    else return cast(Unqual!T) get!T;
   }
 
   /// Replace a Resource.
   void replace(T)(T resource) {
-    assert(contains!T(), "A Resource must first be added before being replaced.");
-    const key = key(resource);
+    assert(contains!T(), "A Resource must first be added before replacement.");
+    const Variant resourceVariant = resource;
+    auto key = resourceVariant.type.toHash;
     (*resources)[key] = resource;
     (*resourceChanged)[key] = true;
   }
@@ -143,7 +123,7 @@ struct Resources {
     }
   }
 
-  /// Clear each Resource's change detection tracking state.
+  /// Clear change detection tracking state for all stored resources.
   package (teraflop) void clearTrackers() {
     foreach (key; resourceChanged.keys) {
       (*resourceChanged)[key] = false;
@@ -157,39 +137,102 @@ unittest {
   assert(world.resources.get!int == 7);
   world.resources.replace(3);
   assert(world.resources.get!int == 3);
-
-  world.resources.remove(3);
+  world.resources.remove!int(3);
   assert(!world.resources.contains!int);
 
-  // Structs
   struct Foo {
     auto bar = "hello";
   }
   world.resources.add(Foo());
   assert(world.resources.get!Foo.bar == "hello");
+}
 
-  // Interfaces and subclasses retreived by superclass
-  interface Integer {
-    int x() @property const;
-  }
-  class A {}
-  class B : A {}
-  class C : B, Integer {
-    int x() @property const {
-      return 7;
-    }
-  }
-  world.resources.add(new C());
-  assert(world.resources.contains!A);
-  assert(world.resources.contains!B);
-  assert(world.resources.get!C.x == 7);
-  assert(world.resources.contains!Integer);
-  assert(world.resources.get!Integer.x == 7);
+private struct KeyedVariant {
+  string fqn;
+  Variant data;
+}
+private alias Variants = KeyedVariant[];
 
-  world.resources.remove(world.resources.get!A);
-  assert(!world.resources.contains!A);
-  assert(!world.resources.contains!B);
-  assert(!world.resources.contains!Integer);
+/// List of operations that modify a `teraflop.ecs.World`, performed after the system that invoked them
+/// finishes iterating matching Entities.
+/// See_Also: <a href="https://docs.rs/bevy/0.7.0/bevy/ecs/system/struct.Commands.html">`bevy::ecs::system::Commands`</a>
+struct Commands {
+  import std.meta : allSatisfy;
+
+  package Entity[] additions = [];
+  package Variants[UUID] componentInsertions;
+  package size_t[UUID] componentRemovals;
+  ///
+  Resources resources;
+
+  @disable this();
+  package this(World world) {
+    resources = world.resources;
+  }
+
+  /// Spawn a new entity given a set of Component instances.
+  void spawn(T...)(T components) if (components.length && allSatisfy!(storableAsComponent, T)) {
+    auto entity = new Entity();
+    foreach (component; components) entity.add(component);
+    additions ~= entity;
+  }
+
+  /// Inserts a set of Component instances into the given `entity`.
+  void insertInto(T)(const Entity entity, T component) if (storableAsComponent!T) {
+    if ((entity.id in componentInsertions) is null)
+      componentInsertions[entity.id] = [];
+    componentInsertions[entity.id] ~= KeyedVariant(fullyQualifiedName!T, component.to!Variant);
+  }
+
+  /// Remove a Component from the given `entity` given the Component's type, `T`.
+  void remove(T)(const Entity entity) if (storableAsComponent!T) {
+    componentRemovals[entity.id] = Entity.key(fullyQualifiedName!T);
+  }
+
+  package (teraflop) void execute(World world) {
+    foreach (entity; additions) world.entities_[entity.id] = entity;
+    foreach (id; componentInsertions.keys) foreach (c; componentInsertions[id])
+      world.entities_[id].components_[Entity.key(c.fqn)] = c.data;
+    foreach (id; componentRemovals.keys) world.entities_[id].remove(componentRemovals[id]);
+  }
+}
+
+unittest {
+  import std.conv : text;
+
+  auto world = new World();
+  auto commands = new Commands(world);
+
+  commands.spawn(Number(1), Vector(0, 1, 2));
+  assert(commands.additions.length && commands.additions[0].components_.length == 2);
+  commands.execute(world);
+  assert(world.entities.length);
+  assert(world.entities[0].components.length == 2);
+
+  commands = new Commands(world);
+  commands.remove!Vector(world.entities[0]);
+  commands.execute(world);
+  assert(world.entities[0].components.length == 1, world.entities[0].components.length.text);
+}
+
+unittest {
+  import std.algorithm : equal;
+  import std.conv : text;
+
+  auto world = new World();
+  auto commands = new Commands(world);
+
+  world.spawn(Number(1));
+  const entity = world.entities[0];
+  commands.insertInto(entity, Vector(0, 1, 2));
+  commands.execute(world);
+
+  const insertions = commands.componentInsertions;
+  assert((entity.id in insertions) !is null);
+  assert(insertions[entity.id][0].data.type == typeid(Vector), insertions[entity.id][0].fqn);
+  assert(insertions[entity.id][0].fqn.equal(fullyQualifiedName!Vector), insertions[entity.id][0].fqn);
+  assert(world.entities[0].contains!Vector);
+  assert(world.entities[0].get!Vector == Vector(0, 1, 2));
 }
 
 /// Detect whether `T` is the `Entity` class.
@@ -197,11 +240,11 @@ enum bool isEntity(T) = __traits(isSame, Unqual!T, Entity);
 
 /// A world entity consisting of a unique ID and a collection of associated components.
 final class Entity {
-  import std.algorithm : canFind, filter, map;
-  import std.array : array;
   import std.uuid : randomUUID;
 
-  private Component[string] components_;
+  private Variant[size_t] components_;
+  private Variant[string] namedComponents_;
+  private bool[string] tags_;
   /// Unique ID of this entity
   const UUID id;
 
@@ -210,294 +253,180 @@ final class Entity {
     id = randomUUID();
   }
 
-  const(Component[]) components() const @property {
+  const(Variant[]) components() const @property {
     return components_.values;
   }
 
-  /// Add a `Component` instance to this entity.
-  void add(inout Component component) {
-    components_[key(component)] = cast(Component) component;
-  }
   /// Add a new Component given its type and, optionally, a default value and its name
   ///
-  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
-  void add(T)(T data = T.init, string name = fullyQualifiedName!T) if (isStruct!T) {
-    add(data.component(name));
+  /// Prefer [Plain Old Data](https://dlang.org/spec/struct.html#POD) structs for Component data.
+  void add(T)(T data = T.init, string name = null) if (storableAsComponent!T) {
+    if (name !is null) namedComponents_[name] = data;
+    else {
+      static if (isNamedComponent!T) namedComponents_[data.name] = data.value;
+      else components_[key!T] = data;
+    }
   }
 
-  /// Detect whether this Entity has the given `Tag`.
-  bool hasTag(const Tag tag) const {
-    return (key(tag) in components_) !is null;
+  /// Flag this entity with a named tag.
+  ///
+  /// Params:
+  /// name = Desired name.
+  void tag(string name) {
+    assert(name.length, "A Tag must be named.");
+    tags_[name] = true;
   }
 
-  /// Determines whether this Entity contains a given `Component` instance.
+  /// Detect whether this Entity has the given tag.
+  bool hasTag(const string tag) const {
+    return (tag in tags_) !is null;
+  }
+
+  /// Determines whether this Entity contains a named Component instance given its name.
   ///
   /// Complexity: Constant
-  bool contains(inout Component component) const {
-    return ((key(component) in components_) !is null);
+  bool contains(string name) const {
+    assert(name !is null);
+    return (name in namedComponents_) !is null;
   }
-  /// Determines whether this Entity contains a `NamedComponent` instance given its name.
+  /// Determines whether this Entity contains a Component given its value.
   ///
   /// Complexity: Linear
-  bool contains(string name) const {
-    assert(name.length);
-    auto componentNames = components.filter!(Component.isNamed)
-      .map!(c => c.to!(const NamedComponent).name);
-    if (componentNames.empty) return false;
-    return componentNames.canFind(name);
+  bool contains(T)(T component) const if (storableAsComponent!T) {
+    Variant c = component;
+    return contains(c);
+  }
+  /// ditto
+  package bool contains(Variant component) const {
+    import std.algorithm : canFind;
+    return components_.values.canFind(component) || namedComponents_.values.canFind(component);
   }
   /// Determines whether this Entity contains a Component given its type and, optionally, its name.
   ///
-  /// Complexity: Linear
-  bool contains(T)(string name = "") const if (storableAsComponent!T) {
-    return get!T(name).length > 0;
+  /// Complexity: Linear in the worst case
+  bool contains(T)(string name = null) const if (storableAsComponent!T) {
+    import std.algorithm : canFind;
+    if (name !is null) return contains(name);
+    return (key!T in components_) !is null || namedComponents_.values.canFind!(
+      (Variant value, TypeInfo t) => value.type == t
+    )(typeid(T));
   }
 
   /// Get Component data given its type and optionally its name.
-  immutable(T[]) get(T)(string name = "") const if (storableAsComponent!T) {
-    auto components = getMut!T(name);
-    static if (isStruct!T && !isEvent!T) {
-      return components.idup;
-    } else {
-      // Cannot implicitly convert from mutable ⇒ immutable 😢️
-      // https://dlang.org/spec/const3.html#implicit_qualifier_conversions
-      return cast(immutable(T[])) components;
-    }
+  const(T) get(T)(string name = null) const if (storableAsComponent!T) {
+    import std.algorithm.searching : find;
+
+    assert(this.contains!T(name));
+    if (name !is null && name.length) return namedComponents_[name].get!T;
+    if ((key!T in components_) !is null) return components_[key!T].get!T;
+    return namedComponents_.values.find!(
+      (Variant value, TypeInfo t) => value.type == t
+    )(typeid(T))[0].get!T;
   }
 
-  /// Get a mutable reference to Component data given its interface type.
-  T[] getMut(T)() const if (isInterface!T) {
-    // https://forum.dlang.org/post/ojbovwuzvzxnycaauolr@forum.dlang.org
-    return components
-      .filter!(c => typeid(T).isBaseOf(c.classinfo))
-      .map!(c => cast(T) c).array;
+  package T getMut(T)(string name = null) @trusted const if (storableAsComponent!T) {
+    import teraflop.async : isEvent;
+    static if (isEvent!T) return get!T(name).dup;
+    else return cast(Unqual!T) get!T(name);
   }
 
-  /// Get a mutable reference to Component data given its type and optionally its name.
-  T[] getMut(T)(string name = "") const if (storableAsComponent!T) {
-    // For unnamed `Component` derivations
-    static if (!isStruct!T && !isNamedComponent!T) {
-      assert(name == "", "Cannot filter for named components given an unnamed Component type.");
-      return components_.filter!(c => c.classname == typeid(T)).array;
-    }
+  private enum string replacementError = "A Component must first be added before replacement.";
 
-    alias FilterFunc = bool function(inout Component);
-    FilterFunc isStructureOrNamed;
-    static if (isStruct!T) {
-      isStructureOrNamed = &Component.isStructure!T;
-    } else static if (isNamedComponent!T) {
-      isStructureOrNamed = &Component.isNamed;
-    }
-
-    auto namedComponents = components.filter!(isStructureOrNamed)
-      .map!(c => c.to!(const NamedComponent)).array;
-
-    if (name.length) {
-      namedComponents = namedComponents.filter!(c => c.name == name).array;
-    }
-
-    // Cannot implicitly convert from const ⇒ mutable
-    // https://dlang.org/spec/const3.html#implicit_qualifier_conversions
-    static if (isStruct!T) {
-      return cast(T[]) namedComponents.map!(c => c.to!(const Structure!T).data).array;
-    } else {
-      return cast(T[]) namedComponents.filter!(c => typeid(T).isBaseOf(c.classinfo))
-        .map!(c => c.to!(const T)).array;
-    }
-  }
-
-  /// Replace a Component given new value.
+  /// Replace a Component given its new value and optionally its name.
   ///
-  /// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
-  void replace(Component component) {
-    assert(contains(component), "A Component must first be added before replacement.");
-    components_[key(component)] = component;
+  /// Complexity: Constant
+  void replace(T)(T component, string name = null) if (storableAsComponent!T) {
+    assert(contains(component), replacementError);
+    if (name !is null && name.length) namedComponents_[name] = component;
+    else components_[key!T] = component;
+  }
+  /// ditto
+  void replace(Variant component, string name = null) {
+    const hasName = name !is null && name.length;
+    assert(hasName ? contains(name) : contains(component), replacementError);
+    if (hasName) namedComponents_[name] = component;
+    else components_[component.toHash] = component;
   }
 
-  // TODO: Move this to the Component classes as a hash function and refactor components_ to use Component.hashOf
-  private static string key(const Component component) {
-    if (Component.isNamed(component)) {
-      return component.type ~ ":" ~ component.to!(const NamedComponent).name;
-    }
-    return component.type;
+  /// Remove a Component given its type, `T`, and its name.
+  void remove(T)(string name = null) if (storableAsComponent!T) {
+    if (name !is null && (name in namedComponents_) !is null) namedComponents_.remove(name);
+    components_.remove(key!T);
+  }
+  /// Remove a Component given its `key`.
+  package void remove(size_t key) {
+    components_.remove(key);
+  }
+
+  /// Component storage key of `T`.
+  private static size_t key(T)() if (storableAsComponent!T) {
+    return hashOf(fullyQualifiedName!T);
+  }
+  /// Component storage key of `fqn`.
+  private static size_t key(string fqn) {
+    return hashOf(fqn);
   }
 
   unittest {
+    import std.conv : text;
+
     auto entity = new Entity();
     auto seven = Number(7);
-    const name = "teraflop.ecs.Number";
-    const key = "teraflop.ecs.Structure!(Number).Structure:" ~ name;
     assert(entity.components.length == 0);
 
     entity.add(seven);
     assert(entity.components.length == 1);
-    assert(entity.components_.keys[0] == key);
-    assert(entity.components[0].to!(const NamedComponent).name == name);
-    assert(entity.contains(name));
+    assert(entity.components_.keys[0] == key!Number, entity.components_.keys[0].text);
     assert(entity.contains!Number());
-    assert(entity.contains!Number(name));
-    assert(entity.contains!NamedComponent);
     assert(entity.contains(entity.components[0]));
+    assert(entity.get!Number == seven);
 
-    import std.conv : to;
-    const structures = entity.get!Number;
-    assert(structures.length == 1);
-    assert(structures == [seven].idup);
+    // Tags
+    const tag = "foo";
+    entity = new Entity();
+    entity.tag(tag);
+    assert(entity.hasTag(tag));
   }
-}
-
-/// Detect whether `T` inherits from `Component`.
-enum bool inheritsComponent(T) = inheritsFrom!(T, Component);
-
-private enum bool isRawComponent(T) = __traits(isSame, T, Component);
-
-/// Detect whether `T` is the `Component` class or inherits from `Component`.
-template isComponent(T) {
-  alias isRawOrInherited = templateOr!(isRawComponent, inheritsComponent);
-  enum bool isComponent = isRawOrInherited!T;
 }
 
 /// Detect whether `T` may be stored as Component data.
 template storableAsComponent(T) {
-  alias isStructOrComponent = templateOr!(isStruct, isComponent);
-  alias isStructOrComponentAndNotInterface = templateAnd!(templateNot!isInterface, isStructOrComponent);
-  enum bool storableAsComponent = isStructOrComponentAndNotInterface!T;
+  enum bool storableAsComponent = isResourceData!T;
 }
 
-/// A container for specialized `Entity` data.
-///
-/// Prefer <a href="https://dlang.org/spec/struct.html#POD">Plain Old Data</a> structs constructed with `component` for Component data.
-abstract class Component {
-  private string type_;
+import std.typecons : Tuple;
+/// A named component.
+/// See_Also: `World.add`.
+alias NamedComponent = Tuple!(Variant, "value", string, "name");
 
-  package string type() const @property {
-    return this.classinfo.name;
-  }
+private enum isNamedComponent(T) = __traits(isSame, T, NamedComponent);
 
-  package static bool isNamed(inout Component component) {
-    return typeid(NamedComponent).isBaseOf(component.classinfo);
-  }
-
-  package static bool isStructure(T)(inout Component component) if (isStruct!T) {
-    return typeid(Structure!T).isBaseOf(component.classinfo);
-  }
-
-  package static bool isTag(inout Component component) {
-    return typeid(Tag).isBaseOf(component.classinfo);
-  }
+/// Apply a name to the given component.
+/// See_Also: `World.add`
+NamedComponent named(T)(T component, string name) if (storableAsComponent!T) {
+  Variant value = component;
+  return NamedComponent(value, name);
 }
 
-/// Detect whether `T` inherits from `NamedComponent`.
-enum bool inheritsNamedComponent(T) = inheritsFrom!(T, NamedComponent);
-
-private enum bool isRawNamedComponent(T) = __traits(isSame, T, NamedComponent);
-
-/// Detect whether `T` is the `NamedComponent` class or inherits from `NamedComponent`.
-template isNamedComponent(T) {
-  alias isRawOrInherited = templateOr!(isRawNamedComponent, inheritsComponent);
-  enum bool isNamedComponent = isRawOrInherited!T;
-}
-
-/// A named container for specialized `Entity` data.
-abstract class NamedComponent : Component {
-  private string name_;
-
-  /// Initialize a new NamedComponent.
-  this(string name) pure {
-    assert(name.length, "A named Component must have a non-empty name.");
-    this.name_ = name;
-  }
-
-  string name() const @property {
-    return name_;
-  }
-}
-
-private final class Structure(T) : NamedComponent if (isStruct!T) {
+/// An opaque wrapper of some class type.
+struct ClassComponent(T) if (isClass!T) {
+  ///
   T data;
-
-  this(T data, const string name = fullyQualifiedName!T) pure {
-    assert(name.length, "A Component constructed from a struct must be named.");
-    super(name);
-    this.data = data;
-  }
+  alias data this;
 }
+/// ditto
+alias ClassOf = ClassComponent;
 
-unittest {
-  auto one = Number(1);
-  auto component = new Structure!Number(one);
-  assert(component.type == "teraflop.ecs.Structure!(Number).Structure");
-  assert(component.name == "teraflop.ecs.Number");
+/// Containerize a given class instance as a Component.
+ClassComponent!T component(T)(T component) if (isClass!T) {
+  return ClassComponent(component);
 }
-
-/// Initialize a new `Component` optionally with initial data and a custom name.
-///
-/// Params:
-/// data = Initial data value.
-/// name = A custom name. Defaults to `fullyQualifiedName!T`.
-Component component(T)(T data = T.init, const string name = "") if (isStruct!T) {
-  return new Structure!T(data, name);
-}
-
-/// A named, dataless Component used to flag Entities.
-final class Tag : NamedComponent {
-  /// Initialize a new Tag.
-  this(string name) pure {
-    super(name);
-  }
-}
-
-/// Create a new `Tag` given a name.
-///
-/// Params:
-/// name = Desired name.
-immutable(Tag) tag(string name) {
-  assert(name.length, "A Tag must be named.");
-  return new Tag(name);
-}
-
-unittest {
-  const foo = tag("foo");
-
-  assert(foo.type == "teraflop.ecs.Tag");
-  assert(foo.name == foo.stringof);
-  assert(Component.isTag(foo));
-
-  auto entity = new Entity();
-  entity.add(foo);
-  assert(entity.contains(foo.stringof));
-  assert(entity.contains!Tag);
-  assert(entity.contains!Tag(foo.stringof));
-  assert(entity.hasTag(foo));
-
-  const tags = entity.get!Tag;
-  assert(tags.length == 1);
-  assert(tags == [foo]);
-
-  assert(entity.get!(Tag)("foo") == [foo]);
-}
-
-// TODO: Move these tag declarations to GPU-ish and teraflop.assets (Asset cache Resource) modules
-
-/// Whether *all* of an `Entity`'s GPU Resources have been initialized.
-static const Initialized = tag("Initialized");
-/// Whether *all* of an `Entity`'s `Asset` Components have been loaded.
-static const Loaded = tag("Loaded");
-
-unittest {
-  assert(Initialized.name == Initialized.stringof);
-  assert(Loaded.name == Loaded.stringof);
-}
-
-/// Detect whether `T` inherits from `System`.
-enum bool inheritsSystem(T) = inheritsFrom!(T, System);
-
-private enum bool isRawSystem(T) = __traits(isSame, T, System);
 
 /// Detect whether `T` is the `System` class or inherits from `System`.
 template isSystem(T) {
-  alias isRawOrInherited = templateOr!(isRawSystem, inheritsSystem);
-  enum bool isSystem = isRawOrInherited!T;
+  enum bool isRawSystem(T) = __traits(isSame, T, System);
+  enum bool inheritsSystem(T) = inheritsFrom!(T, System);
+  enum bool isSystem = templateOr!(isRawSystem, inheritsSystem);
 }
 
 /// A function that initializes a new dynamically generated `System`.
@@ -522,8 +451,8 @@ abstract class System {
   ///        "`fullyQualifiedName!System`:FuncName" where `FuncName` is the name of the function used to generate the System.
   ///
   /// See_Also: `World`, `System.name`
-  this(const World world, const string name = "") {
-    this.name_ = name.length ? name : this.classinfo.name;
+  this(const World world, const string name = null) {
+    this.name_ = (name !is null && name.length) ? name : this.classinfo.name;
     this.world = world;
   }
 
@@ -547,7 +476,7 @@ abstract class System {
   ///       $(LI Apply a constant reference to the generated System for `System` parameters)
   ///       $(LI Try to find a matching Entity Component to apply given a parameter's type and name:)
   ///         $(UL
-  ///           $(LI `struct` and `Component` parameter names must match an Entity's Component name)
+  ///           $(LI `struct` and Component parameter names must match an Entity's Component name)
   ///         )
   ///       $(LI Try to find a matching World Resource to apply given the parameter's type is one of:)
   ///         $(UL
@@ -559,7 +488,7 @@ abstract class System {
   ///       $(LI Or, if a parameter could not be applied, continue to the next Entity)
   ///     </ol>
   ///   $(LI Call the user-provided function for Entities if and only if <i>all</i> parameters were be applied)
-  ///   $(LI For all `struct` and `Component` parameters with the `ref` storage class, update the Component)
+  ///   $(LI For all `struct` and Component parameters with the `ref` storage class, update the Component)
   /// )
   /// Returns: A newly instantiated `SystemGenerator`, a function that initializes a new generated `System` given a `World` reference.
   /// See_Also:
@@ -581,28 +510,20 @@ abstract class System {
     return name_;
   }
 
-  /// Retreive the World's `Resources`.
-  Resources resources() @property const {
-    return world.resources;
-  }
-
   /// Operate this System on Resources and Components in the `World`.
-  abstract void run();
+  abstract void run() inout;
 
-  /// Query the `World` for Entities containing Components of the given types.
-  const(Entity[]) query(ComponentT...)() const {
-    static if (ComponentT.length == 0) return world.entities;
-  }
+  // TODO: https://docs.rs/bevy/latest/bevy/ecs/system/struct.Query.html
 }
 
 unittest {
   class Foo : System {
     this(World world) { super(world); }
-    override void run() {
+    override void run() const {
       assert(world.entities.length == 0);
     }
   }
-  auto foo = new Foo(new World());
+  const foo = new Foo(new World());
 
   import std.traits : fullyQualifiedName;
   assert(foo.name == fullyQualifiedName!Foo);
@@ -610,23 +531,27 @@ unittest {
   foo.run();
 }
 
-/// Diagnostic generated by a running `System`.
+/// Diagnostic message generated by running `System`s.
 struct Diagnostic {
   ///
   string message;
   ///
   string source = "Unknown";
 
+  ///
   string toString() const @property {
     return format!"%s: %s"(source, message);
   }
 }
 
 unittest {
-  const a = Diagnostic("Foobar");
-  assert(a.message == "Foobar");
-  assert(a.source == "Unknown");
-  assert(a.toString == "Unknown: Foobar");
+  import std.algorithm : equal;
+
+  auto diagnostic = Diagnostic("Foobar");
+  assert(diagnostic.toString.equal("Unknown: Foobar"));
+
+  diagnostic = Diagnostic("Failure", "Shader");
+  assert(diagnostic.toString.equal("Shader: Failure"));
 }
 
 /// Exception thrown on errors encountered in running `System`s.
@@ -667,24 +592,20 @@ import std.traits : ConstOf, ImmutableOf, Parameters, ParameterIdentifierTuple, 
 /// `isCallableAsSystem` parameter requirements helper templates
 private enum bool hasConstStorage(T) = __traits(isSame, QualifierOf!T, ConstOf);
 private enum bool hasImmutableStorage(T) = __traits(isSame, QualifierOf!T, ImmutableOf);
+private enum bool hasOutStorage(alias T) = (T & ParameterStorageClass.out_) == ParameterStorageClass.out_;
 private enum bool hasRefStorage(alias T) = (T & ParameterStorageClass.ref_) == ParameterStorageClass.ref_;
 private enum bool hasScopeStorage(alias T) = (T & ParameterStorageClass.scope_) == ParameterStorageClass.scope_;
-private enum bool isImplicitlyConvertableFromMutable(T) =
-    __traits(isSame, Unqual!T, T) ||
-    __traits(isSame, QualifierOf!T, T) ||
-    hasConstStorage!T;
-private alias isIllegalReference = templateAnd!(
-  templateOr!(isResources, templateNot!isResourceData),
-  templateOr!(isStruct, templateNot!isComponent)
-);
+private alias isIllegalReference = templateOr!(isWorld, isEntity, isResources);
+private alias mustNotBeMutable = templateOr!(isResources, isWorld, isEntity);
 private alias isIllegallyMutable = templateAnd!(
+  templateOr!(isResources, templateNot!isResourceData),
   templateNot!hasConstStorage,
-  templateOr!(isResources, templateNot!storableAsComponent)
+  mustNotBeMutable
 );
 private template illegallyEscapesScope(Param, alias ParamStorage) {
   alias escapesScope = templateAnd!(
     templateOr!(isResources, templateNot!isResourceData),
-    templateOr!(isResources, isClass)
+    templateOr!(isResources, isWorld, isEntity)
   );
   alias notHasScopeStorage = templateNot!(hasScopeStorage!ParamStorage);
   enum bool illegallyEscapesScope = notHasScopeStorage!ParamStorage && escapesScope!Param;
@@ -693,32 +614,42 @@ private template illegallyEscapesScope(Param, alias ParamStorage) {
 @safe unittest {
   alias PSCT = ParameterStorageClassTuple;
 
-  class Foo {}
-
-  alias Func = void function(Resources, Foo);
+  alias Func = void function(Resources);
   static assert(!hasConstStorage!(Parameters!Func[0]));
   static assert(!hasImmutableStorage!(Parameters!Func[0]));
+  static assert(!hasOutStorage!(PSCT!Func[0]));
   static assert(!hasRefStorage!(PSCT!Func[0]));
   static assert(!hasScopeStorage!(PSCT!Func[0]));
   static assert( isIllegallyMutable!(Parameters!Func[0]));
   static assert( illegallyEscapesScope!(Parameters!Func[0], PSCT!Func[0]));
-  static assert( isIllegallyMutable!(Parameters!Func[1]));
-  static assert( illegallyEscapesScope!(Parameters!Func[1], PSCT!Func[1]));
 
-  alias f_ref = void function(ref Resources, const Foo);
+  alias Func_RefResources = void function(ref Resources);
+  const Func_RefResources f_ref = (ref Resources) {};
   static assert(!hasConstStorage!(Parameters!f_ref[0]));
   static assert(!hasImmutableStorage!(Parameters!f_ref[0]));
+  static assert(!hasOutStorage!(PSCT!f_ref[0]));
   static assert( hasRefStorage!(PSCT!f_ref[0]));
   static assert(!hasScopeStorage!(PSCT!f_ref[0]));
   static assert( isIllegalReference!(Parameters!f_ref[0]));
   static assert( isIllegallyMutable!(Parameters!f_ref[0]));
   static assert( illegallyEscapesScope!(Parameters!f_ref[0], PSCT!f_ref[0]));
-  static assert(!isIllegallyMutable!(Parameters!f_ref[1]));
-  static assert( illegallyEscapesScope!(Parameters!f_ref[1], PSCT!f_ref[1]));
 
-  alias f_scopeRef = void function(scope ref Resources);
+  alias Func_OutResources = void function(out Resources);
+  const Func_OutResources f_out = (out Resources) {};
+  static assert(!hasConstStorage!(Parameters!f_out[0]));
+  static assert(!hasImmutableStorage!(Parameters!f_out[0]));
+  static assert( hasOutStorage!(PSCT!f_out[0]));
+  static assert(!hasRefStorage!(PSCT!f_out[0]));
+  static assert(!hasScopeStorage!(PSCT!f_out[0]));
+  static assert( isIllegalReference!(Parameters!f_out[0]));
+  static assert( isIllegallyMutable!(Parameters!f_out[0]));
+  static assert( illegallyEscapesScope!(Parameters!f_out[0], PSCT!f_out[0]));
+
+  alias Func_ScopeRef = void function(scope ref Resources);
+  const Func_ScopeRef f_scopeRef = (ref Resources) {};
   static assert(!hasConstStorage!(Parameters!f_scopeRef[0]));
   static assert(!hasImmutableStorage!(Parameters!f_scopeRef[0]));
+  static assert(!hasOutStorage!(PSCT!f_scopeRef[0]));
   static assert( hasRefStorage!(PSCT!f_scopeRef[0]));
   static assert( hasScopeStorage!(PSCT!f_scopeRef[0]));
   static assert( isIllegalReference!(Parameters!f_scopeRef[0]));
@@ -741,24 +672,21 @@ import std.traits : isCallable, ReturnType;
 ///       $(LI Any <a href="https://dlang.org/spec/type.html#basic-data-types" title="The D Language Website">Basic Data Type</a>, e.g. `bool`, `int`, `uint`, `float`, `double`, `char`, etc.)
 ///       $(LI Any <a href="https://dlang.org/spec/type.html#derived-data-types" title="The D Language Website">array type</a> derived from a Basic Data Type, e.g. `int[]`, `float[]`, `string[]`, etc.)
 ///       $(LI Any <a href="https://dlang.org/spec/arrays.html#strings" title="The D Language Website">string type</a>, e.g. `string`, `char[]`, `wchar[]`, etc.)
-///       $(LI Any `struct` type)
+///       $(LI A `struct` type)
 ///       $(LI `World`)
 ///       $(LI `Resources`)
-///       $(LI `teraflop.platform.window.Window` or any of its derivations)
-///       $(LI `teraflop.platform.input.event.InputEvent` or any of its derivations)
 ///       $(LI `Entity`)
-///       $(LI `Component` or any of its derivations)
-///       $(LI `System`, or)
-///       $(LI Any user-defined `class` type)
+///       $(LI `System`)
 ///     )
+///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `out` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>.)
 ///   $(LI <i>All</i> of `T`'s parameters <b>MUST NOT</b> use the `immutable` <a href="https://dlang.org/spec/function.html#param-storage" title="The D Language Website">Storage Class</a>. <p>Use `const` instead.</p>)
 ///   $(LI <i>Certain</i> parameters <b>MUST</b> use specific Storage Classes:)
 ///     $(UL
-///       $(LI `World`, `Resources`, `Window`, `Entity`, `Component`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
+///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `scope` Storage Class)
 ///       $(LI `World`, `Resources`, `Entity`, and `System` parameters <b>MUST</b> use the `const` Storage Class)
 ///       $(LI The `ref` Storage Class <b>MUST NOT</b> be used with the `const` Storage Class)
 ///     )
-///   $(LI `struct` and `Component` parameters <b>MAY</b> use the `ref` Storage Class)
+///   $(LI `struct` Component parameters <b>MAY</b> use the `ref` Storage Class)
 /// )
 /// See_Also:
 /// $(UL
@@ -778,9 +706,9 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
     import std.meta : allSatisfy;
     alias isComponentData(T) = storableAsComponent!T;
     enum bool isCallableAsSystem = allSatisfy!(templateOr!(
+      isEntity,
       isResourceData,
-      isComponentData,
-      isClass
+      isComponentData
     ), TParams);
   }
 }
@@ -796,6 +724,19 @@ template isCallableAsSystem(T...) if (T.length == 1 && isCallable!T && is (Retur
   static assert(isCallableAsSystem!(I.run));
   static assert(isCallableAsSystem!(c.opCall));
   static assert(isCallableAsSystem!((Number _) {}));
+}
+
+unittest {
+  class C {
+    import std.typecons : Flag, Yes;
+    import teraflop.async : Event;
+    import teraflop.input : InputEventAction;
+
+    alias ExitEvent = Event!(Flag!"force");
+    static void exitOnEscape(scope const ClassOf!InputEventAction, scope ExitEvent) {}
+  }
+
+  static assert(isCallableAsSystem!(C.exitOnEscape));
 }
 
 private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!Func) {
@@ -814,17 +755,16 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     super(world, "teraflop.ecs.GeneratedSystem:" ~ systemName);
   }
 
-  override void run() {
+  override void run() inout {
     import std.algorithm.iteration : each, joiner, map;
     import std.string : join;
 
-    alias Replacements = Component[];
     Replacements[UUID] replacements;
     debug Diagnostic[] diagnostics;
 
     foreach (entity; world.entities) {
-      const results = tryApplyFunc(entity);
-      replacements[entity.id] ~= cast(Component[]) results.replacements;
+      auto results = tryApplyFunc(entity);
+      replacements[entity.id] = results.replacements;
       debug {
         auto messages = results.diagnostics.map!(d => d.message);
         if (messages.length)
@@ -835,19 +775,20 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
     debug {
       if (diagnostics.length) {
         auto message = diagnostics.map!(d => d.toString).join("\n\n");
-        throw new SystemException(this, format!"Ran system '%s':\n%s"(name, message), diagnostics);
+        assert(0, format!"Ran system '%s':\n%s"(name, message));
       }
     }
 
     foreach (entityId; replacements.keys) {
       auto entity = cast(Entity) world.get(entityId);
-      foreach (Component component; replacements[entityId])
-        entity.replace(component);
+      foreach (name; replacements[entityId].keys)
+        entity.replace(replacements[entityId][name], name);
     }
   }
 
-  private alias FuncApplicationResults = Tuple!(Component[], "replacements", Diagnostic[], "diagnostics");
-  private FuncApplicationResults tryApplyFunc(const Entity entity) const {
+  private alias Replacements = Variant[string];
+  private alias FuncApplicationResults = Tuple!(Replacements, "replacements", Diagnostic[], "diagnostics");
+  private FuncApplicationResults tryApplyFunc(const Entity entity) @trusted inout {
     import std.algorithm.iteration : map;
     import std.array : array;
     import std.conv : text;
@@ -855,7 +796,7 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
 
     FuncApplicationResults results;
     string[] diagnosticMessages;
-    Component[] replacements;
+    Replacements replacements;
 
     // Parameter helper templates
     enum int indexOf(T) = staticIndexOf!(T, FuncParams);
@@ -871,11 +812,10 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       enum string diagnosticNameOf = "parameter " ~ text(indexOf!T + 1) ~ paramName ~
       " of type `" ~ fullyQualifiedName!(Unqual!T) ~ "`";
     }
-    enum string diagnosticHintOf(T) = "`" ~ text(typeid(Unqual!T).name, " ", ParamName!T) ~ "` parameter";
+    enum string diagnosticHintOf(T) = "`" ~ text(fullyQualifiedName!(Unqual!T), ParamName!T) ~ "` parameter";
     enum string diagnosticBadPractice =
       "Teraflop considers it bad practice to modify the World, Resources, an Entity, or this System when it's running.";
     enum string diagnosticDlangFuncParams = "See https://dlang.org/spec/function.html#parameters";
-    enum string diagnosticFailure(T) = "Could not apply " ~ diagnosticNameOf!T ~ " to " ~ GeneratedSystemName;
 
     // Try to get the dependent Entity, Component, and Resource instances for function arguments
     Tuple!(staticMap!(Unqual, FuncParams)) params;
@@ -888,6 +828,10 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
           "\n\t" ~ diagnosticDlangFuncParams ~
           "\n\n\tHint: Use `const` qualifier instead." ~
           "\n");
+      // Guard against output parameters
+      static if (hasOutStorage!(FuncParamStorage[indexOf!Param]))
+        static assert(0, "Output qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
+          "\n\t" ~ diagnosticDlangFuncParams);
       // Guard against `ref World`, `ref Entity`, `ref Resources`, and `ref System` parameter
       static if (hasRefStorage!(FuncParamStorage[indexOf!Param]) && isIllegalReference!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
@@ -897,96 +841,110 @@ private final class GeneratedSystem(alias Func) : System if (isCallableAsSystem!
       static if (hasRefStorage!(FuncParamStorage[indexOf!Param]) && hasConstStorage!Param)
         static assert(0, "Reference qualifier on " ~ diagnosticNameOf!Param ~ " is not supported." ~
           "\n\t" ~ diagnosticDlangFuncParams);
-      // Require the `const` storage class qualifier on `World`, Resources, `Entity`, and `System` parameters
+      // Require the `const` storage class qualifier on `World`, `Resources`, `Entity`, and `System` parameters
       static if (isIllegallyMutable!Param)
         static assert(0, "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
           "\n\t" ~ diagnosticBadPractice ~
           "\n\t" ~ diagnosticDlangFuncParams ~
           "\n\n\tHint: Add `const` qualifier to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
-      // Require the `scope` storage class qualifier on `World`, Resources, `Entity`, `Component`, and `System` parameters
+      // Require the `scope` storage class qualifier on `World`, `Resources`, `Entity`, and `System` parameters
       static if (illegallyEscapesScope!(Param, FuncParamStorage[indexOf!Param]))
         static assert(0, "Scoped storage class qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-          "\n\tWorld, Resources, Window, Entity, Component, and System references cannot escape a running System." ~
+          "\n\tWorld, Resources, Entity, Component, and System references cannot escape a running System." ~
           "\n\t" ~ diagnosticDlangFuncParams ~
           "\n\n\tHint: Add `scope` storage class to " ~ diagnosticHintOf!Param ~ "." ~
           "\n");
 
-      // TODO: Use `T.init` for `out` parameters
-      // Otherwise, get the World, Resources, Entity, Resource, or Component data
+      // Get the World, Resources, Entity, if applicable
       static if (isWorld!Param) {
         params[indexOf!Param] = world;
       } else static if (isResources!Param) {
         params[indexOf!Param] = world.resources;
       } else static if (isEntity!Param) {
         params[indexOf!Param] = cast(Entity) entity;
-      } else {
+      }
+      static if (isWorld!Param && isResources!Param && isEntity!Param) {
+        goto L_continueApplyingParams; // Hack to workaround lack of `continue` support in `static foreach` 😒️
+      }
+
+      static if (!isWorld!Param && !isResources!Param && !isEntity!Param) {
+        componentExists = storableAsComponent!Param && entity.contains!(Unqual!Param)(ParamName!Param);
+        isResource = !componentExists && isResourceData!Param && world.resources.contains!(Unqual!Param);
+
         // Run the system function only if this entity contains instances of all the expected Resource and Component types
-        static if (!isResources!Param && storableAsComponent!Param) {
-          componentExists = entity.contains!(Unqual!Param)(ParamName!Param);
-        }
-        isResource = isResources!Param || world.resources.contains!(Unqual!Param);
         if (!isResource && !componentExists) {
-          diagnosticMessages ~= format!(diagnosticFailure!Param ~
+          diagnosticMessages ~= format!("Could not apply %s to %s" ~
             "\n\tThere must exist a Resource of type `%s` or a Component named '%s' in the World.")(
+              diagnosticNameOf!Param,
+              GeneratedSystemName,
               fullyQualifiedName!(Unqual!Param),
               ParamName!Param);
-          goto L_systemDoesNotApply; // Hack to workaround lack of `continue` support in `static foreach` 😒️
+          goto L_systemDoesNotApply;
         }
 
-        // Otherwise carry on with Component or Resource parameter assignment
-        if (componentExists) {
-          static if (storableAsComponent!Param && isImplicitlyConvertableFromMutable!Param) {
-            params[indexOf!Param] = entity.getMut!(Unqual!Param)(ParamName!Param)[0];
+        // Otherwise, get the Resource or Component data
+        static if (storableAsComponent!Param && !isResources!Param) {
+          if (!componentExists && isIllegallyMutable!Param) {
+            // Guard against illegally mutable Resources
+            if (!isStruct!Param && hasRefStorage!(FuncParamStorage[indexOf!Param])) {
+              diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
+                "\n\t" ~ diagnosticBadPractice ~
+                "\n\t" ~ diagnosticDlangFuncParams ~
+                "\n\n\tHint: Use `const` qualifier instead." ~
+                "\n";
+            } else if (!isStruct!Param) {
+              diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
+                "\n\t" ~ diagnosticBadPractice ~
+                "\n\t" ~ diagnosticDlangFuncParams ~
+                "\n\n\tHint: Add `const` qualifier to " ~ diagnosticHintOf!Param ~ "." ~
+                "\n";
+            }
+            goto L_systemDoesNotApply;
           }
-        } else if (isIllegallyMutable!Param) {
-          // Guard against illegally mutable Resources
-          if (!isStruct!Param && hasRefStorage!(FuncParamStorage[indexOf!Param])) {
-            diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-              "\n\t" ~ diagnosticBadPractice ~
-              "\n\t" ~ diagnosticDlangFuncParams ~
-              "\n\n\tHint: Use `const` qualifier instead." ~
-              "\n";
-          } else if (!isStruct!Param) {
-            diagnosticMessages ~= "Constant qualifier on " ~ diagnosticNameOf!Param ~ " is required." ~
-              "\n\t" ~ diagnosticBadPractice ~
-              "\n\t" ~ diagnosticDlangFuncParams ~
-              "\n\n\tHint: Add `const` qualifier to `" ~ diagnosticHintOf!Param ~ "." ~
-              "\n";
-          }
-          goto L_systemDoesNotApply;
-        } else {
-          static if (isEvent!Param || isResourceData!Param || isClass!Param) {
-            params[indexOf!Param] = cast(Unqual!Param) world.resources.get!(Unqual!Param);
+
+          if (componentExists) {
+            params[indexOf!Param] = entity.getMut!(Unqual!Param)(ParamName!Param);
           } else {
-            static assert(0, diagnosticFailure!Param);
+            // Otherwise retreive the Resource for parameter assignment
+            params[indexOf!Param] = world.resources.getMut!(Unqual!Param);
           }
+        } else static if (!isResources!Param) {
+          static assert(0, "Could not apply " ~ diagnosticNameOf!Param ~ " to " ~ GeneratedSystemName);
         }
+      }
+
+      // Only define this label once
+      static if (indexOf!Param == 0) {
+L_continueApplyingParams:
       }
 
       isResource = false;
       componentExists = false;
     }
 
-    // Run the system, applying dependent `Component` instance arguments
+    results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
+
+    // Run the system, applying collected argument parameters
     Func(params.expand);
 
+    // TODO: Document Component replacement as applicable for each parameter storage class
     static foreach (Param; FuncParams) {
-      static if (hasRefStorage!(FuncParamStorage[indexOf!Param])) {
-        static if (isStruct!(Unqual!Param)) {
-          if (entity.contains!(Unqual!Param))
-            replacements ~= new Structure!(Unqual!Param)(params[indexOf!Param], ParamName!Param);
-        } else static if (!isComponent!(Unqual!Param))
-          replacements ~= params[indexOf!Param];
+      static if (hasOutStorage!(FuncParamStorage[indexOf!Param]) || hasRefStorage!(FuncParamStorage[indexOf!Param])) {
+        replacements[ParamName!Param] = params[indexOf!Param];
       }
     }
 
 L_systemDoesNotApply:
 
     results.replacements = replacements;
-    results.diagnostics = diagnosticMessages.map!(msg => Diagnostic(msg)).array;
     return results;
   }
+}
+
+unittest {
+  const outputSystem = __traits(compiles, System.from!((out Number number) {}));
+  assert(!outputSystem, "System parameters MUST NOT use output qualifiers.");
 }
 
 unittest {
@@ -995,26 +953,28 @@ unittest {
   // Counter system with a Resource
   world.resources.add(Number(0));
   assert(world.resources.get!Number.value == 0);
-  world.spawn(Vector().component("position"));
+  world.spawn(Vector().named("position"));
   assert(world.entities.length == 1);
 
-  auto resourceSystem = System.from!((scope const Resources resources, const Number number) => {
+  auto resourceSystem = System.from!((scope const Resources resources, const Number number) {
     assert(resources.get!Number.value == 0);
     assert(number.value == 0);
-  }());
+  });
   resourceSystem(world).run();
   const numberResource = world.resources.get!Number;
   assert(numberResource.value == 0, "Systems MUST NOT mutate Resources when running.");
-  // TODO: Add a `Commands` interface so that Systems can queue Entity spawns and Resource changes
+}
+
+unittest {
+  auto world = new World();
 
   // Counter System with a Component
-  world = new World();
-  world.spawn(Number(0).component("number"));
+  world.spawn(Number(0).named("number"));
   assert(world.entities.length == 1);
 
   auto counterSystem = System.from!counter;
   counterSystem(world).run();
-  const number = world.entities[0].get!Number[0];
+  const number = world.entities[0].get!Number;
   assert(number.value == 1);
 }
 

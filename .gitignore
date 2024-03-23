@@ -22,6 +22,7 @@ cube.cap
 
 # Executables
 *.exe
+bin/teraflop-test-library
 bin/teraflop-test-unittest
 bin/teraflop-test-unittest-gpu
 bin/teraflop_triangle

@@ -6,36 +6,31 @@
 module teraflop.platform.window;
 
 import bindbc.glfw;
-import std.exception : enforce;
+import std.conv : to;
 import std.string : toStringz;
+import teraflop.async : Event, EventLoop;
+import teraflop.ecs : Resource;
 import teraflop.input;
-import teraflop.platform.vulkan : SurfaceSizeProvider;
+import teraflop.platform.wgpu;
 
-private uint lastWindowId = 0;
+private int lastWindowId = 0;
 
 /// A native window.
-class Window : SurfaceSizeProvider, InputNode {
-  import gfx.core.rc : atomicRcCode;
-  import gfx.graal : Device, Instance, Surface;
-  import gfx.vulkan : VkSurfaceKHR;
-  import teraflop.async : Event;
-  import teraflop.graphics : Color;
+class Window : InputNode, Resource {
+  import teraflop.input : KeyboardKey, MouseButton;
   import teraflop.math : Size, vec2d;
-  import teraflop.platform.vulkan : instance;
+  import wgpu.api : Adapter, Device, Instance, Surface, TextureFormat;
 
-  private GLFWwindow* window;
-  private Surface _surface;
-  private WindowData data;
-  private bool _valid = false;
-  private string _title;
-
-  /// Window identifier.
+  /// Window identifier
   const int id;
 
-  /// Color this Window's framebuffer should be cleared to when rendered.
-  auto clearColor = Color.black;
-  ///
-  static Color defaultClearColor = Color.black;
+  private GLFWwindow* window;
+  private Device device_;
+  private Surface surface_;
+  private TextureFormat swapChainFormat_;
+  private const EventLoop eventLoop_;
+  private string title_;
+  private WindowData data;
 
   /// Fired when this window receives an unhandled `InputEvent`.
   Event!(const InputEvent) onUnhandledInput;
@@ -47,47 +42,28 @@ class Window : SurfaceSizeProvider, InputNode {
   /// width = Initial width of the Window
   /// height = Initial height of the Window
   /// initiallyFocused = Whether the window will be given input focus when created
-  this(
-    string title, int width = 960, int height = 720, bool initiallyFocused = true
-  ) {
-    this(title, defaultClearColor, width, height, initiallyFocused);
-  }
-  /// Initialize a new Window.
-  ///
-  /// Params:
-  /// title = Title of the Window
-  /// clearColor = Color the window's framebuffer should be cleared to when rendered.
-  /// width = Initial width of the Window
-  /// height = Initial height of the Window
-  /// initiallyFocused = Whether the window will be given input focus when created
-  this(
-    string title, Color clearColor, int width = 960, int height = 720, bool initiallyFocused = true
-  ) {
-    import gfx.vulkan.wsi : createVulkanGlfwSurface;
+  this(Instance instance, string title, int width = 800, int height = 600, bool initiallyFocused = true) {
+    import teraflop.async : createEventLoop;
 
     id = lastWindowId += 1;
-    _title = title;
-    this.clearColor = clearColor;
+    title_ = title;
+    eventLoop_ = createEventLoop();
 
     // https://www.glfw.org/docs/3.3/window_guide.html#window_hints
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, true);
     glfwWindowHint(GLFW_FOCUSED, initiallyFocused);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, true);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by Vulkan
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Graphics are handled by wgpu
 
     window = glfwCreateWindow(width, height, toStringz(title), null, null);
-    _valid = window !is null;
-    if (!_valid) {
-      errorCallback(0, toStringz("Failed to initialize a new GLFW Window."));
+    if (!valid) {
+      errorCallback(0, toStringz("Failed to initialize a new GLFW Window"));
       return;
     }
-    _surface = createVulkanGlfwSurface(instance, window);
-    _surface.retain();
 
     glfwSetWindowUserPointer(window, &data);
-    glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
-    glfwSetWindowIconifyCallback(window, &iconifyCallback);
+    // TODO: glfwSetFramebufferSizeCallback(window, &framebufferResizeCallback);
+    // TODO: glfwSetWindowIconifyCallback(window, &iconifyCallback);
     // https://www.glfw.org/docs/latest/input_guide.html#input_mouse_button
     glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GLFW_TRUE);
     // https://www.glfw.org/docs/latest/input_guide.html#scrolling
@@ -101,14 +77,24 @@ class Window : SurfaceSizeProvider, InputNode {
     // TODO: For save games? https://www.glfw.org/docs/latest/input_guide.html#path_drop
     // TODO: https://www.glfw.org/docs/latest/input_guide.html#joystick and https://www.glfw.org/docs/latest/input_guide.html#gamepad
 
+    // Initialize GPU surface and swap chain descriptor
+    surface_ = createPlatformSurface(instance, window);
+    if (!valid) {
+      glfwDestroyWindow(window);
+      errorCallback(0, toStringz("Failed to initialize a new GPU surface"));
+      return;
+    }
+
     data.update(window);
   }
+
   ~this() {
-    if (valid) glfwDestroyWindow(window);
-    assert(_surface.release(), "Surface was not released!");
+    if (!valid) return;
+    glfwDestroyWindow(window);
+    surface_.destroy();
   }
 
-  // Swap chains are keyed on their windows
+  // User input is keyed on the target window
   // https://dlang.org/spec/hash-map.html#using_classes_as_key
   override size_t toHash() @safe @nogc const pure {
     return id;
@@ -118,34 +104,27 @@ class Window : SurfaceSizeProvider, InputNode {
     return other && id == other.id;
   }
 
-  /// Whether the native window handle is valid.
-  ///
-  /// May be `false` if Window initialization failed .
-  bool valid() @property const {
-    return _valid;
-  }
-
   /// Title of this Window.
   string title() @property const {
-    return _title;
+    return title_;
   }
-  void title(const string value) @property {
-    _title = value;
-    if (valid) glfwSetWindowTitle(window, value.toStringz);
+  void title(string value) @property {
+    title_ = value;
   }
 
-  /// Whether this Window is currently visible.
-  /// See_Also: $(UL
-  ///   $(LI `Window.show`)
-  ///   $(LI `Window.hide`)
-  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
-  /// )
-  bool visible() @property const {
-    return data.visible;
+  /// Whether the native window handle and backing GPU surface is valid.
+  ///
+  /// May be `false` if Window initialization failed.
+  bool valid() @property const {
+    import wgpu.utils : valid;
+    if (window is null) return false;
+    if (surface is null) return false;
+    return surface_.valid;
   }
-  void visible(bool value) @property {
-    if (this.visible && !value) hide();
-    else if (!this.visible && value) show();
+
+  ///
+  EventLoop eventLoop() @trusted @property const {
+    return cast(EventLoop) this.eventLoop_;
   }
 
   /// Size of this Window's content area, in <a href="https://www.glfw.org/docs/latest/intro_guide.html#coordinate_systems">screen coordinates</a>.
@@ -213,6 +192,21 @@ class Window : SurfaceSizeProvider, InputNode {
     return data.framebufferSize;
   }
 
+  /// Whether this Window is currently visible.
+  /// See_Also: $(UL
+  ///   $(LI `Window.show`)
+  ///   $(LI `Window.hide`)
+  ///   $(LI <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_hide">Window visibility</a> in the GLFW documentation)
+  /// )
+  bool visible() const @property {
+    return data.visible;
+  }
+  /// ditto
+  void visible(bool value) @property {
+    if (this.visible && !value) hide();
+    else if (!this.visible && value) show();
+  }
+
   /// Whether this window is minimized.
   /// See_Also: <a href="https://www.glfw.org/docs/3.3/window_guide.html#window_iconify">Window iconification</a> in the GLFW documentation
   bool minimized() @property const {
@@ -227,11 +221,20 @@ class Window : SurfaceSizeProvider, InputNode {
     return mouseButtonsChanged || mousePosChanged;
   }
 
+  package (teraflop) Surface surface() @trusted @property const {
+    return cast(Surface) surface_;
+  }
+  package (teraflop) TextureFormat surfaceFormat() @trusted @property const {
+    import std.conv : asOriginalType;
+    // TODO: Abstract this check back into a `Surface.valid` parameter
+    auto config = surface.config;
+    assert(config !is null, "Cannot create texture descriptor: This surface is not configured.");
+    if (config is null) throw new Exception("Cannot create texture descriptor: This surface is not configured.");
+
+    return config.format.asOriginalType.to!TextureFormat;
+  }
   package (teraflop) bool dirty() @property const {
     return data.dirty;
-  }
-  package (teraflop) Surface surface() @property const {
-    return cast(Surface) _surface;
   }
 
   bool isKeyDown(KeyboardKey key) @property const {
@@ -286,15 +289,18 @@ class Window : SurfaceSizeProvider, InputNode {
     return !this.visible;
   }
 
-  package (teraflop) void update() {
-    if (glfwWindowShouldClose(window)) {
-      glfwDestroyWindow(window);
-      _valid = false;
-      return;
-    }
+  /// See_Also: `Resource`
+  void initialize(Adapter adapter, Device device) {
+    import wgpu.api : CompositeAlphaMode, PresentMode, TextureUsage;
 
-    glfwPollEvents();
-    data.update(window);
+    this.device_ = device;
+
+    this.swapChainFormat_ = surface.preferredFormat(adapter);
+    surface.configure(
+      device, surfaceSize.width, surfaceSize.height, surfaceFormat,
+      TextureUsage.renderAttachment,
+      PresentMode.fifo, CompositeAlphaMode.auto_
+    );
   }
 
   override void actionInput(const InputEventAction event) {
@@ -307,28 +313,34 @@ class Window : SurfaceSizeProvider, InputNode {
     return true; // Mark handled
   }
 
-  extern(C) {
-    private static void framebufferResizeCallback(GLFWwindow* window, int, int) nothrow {
-      auto data = cast(WindowData*) glfwGetWindowUserPointer(window);
-      assert(data !is null, "Could not retrieve GLFW window data");
-      data.update(window);
+  package (teraflop) void update() {
+    if (glfwWindowShouldClose(window)) {
+      glfwDestroyWindow(window);
+      window = null;
+      return;
     }
 
-    private static void iconifyCallback(GLFWwindow* window, int iconified) nothrow {
-      auto data = cast(WindowData*) glfwGetWindowUserPointer(window);
-      assert(data !is null, "Could not retrieve GLFW window data");
+    data.update(window);
+    if (data.dirty) updateSwapChain();
 
-      const wasMinimized = data.minimized;
-      data.minimized = iconified == GLFW_TRUE;
-      if (!wasMinimized && data.minimized) data.dirty = true;
-    }
+    glfwSetWindowTitle(window, toStringz(title_));
+
+    // TODO: Add input event listeners at Window construction and trigger the Game's AsyncNotifier (https://libasync.dpldocs.info/libasync.notifier.AsyncNotifier.html)
+  }
+
+  private void updateSwapChain() {
+    import std.typecons : Yes;
+    import wgpu.utils : resize;
+
+    // Force wait to flush GPU queue and pump callbacks
+    device_.poll(Yes.forceWait);
+    surface.resize(surfaceSize.width, surfaceSize.height);
+    data.dirty = false;
   }
 
   // https://github.com/dkorpel/glfw-d/blob/master/example/app.d
   private struct WindowData {
-    // These are stored in the window's user data so that when exiting fullscreen,
-    // the window can be set to the position where it was before entering fullscreen
-    // instead of resetting to e.g. (0, 0)
+    // TODO: When exiting fullscreen, set to the position where it was before entering fullscreen
     int xpos;
     int ypos;
     Size size;
@@ -347,17 +359,17 @@ class Window : SurfaceSizeProvider, InputNode {
     bool[KeyboardKey] wasKeyPressed;
 
     void update(GLFWwindow* window) nothrow {
-      import bindbc.glfw: GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE;
-      import std.conv : to;
-
       assert(window !is null);
 
-      const size_t oldData = framebufferSize.width + framebufferSize.height;
+      const size_t oldData = xpos + ypos + framebufferSize.width + framebufferSize.height;
+
+      glfwPollEvents();
       glfwGetWindowPos(window, &this.xpos, &this.ypos);
       glfwGetWindowSize(window, cast(int*) &this.size.width, cast(int*) &this.size.height);
       glfwGetFramebufferSize(window, cast(int*) &this.framebufferSize.width, cast(int*) &this.framebufferSize.height);
       if (!minimized && framebufferSize.width == 0 && framebufferSize.height == 0)
         minimized = true;
+
       // Mouse input
       lastMousePos.x = mousePos.x;
       lastMousePos.y = mousePos.y;
@@ -384,27 +396,28 @@ class Window : SurfaceSizeProvider, InputNode {
   }
 }
 
-version(OSX) {
-  // Mixin function declarations and loader
+version (OSX) {
   mixin(bindGLFW_Cocoa);
 }
 
-version(Windows) {
-  // Import the platform API bindings
+version (Windows) {
+  // Import platform API bindings
   import core.sys.windows.windows;
   // Mixin function declarations and loader
   mixin(bindGLFW_Windows);
 }
 
-package (teraflop) bool initGlfw() {
+// FIXME: Remove this
+package extern (C) void glfwSetWindowSizeLimits(
+  GLFWwindow* window, int minwidth, int minheight, int maxwidth, int maxheight
+);
+
+package (teraflop) bool initGlfw() @trusted {
   const GLFWSupport loadResult;
 
   version (Windows) {
     loadResult = loadGLFW_Windows();
-  }
 
-  version(OSX) {
-    loadResult = loadGLFW_Cocoa();
     if (loadResult != glfwSupport && loadResult == GLFWSupport.noLibrary) {
         errorCallback(0, toStringz("GLFW shared library failed to load."));
     } else if (GLFWSupport.badLibrary) {
@@ -414,7 +427,7 @@ package (teraflop) bool initGlfw() {
       errorCallback(0, toStringz("One or more GLFW symbols failed to load. Is glfw >= 3.2 installed?"));
     }
 
-    // TODO: Fix this for Windows and OSX? Or just use the static lib everywhere?
+    // TODO: Fix this for Windows? Or just use the static lib everywhere?
     // if (loadResult != GLFWSupport.glfw32 && loadResult != GLFWSupport.glfw33) {
     //   errorCallback(0, toStringz("GLFW version >= 3.2 failed to load. Is GLFW installed?"));
     //   return false;

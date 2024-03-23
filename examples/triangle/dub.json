@@ -8,7 +8,7 @@
   "copyright": "Copyright © 2020, Chance Snow",
   "targetType": "executable",
   "targetPath": "../../bin",
-  "systemDependencies": "glfw >= 3.2.0, vulkan >= 1.1.0",
+  "systemDependencies": "glfw >= 3.2.0",
   "dependencies": {
     "teraflop": {
       "path": "../../"
@@ -17,6 +17,9 @@
   "preBuildCommands": [
     "glslc assets/shaders/triangle.vs.glsl -o assets/shaders/triangle.vs.spv",
     "glslc assets/shaders/triangle.fs.glsl -o assets/shaders/triangle.fs.spv"
+  ],
+  "postBuildCommands-linux": [
+    "patchelf --set-rpath '$$ORIGIN' $PACKAGE_DIR/../../bin/triangle"
   ],
   "lflags-linux": [
     "-L../../lib/glfw-3.3.2/src"

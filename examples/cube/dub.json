@@ -8,7 +8,7 @@
   "copyright": "Copyright © 2020, Chance Snow",
   "targetType": "executable",
   "targetPath": "../../bin",
-  "systemDependencies": "glfw >= 3.2.0, vulkan >= 1.1.0",
+  "systemDependencies": "glfw >= 3.2.0",
   "dependencies": {
     "teraflop": {
       "path": "../../"

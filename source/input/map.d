@@ -134,10 +134,10 @@ class InputMapBinding {
 
   private alias stateAppliesAggregate = int delegate(int, BindingState);
   private stateAppliesAggregate totalApplicableStatesFor(InputEvent event) {
-    return (int numApplicableStates, BindingState state) => {
+    return (int numApplicableStates, BindingState state) {
       if (event.device != state.device) return 0;
       return numApplicableStates + (state.appliesTo(event) ? 1 : 0);
-    }();
+    };
   }
 
   /// Whether this action binding applies to the given `InputEvent`

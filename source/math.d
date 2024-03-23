@@ -9,7 +9,6 @@ module teraflop.math;
 
 public import gfm.math;
 import std.typecons : Flag, Yes;
-import teraflop.graphics : Color;
 
 private const float ONE_DEGREE_IN_RADIANS = 0.01745329252;
 
@@ -44,17 +43,22 @@ enum vec3f forward = vec3f(0, 0, 1);
 /// Backward unit vector, i.e. inverse of Z-forward.
 enum vec3f back = vec3f(0, 0, -1);
 
-/// Transformation matrix to correct for the Vulkan coordinate system.
-/// Vulkan clip space has inverted Y and half Z.
+/// Transformation matrix to correct for the WebGPU coordinate system.
+/// WebGPU clip space has inverted Y and half Z.
 /// Params:
 /// invertY = Whether the Y axis of the matrix is inverted.
-mat4f vulkanClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
+/// See_Also: https://github.com/gpuweb/gpuweb/issues/416
+mat4f wgpuClipCorrection(Flag!"invertY" invertY = Yes.invertY) @property pure {
   return mat4f(
     1f, 0f, 0f, 0f,
     0f, invertY ? -1f : 1.0f, 0f, 0f,
     0f, 0f, 0.5f, 0.5f,
     0f, 0f, 0f, 1f,
   );
+}
+
+unittest {
+  // TODO: Test wgpuClipCorrection
 }
 
 /// Extract the translation transformation from the given `matrix`.
@@ -141,6 +145,10 @@ vec3f transform(vec3f a, mat4f transformation) {
   result.z = transformation.v[8] * x + transformation.v[9] * y + transformation.v[10] * z + transformation.v[11];
 
   return result;
+}
+
+unittest {
+  assert(vec3f(0, 0, 0).transform(mat4f.translation(vec3f(0, 1, 0))) == vec3f(0, 1, 0));
 }
 
 ///

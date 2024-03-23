@@ -1,7 +1,7 @@
 /// Native platform integrations.
 ///
 /// $(UL
-///   $(LI <a href="platform/vulkan.html">Vulkan</a>: Utilities for <a href="https://github.com/rtbo/gfx-d#readme">gfx</a> graphics library integration.)
+///   $(LI <a href="platform/wgpu.html">WebGPU</a>: Utilities for <a href="https://chances.github.io/wgpu-d">WebGPU</a> graphics library integration.)
 ///   $(LI <a href="platform/window.html">Window</a>: Native window primitives.)
 /// )
 ///
@@ -10,7 +10,7 @@
 /// License: 3-Clause BSD License
 module teraflop.platform;
 
-public {
-  import teraflop.platform.vulkan;
-  import teraflop.platform.window;
-}
+public:
+
+import teraflop.platform.wgpu : createPlatformSurface;
+import teraflop.platform.window;

@@ -69,17 +69,17 @@ final class Input {
 
   ///
   static ActionInput ignoreActions() {
-    return (const InputEventAction event) => {
+    return (const InputEventAction event) {
       assert(event.action.length);
-    }();
+    };
   }
 
   ///
   static UnhandledInput ignoreUnhandledInputs() {
-    return (const InputEvent event) => {
+    return (const InputEvent event) {
       assert(event.device >= 0);
       return false;
-    }();
+    };
   }
 
   InputMap map() @property const {
@@ -105,13 +105,13 @@ final class Input {
 
     // trace(format!"adding anonymous '%s' action handler"(action));
     this.nodes ~= InputEventHandlers(
-      event => {
+      (event) {
         if (event.action == action) handler();
-      }(),
-      event => {
+      },
+      (event) {
         if (event.isActionEvent && event.asActionEvent.action == action) return markInputHandled;
         return false;
-      }()
+      }
     );
   }
 
