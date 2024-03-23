@@ -51,14 +51,14 @@ version (OSX) {
   extern (Objective-C) {
     /// An object that manages image-based content and allows you to perform animations on that content.
     /// See_Also: https://developer.apple.com/documentation/quartzcore/calayer?language=objc
-    extern class CALayer {
-      /// Creates and returns an instance of the layer object.
-      /// See_Also: https://developer.apple.com/documentation/quartzcore/calayer/1410793-layer?language=objc
-      static CALayer layer() @selector("layer");
-    }
+    interface CALayer {}
     /// A Core Animation layer that Metal can render into, typically to be displayed onscreen.
     /// See_Also: https://developer.apple.com/documentation/quartzcore/cametallayer?language=objc
-    extern class CAMetalLayer : CALayer {}
+    class CAMetalLayer : CALayer {
+      /// Creates and returns an instance of the layer object.
+      /// See_Also: https://developer.apple.com/documentation/quartzcore/calayer/1410793-layer?language=objc
+      static CAMetalLayer layer() @selector("layer");
+    }
     /// A window that an app displays on the screen.
     /// See_Also: https://developer.apple.com/documentation/appkit/nswindow?language=objc
     extern interface NSWindow {
